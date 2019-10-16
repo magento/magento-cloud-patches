@@ -16,7 +16,7 @@ The Magento Cloud Suite includes a set of packages designed to deploy and manage
 - [Magento Cloud Patches](https://github.com/magento/magento-cloud-patches) package - Set of patches which improve integration of all Magento versions with Cloud environments
 
 ## Useful Resources
-- [Release Notes](https://github.com/magento/ece-tools/releases)
+- [Release Notes](https://github.com/magento/magento-cloud-patches/releases)
 - [Magento Cloud Guide DevDocs](https://devdocs.magento.com/guides/v2.3/cloud/bk-cloud.html)
 - [Cloud Knowledge Base and Support](https://support.magento.com)
 - [Cloud Slack Channel](https://magentocommeng.slack.com) (join #cloud and #cloud-docker)
