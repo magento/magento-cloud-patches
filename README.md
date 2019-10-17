@@ -1,7 +1,7 @@
 # Magento Cloud Patches
 
 ## Welcome
-The Magento Cloud Patches package is a set of patches, previously used within the ece-tools package to improve the integration of all Magento versions with Cloud environments and to deliver critical fixes quickly. Beginning with ece-tools version 2002.0.22 and 2002.1.0, the Magento Cloud Patches  package is required so that patches can be applied with same workflow used in  ece-tools 2002.0.21 and earlier versions.
+The Magento Cloud Patches package is a set of patches, previously used within the ece-tools package to improve the integration of all Magento versions with Cloud environments and to deliver critical fixes quickly. Beginning with ece-tools version `2002.0.22` and `2002.1.0`, the Magento Cloud Patches  package is required so that patches can be applied with same workflow used in  ece-tools `2002.0.21` and earlier versions.
 
 ## Contributing to Magento Cloud Patches Code Base
 You can submit pull requests to fix potential bugs. If you find a bug or have a new suggestion, let us know by creating a Github issue.
