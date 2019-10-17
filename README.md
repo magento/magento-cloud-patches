@@ -13,7 +13,7 @@ The Magento Cloud Suite includes a set of packages designed to deploy and manage
 - The [ece-tools package](https://github.com/magento/ece-tools) - A set of scripts and tools designed to manage and deploy Cloud projects
 - [Magento Cloud Components](https://github.com/magento/magento-cloud-components) package - Extended Magento Commerce core functionality for sites deployed on the Cloud platform
 - [Magento Cloud Docker](https://github.com/magento/magento-cloud-docker) package - Functionality and Docker images to deploy Magento Commerce to a local Cloud environment
-- [Magento Cloud Patches](https://github.com/magento/magento-cloud-patches) package - Set of patches which improve the integration of all Magento versions with Cloud environments.
+- [Magento Cloud Patches](https://github.com/magento/magento-cloud-patches) package - Set of patches which improve the integration of all Magento versions with Cloud environments
 
 ## Useful Resources
 - [Release Notes](https://github.com/magento/magento-cloud-patches/releases)
@@ -24,4 +24,4 @@ The Magento Cloud Suite includes a set of packages designed to deploy and manage
 ## License
 Each Magento source file included in this distribution is licensed under OSL-3.0 license.
 
-See [LICENSE.txt](https://github.com/magento/magento-cloud-patches/blob/develop/LICENSE.txt) for the full text of the [Open Software License v. 3.0 (OSL-3.0)](http://opensource.org/licenses/osl-3.0.php).
+See [LICENSE.txt](https://github.com/magento/magento-cloud-patches/blob/develop/LICENSE.txt) for the full text of the [Open Software License v. 3.0 (OSL-3.0)](http://opensource.org/licenses/osl-3.0.php)
