@@ -6,7 +6,7 @@ The Magento Cloud Patches package is a set of patches, previously used within th
 ## Contributing to Magento Cloud Patches Code Base
 You can submit pull requests to fix potential bugs. If you find a bug or have a new suggestion, let us know by creating a Github issue.
 
-*Please note:* this repository is not an official support channel. To get project-specific help, please create support ticket through [Support Portal](https://support.magento.com). Support-related issues will be closed with the request to open a support ticket.
+**Note:** This repository is not an official support channel. To get project-specific help, create a support ticket through the [Magento Support Portal](https://support.magento.com). Support-related issues will be closed with the request to open a support ticket.
 
 # Magento Cloud Suite
 The Magento Cloud Suite includes a set of packages designed to deploy and manage Magento Commerce installations on the Cloud platform.
