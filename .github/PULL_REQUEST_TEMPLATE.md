@@ -16,10 +16,10 @@
 
 ### Fixed Issues (if relevant)
 <!---
-    If relevant, please provide a list of fixed issues in the format magento/ece-tools#<issue_number>.
+    If relevant, please provide a list of fixed issues in the format magento/magento-cloud-patches#<issue_number>.
     There could be 1 or more issues linked here and it will help us find some more information about the reasoning behind this change.
 -->
-1. magento/ece-tools#<issue_number>: Issue title
+1. magento/magento-cloud-patches#<issue_number>: Issue title
 2. ...
 
 ### Manual testing scenarios
