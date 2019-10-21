@@ -36,6 +36,9 @@ class ProcessFactory
      */
     public function create(array $cmd): Process
     {
-        return new Process($cmd, $this->directoryList->getMagentoRoot());
+        return new Process(
+            implode(' ', $cmd),
+            $this->directoryList->getMagentoRoot()
+        );
     }
 }

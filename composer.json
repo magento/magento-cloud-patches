@@ -14,6 +14,9 @@
         "symfony/dependency-injection": "^3.3||^4.3",
         "symfony/process": "^2.1||^4.1"
     },
+    "conflict": {
+        "symfony/process": "^4.2"
+    },
     "require-dev": {
         "phpmd/phpmd": "@stable",
         "phpunit/phpunit": "^6.2",
