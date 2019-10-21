@@ -66,27 +66,6 @@ class Manager
     }
 
     /**
-     * Copying static file endpoint.
-     * This resolves issue MAGECLOUD-314.
-     *
-     * @param OutputInterface $output
-     */
-    public function copyStaticFile(OutputInterface $output)
-    {
-        $magentoRoot = $this->directoryList->getMagentoRoot();
-
-        if (!$this->filesystem->exists($magentoRoot . '/pub/static.php')) {
-            $output->writeln('File "static.php" was not found');
-
-            return;
-        }
-
-        $this->filesystem->copy($magentoRoot . '/pub/static.php', $magentoRoot . '/pub/front-static.php');
-
-        $output->writeln('File "static.php" was copied');
-    }
-
-    /**
      * Applies patches from composer.json file.
      * Patches are applying from top to bottom of config list.
      *

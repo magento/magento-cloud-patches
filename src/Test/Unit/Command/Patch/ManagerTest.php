@@ -76,26 +76,6 @@ class ManagerTest extends TestCase
         );
     }
 
-    public function testCopyStaticFiles()
-    {
-        $this->filesystemMock->expects($this->once())
-            ->method('exists')
-            ->with('/pub/static.php')
-            ->willReturn(true);
-        $this->filesystemMock->expects($this->once())
-            ->method('copy')
-            ->with('/pub/static.php', '/pub/front-static.php')
-            ->willReturn(true);
-
-        /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
-        $outputMock->expects($this->once())
-            ->method('writeln')
-            ->with('File "static.php" was copied');
-
-        $this->manager->copyStaticFile($outputMock);
-    }
-
     /**
      * @throws ApplierException
      * @throws ManagerException

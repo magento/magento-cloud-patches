@@ -65,7 +65,6 @@ class Apply extends Command
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->manager->copyStaticFile($output);
         $this->manager->applyComposerPatches($input, $output);
         $this->manager->applyHotFixes($input, $output);
     }
