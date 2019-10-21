@@ -1,0 +1,45 @@
+{
+    "name": "magento/magento-cloud-patches",
+    "description": "Provides critical fixes for Magento 2 Enterprise Edition",
+    "type": "magento2-component",
+    "version": "1.0.0",
+    "license": "OSL-3",
+    "require": {
+        "php": "^7.0",
+        "ext-json": "*",
+        "composer/composer": "^1.0",
+        "illuminate/filesystem": "^5.5",
+        "psr/log": "^1.0",
+        "symfony/config": "^3.4||^4.3",
+        "symfony/console": "^2.3||^4.0",
+        "symfony/dependency-injection": "^3.4||^4.3",
+        "symfony/process": "^2.1||^4.1"
+    },
+    "require-dev": {
+        "phpmd/phpmd": "@stable",
+        "phpunit/phpunit": "^6.2",
+        "squizlabs/php_codesniffer": "^3.0"
+    },
+    "bin": [
+        "bin/ece-patches"
+    ],
+    "autoload": {
+        "psr-4": {
+            "Magento\\CloudPatches\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": [
+            "@phpcs",
+            "@phpmd",
+            "@phpunit"
+        ],
+        "phpcs": "phpcs src --standard=tests/static/phpcs-ruleset.xml -p -n",
+        "phpmd": "phpmd src xml tests/static/phpmd-ruleset.xml",
+        "phpunit": "phpunit --configuration tests/unit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "prefer-stable": true
+}
