@@ -123,7 +123,6 @@ class Applier
     {
         try {
             $this->processFactory->create(['git', 'apply', $path])
-                ->disableOutput()
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
             if ($deployedFromGit) {
@@ -136,7 +135,6 @@ class Applier
 
             try {
                 $this->processFactory->create(['git', 'apply', '--check', '--reverse', $path])
-                    ->disableOutput()
                     ->mustRun();
             } catch (ProcessFailedException $reverseException) {
                 throw new ApplierException(

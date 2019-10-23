@@ -111,9 +111,6 @@ class ApplierTest extends TestCase
             ->with(['git', 'apply', $path])
             ->willReturn($processMock);
         $processMock->expects($this->once())
-            ->method('disableOutput')
-            ->willReturnSelf();
-        $processMock->expects($this->once())
             ->method('mustRun');
 
         $this->assertSame(
@@ -147,9 +144,6 @@ class ApplierTest extends TestCase
             ->method('create')
             ->with(['git', 'apply', $path])
             ->willReturn($processMock);
-        $processMock->expects($this->once())
-            ->method('disableOutput')
-            ->willReturnSelf();
         $processMock->expects($this->once())
             ->method('mustRun');
 
@@ -197,9 +191,6 @@ class ApplierTest extends TestCase
             ->method('create')
             ->with(['git', 'apply', 'root/path/to/patch'])
             ->willReturn($processMock);
-        $processMock->expects($this->once())
-            ->method('disableOutput')
-            ->willReturnSelf();
         $processMock->expects($this->once())
             ->method('mustRun');
 
@@ -276,9 +267,6 @@ class ApplierTest extends TestCase
             /** @var Process|MockObject $result */
             $result = $this->createMock(Process::class);
             $result->expects($this->once())
-                ->method('disableOutput')
-                ->willReturnSelf();
-            $result->expects($this->once())
                 ->method('mustRun');
 
             return $result;
@@ -286,9 +274,6 @@ class ApplierTest extends TestCase
 
         /** @var Process|MockObject $result */
         $result = $this->createMock(Process::class);
-        $result->expects($this->once())
-            ->method('disableOutput')
-            ->willReturnSelf();
         $result->expects($this->once())
             ->method('mustRun')
             ->willThrowException(new ProcessFailedException($result));
