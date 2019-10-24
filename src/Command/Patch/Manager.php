@@ -7,11 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command\Patch;
 
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
-use Illuminate\Filesystem\Filesystem;
 use Magento\CloudPatches\Command\Apply;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
+use Magento\CloudPatches\Filesystem\FileNotFoundException;
+use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use Symfony\Component\Console\Input\InputInterface;
@@ -91,13 +91,12 @@ class Manager
     public function applyComposerPatches(InputInterface $input, OutputInterface $output)
     {
         try {
-            $patches = json_decode(
-                $this->filesystem->get($this->fileList->getPatches()) ?? '',
-                true
-            );
+            $content = $this->filesystem->get($this->fileList->getPatches());
         } catch (FileNotFoundException $exception) {
             throw new ManagerException($exception->getMessage(), $exception->getCode(), $exception);
         }
+
+        $patches = json_decode($content, true);
 
         if (!$patches) {
             $output->writeln('Composer patches not found');

@@ -8,10 +8,10 @@
 
         <service id="Magento\CloudPatches\App\Container" autowire="false"/>
         <service id="Magento\CloudPatches\Filesystem\DirectoryList" autowire="false"/>
-        <service id="Illuminate\Filesystem\Filesystem"/>
         <service id="Composer\Composer"/>
         <service id="Magento\CloudPatches\App\GenericException" autowire="false"/>
         <service id="Magento\CloudPatches\Command\Patch\ManagerException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\ApplierException" autowire="false"/>
+        <service id="Magento\CloudPatches\Filesystem\FileNotFoundException" autowire="false"/>
     </services>
 </container>

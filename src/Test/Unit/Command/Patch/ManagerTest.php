@@ -8,13 +8,13 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Command\Patch;
 
 use Composer\Package\RootPackageInterface;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
-use Illuminate\Filesystem\Filesystem;
 use Magento\CloudPatches\Command\Apply;
 use Magento\CloudPatches\Command\Patch\Manager;
 use Magento\CloudPatches\Command\Patch\ManagerException;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
+use Magento\CloudPatches\Filesystem\FileNotFoundException;
+use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use PHPUnit\Framework\MockObject\MockObject;

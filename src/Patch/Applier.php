@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Patch;
 
 use Composer;
-use Illuminate\Filesystem\Filesystem;
 use Magento\CloudPatches\Filesystem\DirectoryList;
+use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
@@ -42,18 +42,18 @@ class Applier
      * @param Composer\Composer $composer
      * @param ProcessFactory $processFactory
      * @param DirectoryList $directoryList
-     * @param Filesystem $file
+     * @param Filesystem $filesystem
      */
     public function __construct(
         Composer\Composer $composer,
         ProcessFactory $processFactory,
         DirectoryList $directoryList,
-        Filesystem $file
+        Filesystem $filesystem
     ) {
         $this->repository = $composer->getRepositoryManager()->getLocalRepository();
         $this->processFactory = $processFactory;
         $this->directoryList = $directoryList;
-        $this->filesystem = $file;
+        $this->filesystem = $filesystem;
     }
 
     /**
