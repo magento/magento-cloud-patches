@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Default configuration for services in *this* file -->
+        <defaults autowire="true" public="true"/>
+
+        <prototype namespace="Magento\CloudPatches\" resource="../src/*" exclude="../src/{Test}"/>
+
+        <service id="Magento\CloudPatches\App\Container" autowire="false"/>
+        <service id="Magento\CloudPatches\Filesystem\DirectoryList" autowire="false"/>
+        <service id="Composer\Composer"/>
+        <service id="Magento\CloudPatches\App\GenericException" autowire="false"/>
+        <service id="Magento\CloudPatches\Command\Patch\ManagerException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\ApplierException" autowire="false"/>
+        <service id="Magento\CloudPatches\Filesystem\FileNotFoundException" autowire="false"/>
+    </services>
+</container>

@@ -1,0 +1,10 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+$container = require __DIR__ . '/../bootstrap.php';
+
+$application = new Magento\CloudPatches\Application($container);
+$application->run();
