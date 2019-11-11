@@ -203,8 +203,8 @@
       "2.3.2 - 2.3.3": "MAGECLOUD-3392__reduce_q-ty_of_error_report_files__2.3.2.patch"
     },
     "Fix pagebuilder module": {
-      "2.3.1": "MDVA-22979__fix_pagebuilder_module_2.3.1_v1.patch",
-      "2.3.2": "MDVA-22979__fix_pagebuilder_module_2.3.2_v1.patch"
+      "2.3.1": "MDVA-22979__fix_pagebuilder_module__2.3.1.patch",
+      "2.3.2": "MDVA-22979__fix_pagebuilder_module__2.3.2.patch"
     }
   },
   "monolog/monolog": {
