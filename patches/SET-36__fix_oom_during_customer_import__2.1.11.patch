@@ -1,5 +1,4 @@
 diff -Naur a/vendor/magento/module-customer-import-export/Model/Import/Address.php b/vendor/magento/module-customer-import-export/Model/Import/Address.php
-index 3f745267fd2..13e659e4e62 100644
 --- a/vendor/magento/module-customer-import-export/Model/Import/Address.php
 +++ b/vendor/magento/module-customer-import-export/Model/Import/Address.php
 @@ -257,6 +257,11 @@ class Address extends AbstractCustomer
@@ -74,7 +73,6 @@ index 3f745267fd2..13e659e4e62 100644
       *
       * @return $this
 diff -Naur a/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php b/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
-index 4e6687bff28..359822df6d9 100644
 --- a/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
 +++ b/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
 @@ -117,13 +117,18 @@ class Storage

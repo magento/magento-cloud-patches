@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
-index cbce1682cb5..79ceb56a883 100644
 --- a/vendor/magento/module-email/Model/Transport.php
 +++ b/vendor/magento/module-email/Model/Transport.php
 @@ -9,7 +9,6 @@ namespace Magento\Email\Model;
@@ -26,7 +25,6 @@ index cbce1682cb5..79ceb56a883 100644
          $parameters = null
      ) {
 diff -Nuar a/vendor/magento/framework/Mail/EmailMessage.php b/vendor/magento/framework/Mail/EmailMessage.php
-index aaef9750751..02c75977cd0 100644
 --- a/vendor/magento/framework/Mail/EmailMessage.php
 +++ b/vendor/magento/framework/Mail/EmailMessage.php
 @@ -10,19 +10,13 @@ namespace Magento\Framework\Mail;
@@ -220,7 +218,6 @@ index aaef9750751..02c75977cd0 100644
  
      /**
 diff -Nuar a/vendor/magento/framework/Mail/EmailMessageInterface.php b/vendor/magento/framework/Mail/EmailMessageInterface.php
-index 95f83ff679c..93eaa4acde3 100644
 --- a/vendor/magento/framework/Mail/EmailMessageInterface.php
 +++ b/vendor/magento/framework/Mail/EmailMessageInterface.php
 @@ -9,7 +9,7 @@ namespace Magento\Framework\Mail;
@@ -250,7 +247,6 @@ index 95f83ff679c..93eaa4acde3 100644
      /**
       * Get the string-serialized message body text
 diff -Nuar a/vendor/magento/framework/Mail/MailMessageInterface.php b/vendor/magento/framework/Mail/MailMessageInterface.php
-index da010be2702..5179e6057c4 100644
 --- a/vendor/magento/framework/Mail/MailMessageInterface.php
 +++ b/vendor/magento/framework/Mail/MailMessageInterface.php
 @@ -10,6 +10,8 @@ namespace Magento\Framework\Mail;
@@ -263,7 +259,6 @@ index da010be2702..5179e6057c4 100644
  interface MailMessageInterface extends MessageInterface
  {
 diff -Nuar a/vendor/magento/framework/Mail/Message.php b/vendor/magento/framework/Mail/Message.php
-index b15b75ca9ac..1f423e80108 100644
 --- a/vendor/magento/framework/Mail/Message.php
 +++ b/vendor/magento/framework/Mail/Message.php
 @@ -10,13 +10,16 @@ use Zend\Mime\Part;
@@ -285,7 +280,6 @@ index b15b75ca9ac..1f423e80108 100644
      /**
       * Message type
 diff -Nuar a/vendor/magento/framework/Mail/Template/TransportBuilder.php b/vendor/magento/framework/Mail/Template/TransportBuilder.php
-index 4a8d6572faa..2d28e2f560a 100644
 --- a/vendor/magento/framework/Mail/Template/TransportBuilder.php
 +++ b/vendor/magento/framework/Mail/Template/TransportBuilder.php
 @@ -87,7 +87,7 @@ class TransportBuilder

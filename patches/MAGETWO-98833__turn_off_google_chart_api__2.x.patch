@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/magento/module-backend/Block/Dashboard/Graph.php b/vendor/magento/module-backend/Block/Dashboard/Graph.php
-index 8e238ccab44c..71a6cf4e938f 100644
 --- a/vendor/magento/module-backend/Block/Dashboard/Graph.php
 +++ b/vendor/magento/module-backend/Block/Dashboard/Graph.php
 @@ -15,7 +15,7 @@ class Graph extends \Magento\Backend\Block\Dashboard\AbstractDashboard

@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php b/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php
-index 82cb8ac51..7997d7cb6 100644
 --- a/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php
 +++ b/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php
 @@ -107,11 +107,15 @@ class TemplateFile extends File
