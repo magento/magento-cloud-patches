@@ -377,7 +377,7 @@ diff -Nuar a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php 
 -        return $consumerName . '-' . $sanitizedHostname . static::PID_FILE_EXT;
 -    }
  }
-diff --git a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner/PidConsumerManager.php b/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner/PidConsumerManager.php
+diff -Nuar a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner/PidConsumerManager.php b/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner/PidConsumerManager.php
 deleted file mode 100644
 --- a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner/PidConsumerManager.php
 +++ /dev/null

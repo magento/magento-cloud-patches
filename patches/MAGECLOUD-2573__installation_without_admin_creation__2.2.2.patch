@@ -104,7 +104,7 @@ diff -Nuar a/setup/src/Magento/Setup/Console/Command/InstallCommand.php b/setup/
 +    }
  }
 
-diff --git a/setup/src/Magento/Setup/Console/Command/AdminUserCreateCommand.php b/setup/src/Magento/Setup/Console/Command/AdminUserCreateCommand.php
+diff -Nuar a/setup/src/Magento/Setup/Console/Command/AdminUserCreateCommand.php b/setup/src/Magento/Setup/Console/Command/AdminUserCreateCommand.php
 --- a/setup/src/Magento/Setup/Console/Command/AdminUserCreateCommand.php
 +++ b/setup/src/Magento/Setup/Console/Command/AdminUserCreateCommand.php
 @@ -15,6 +15,9 @@ use Symfony\Component\Console\Input\InputOption;

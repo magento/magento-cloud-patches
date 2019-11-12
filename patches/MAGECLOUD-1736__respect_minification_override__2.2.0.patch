@@ -1,4 +1,4 @@
-diff --git a/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php b/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php
+diff -Nuar a/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php b/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php
 index 09f87d878..5ef71afcc 100644
 --- a/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php
 +++ b/vendor/magento/framework/View/Design/FileResolution/Fallback/TemplateFile.php

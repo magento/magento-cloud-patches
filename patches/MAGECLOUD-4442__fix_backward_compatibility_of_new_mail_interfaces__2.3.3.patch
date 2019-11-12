@@ -1,4 +1,4 @@
-diff --git a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
+diff -Nuar a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
 index cbce1682cb5..79ceb56a883 100644
 --- a/vendor/magento/module-email/Model/Transport.php
 +++ b/vendor/magento/module-email/Model/Transport.php
@@ -25,7 +25,7 @@ index cbce1682cb5..79ceb56a883 100644
          ScopeConfigInterface $scopeConfig,
          $parameters = null
      ) {
-diff --git a/vendor/magento/framework/Mail/EmailMessage.php b/vendor/magento/framework/Mail/EmailMessage.php
+diff -Nuar a/vendor/magento/framework/Mail/EmailMessage.php b/vendor/magento/framework/Mail/EmailMessage.php
 index aaef9750751..02c75977cd0 100644
 --- a/vendor/magento/framework/Mail/EmailMessage.php
 +++ b/vendor/magento/framework/Mail/EmailMessage.php
@@ -219,7 +219,7 @@ index aaef9750751..02c75977cd0 100644
      }
  
      /**
-diff --git a/vendor/magento/framework/Mail/EmailMessageInterface.php b/vendor/magento/framework/Mail/EmailMessageInterface.php
+diff -Nuar a/vendor/magento/framework/Mail/EmailMessageInterface.php b/vendor/magento/framework/Mail/EmailMessageInterface.php
 index 95f83ff679c..93eaa4acde3 100644
 --- a/vendor/magento/framework/Mail/EmailMessageInterface.php
 +++ b/vendor/magento/framework/Mail/EmailMessageInterface.php
@@ -249,7 +249,7 @@ index 95f83ff679c..93eaa4acde3 100644
  
      /**
       * Get the string-serialized message body text
-diff --git a/vendor/magento/framework/Mail/MailMessageInterface.php b/vendor/magento/framework/Mail/MailMessageInterface.php
+diff -Nuar a/vendor/magento/framework/Mail/MailMessageInterface.php b/vendor/magento/framework/Mail/MailMessageInterface.php
 index da010be2702..5179e6057c4 100644
 --- a/vendor/magento/framework/Mail/MailMessageInterface.php
 +++ b/vendor/magento/framework/Mail/MailMessageInterface.php
@@ -262,7 +262,7 @@ index da010be2702..5179e6057c4 100644
   */
  interface MailMessageInterface extends MessageInterface
  {
-diff --git a/vendor/magento/framework/Mail/Message.php b/vendor/magento/framework/Mail/Message.php
+diff -Nuar a/vendor/magento/framework/Mail/Message.php b/vendor/magento/framework/Mail/Message.php
 index b15b75ca9ac..1f423e80108 100644
 --- a/vendor/magento/framework/Mail/Message.php
 +++ b/vendor/magento/framework/Mail/Message.php
@@ -284,7 +284,7 @@ index b15b75ca9ac..1f423e80108 100644
  
      /**
       * Message type
-diff --git a/vendor/magento/framework/Mail/Template/TransportBuilder.php b/vendor/magento/framework/Mail/Template/TransportBuilder.php
+diff -Nuar a/vendor/magento/framework/Mail/Template/TransportBuilder.php b/vendor/magento/framework/Mail/Template/TransportBuilder.php
 index 4a8d6572faa..2d28e2f560a 100644
 --- a/vendor/magento/framework/Mail/Template/TransportBuilder.php
 +++ b/vendor/magento/framework/Mail/Template/TransportBuilder.php

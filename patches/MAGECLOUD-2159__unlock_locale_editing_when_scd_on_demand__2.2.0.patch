@@ -266,7 +266,7 @@ new file mode 100644
 +    }
 +}
 
-diff --git a/vendor/magento/module-config/Model/Config/Structure/ElementVisibility/ConcealInProductionWithoutScdOnDemand.php b/vendor/magento/module-config/Model/Config/Structure/ElementVisibility/ConcealInProductionWithoutScdOnDemand.php
+diff -Nuar a/vendor/magento/module-config/Model/Config/Structure/ElementVisibility/ConcealInProductionWithoutScdOnDemand.php b/vendor/magento/module-config/Model/Config/Structure/ElementVisibility/ConcealInProductionWithoutScdOnDemand.php
 new file mode 100644
 --- /dev/null
 +++ b/vendor/magento/module-config/Model/Config/Structure/ElementVisibility/ConcealInProductionWithoutScdOnDemand.php
