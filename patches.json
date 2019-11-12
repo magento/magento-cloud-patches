@@ -113,7 +113,7 @@
       "2.2.7": "MAGECLOUD-3913__fix_problems_with_consumer_runners_on_cloud_clusters__2.2.7.patch",
       "2.2.8 - 2.2.9": "MAGECLOUD-3913__fix_problems_with_consumer_runners_on_cloud_clusters__2.2.8.patch",
       "2.3.0": "MAGECLOUD-3913__fix_problems_with_consumer_runners_on_cloud_clusters__2.3.0.patch",
-      "2.3.1 - 2.3.2": "MAGECLOUD-3913__fix_problems_with_consumer_runners_on_cloud_clusters__2.3.1.patch"
+      ">=2.3.1 <2.3.3": "MAGECLOUD-3913__fix_problems_with_consumer_runners_on_cloud_clusters__2.3.1.patch"
     },
     "Resolve Issues with Cron Schedule": {
       "2.1.10 - 2.1.14 || 2.2.2 - 2.2.5": "MAGECLOUD-2427__resolve_issues_with_cron_schedule.patch"
@@ -170,16 +170,16 @@
       "2.2.0 - 2.2.3": "MAGECLOUD-3611__multi_thread_scd__2.2.0.patch",
       "2.2.4 - 2.2.9": "MAGECLOUD-3611__multi_thread_scd__2.2.4.patch",
       "2.3.0 - 2.3.1": "MAGECLOUD-3611__multi_thread_scd__2.3.0.patch",
-      "2.3.2": "MAGECLOUD-3611__multi_thread_scd__2.3.2.patch"
+      ">=2.3.2 <2.3.3": "MAGECLOUD-3611__multi_thread_scd__2.3.2.patch"
     },
     "setup:upgrade returns error code if app:config:import failed": {
       "2.2.0": "MAGECLOUD-3806__error_code_fix_for_setup_upgrade__2.2.0.patch",
       "2.2.1 - 2.2.9": "MAGECLOUD-3806__error_code_fix_for_setup_upgrade__2.2.1.patch",
-      "2.3.0 - 2.3.2": "MAGECLOUD-3806__error_code_fix_for_setup_upgrade__2.3.0.patch"
+      ">=2.3.0 < 2.3.3": "MAGECLOUD-3806__error_code_fix_for_setup_upgrade__2.3.0.patch"
     },
     "Re-work consumers to terminate as soon as there is nothing left to process": {
       "2.2.0 - 2.3.1": "MAGECLOUD-4071__terminate_consumers_if_the_queue_is_empty__2.2.0.patch",
-      "2.3.2 - 2.3.3": "MAGECLOUD-4071__terminate_consumers_if_the_queue_is_empty__2.3.2.patch"
+      ">=2.3.2 <2.3.4": "MAGECLOUD-4071__terminate_consumers_if_the_queue_is_empty__2.3.2.patch"
     },
     "Backward Compatibility of new Mail Interfaces": {
       "2.3.3": "MAGECLOUD-4442__fix_backward_compatibility_of_new_mail_interfaces__2.3.3.patch"
@@ -200,7 +200,7 @@
       "~2.2.8": "MAGECLOUD-3392__reduce_q-ty_of_error_report_files__2.2.8.patch",
       "2.3.0": "MAGECLOUD-3392__reduce_q-ty_of_error_report_files__2.3.0.patch",
       "2.3.1": "MAGECLOUD-3392__reduce_q-ty_of_error_report_files__2.3.1.patch",
-      "2.3.2 - 2.3.3": "MAGECLOUD-3392__reduce_q-ty_of_error_report_files__2.3.2.patch"
+      ">=2.3.2 <2.3.4": "MAGECLOUD-3392__reduce_q-ty_of_error_report_files__2.3.2.patch"
     },
     "Fix pagebuilder module": {
       "2.3.1": "MDVA-22979__fix_pagebuilder_module__2.3.1.patch",
