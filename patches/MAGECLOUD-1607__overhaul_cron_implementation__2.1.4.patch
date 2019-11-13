@@ -730,7 +730,6 @@ diff -Naur a/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php b/
  }
 
 diff -Naur a/vendor/magento/module-cron/Model/ResourceModel/Schedule.php b/vendor/magento/module-cron/Model/ResourceModel/Schedule.php
-index dc401e3..25dd02c 100644
 --- a/vendor/magento/module-cron/Model/ResourceModel/Schedule.php
 +++ b/vendor/magento/module-cron/Model/ResourceModel/Schedule.php
 @@ -1,6 +1,6 @@

@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/monolog/monolog/src/Monolog/Handler/SlackHandler.php b/vendor/monolog/monolog/src/Monolog/Handler/SlackHandler.php
-index 643b003..ac2af02 100644
 --- a/vendor/monolog/monolog/src/Monolog/Handler/SlackHandler.php
 +++ b/vendor/monolog/monolog/src/Monolog/Handler/SlackHandler.php
 @@ -70,15 +70,16 @@ class SlackHandler extends SocketHandler
@@ -143,7 +142,6 @@ index 643b003..ac2af02 100644
       */
      protected function stringify($fields)
 diff -Nuar a/vendor/monolog/monolog/src/Monolog/Handler/SocketHandler.php b/vendor/monolog/monolog/src/Monolog/Handler/SocketHandler.php
-index a3e7252e..e4c3c37f 100644
 --- a/vendor/monolog/monolog/src/Monolog/Handler/SocketHandler.php
 +++ b/vendor/monolog/monolog/src/Monolog/Handler/SocketHandler.php
 @@ -41,6 +41,15 @@ class SocketHandler extends AbstractProcessingHandler

@@ -1,5 +1,4 @@
 diff -Naur a/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php b/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php
-index f772a6c..d760e92 100644
 --- a/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php
 +++ b/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php
 @@ -13,6 +13,8 @@ use Magento\Framework\App\State;

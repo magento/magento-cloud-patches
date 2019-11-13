@@ -5,7 +5,6 @@ Date:   Mon Nov 27 18:21:54 2017 +0200
     MAGETWO-84444
 
 diff -Nuar a/vendor/magento/framework/Mview/Test/Unit/View/SubscriptionTest.php b/vendor/magento/framework/Mview/Test/Unit/View/SubscriptionTest.php
-index d8094cfa8..da9a2c724 100644
 --- a/vendor/magento/framework/Mview/Test/Unit/View/SubscriptionTest.php
 +++ b/vendor/magento/framework/Mview/Test/Unit/View/SubscriptionTest.php
 @@ -62,7 +62,7 @@ class SubscriptionTest extends \PHPUnit_Framework_TestCase
@@ -71,7 +70,6 @@ index d8094cfa8..da9a2c724 100644
  
          $changelogMock = $this->getMockForAbstractClass(
 diff -Nuar a/vendor/magento/framework/Mview/View/Subscription.php b/vendor/magento/framework/Mview/View/Subscription.php
-index 7dd440ae9..54e4aaf53 100644
 --- a/vendor/magento/framework/Mview/View/Subscription.php
 +++ b/vendor/magento/framework/Mview/View/Subscription.php
 @@ -10,6 +10,8 @@ namespace Magento\Framework\Mview\View;
@@ -278,7 +276,6 @@ index 7dd440ae9..54e4aaf53 100644
       */
      public function getView()
 diff -Nuar a/vendor/magento/framework/Mview/etc/mview.xsd b/vendor/magento/framework/Mview/etc/mview.xsd
-index d171699c3..0521691e8 100644
 --- a/vendor/magento/framework/Mview/etc/mview.xsd
 +++ b/vendor/magento/framework/Mview/etc/mview.xsd
 @@ -106,7 +106,7 @@
@@ -291,7 +288,6 @@ index d171699c3..0521691e8 100644
          </xs:annotation>
          <xs:restriction base="xs:string">
 diff -Nuar a/vendor/magento/module-catalog-inventory/etc/mview.xml b/vendor/magento/module-catalog-inventory/etc/mview.xml
-index 5737fea21..954a3349e 100644
 --- a/vendor/magento/module-catalog-inventory/etc/mview.xml
 +++ b/vendor/magento/module-catalog-inventory/etc/mview.xml
 @@ -5,10 +5,13 @@
@@ -311,7 +307,6 @@ index 5737fea21..954a3349e 100644
  </config>
 diff -Nuar a/vendor/magento/module-catalog-staging/Model/Mview/View/Attribute/Subscription.php b/vendor/magento/module-catalog-staging/Model/Mview/View/Attribute/Subscription.php
 new file mode 100644
-index 000000000..7c549538c
 --- /dev/null
 +++ b/vendor/magento/module-catalog-staging/Model/Mview/View/Attribute/Subscription.php
 @@ -0,0 +1,100 @@
@@ -416,7 +411,6 @@ index 000000000..7c549538c
 +    }
 +}
 diff -Nuar a/vendor/magento/module-catalog-staging/Model/Mview/View/Category/Attribute/Subscription.php b/vendor/magento/module-catalog-staging/Model/Mview/View/Category/Attribute/Subscription.php
-index 3ffa1a1fc..438318597 100644
 --- a/vendor/magento/module-catalog-staging/Model/Mview/View/Category/Attribute/Subscription.php
 +++ b/vendor/magento/module-catalog-staging/Model/Mview/View/Category/Attribute/Subscription.php
 @@ -6,22 +6,16 @@
@@ -520,7 +514,6 @@ index 3ffa1a1fc..438318597 100644
      }
  }
 diff -Nuar a/vendor/magento/module-catalog-staging/Model/Mview/View/SubscriptionFactory.php b/vendor/magento/module-catalog-staging/Model/Mview/View/SubscriptionFactory.php
-index 6f03681f7..052aa3702 100644
 --- a/vendor/magento/module-catalog-staging/Model/Mview/View/SubscriptionFactory.php
 +++ b/vendor/magento/module-catalog-staging/Model/Mview/View/SubscriptionFactory.php
 @@ -11,34 +11,43 @@ class SubscriptionFactory extends FrameworkSubscriptionFactory
@@ -581,7 +574,6 @@ index 6f03681f7..052aa3702 100644
      protected function isStagingTable(array $data = [])
      {
 diff -Nuar a/vendor/magento/module-catalog-staging/Model/VersionTables.php b/vendor/magento/module-catalog-staging/Model/VersionTables.php
-index 7ebd828bd..2cc32669b 100644
 --- a/vendor/magento/module-catalog-staging/Model/VersionTables.php
 +++ b/vendor/magento/module-catalog-staging/Model/VersionTables.php
 @@ -5,6 +5,11 @@
@@ -598,7 +590,6 @@ index 7ebd828bd..2cc32669b 100644
      /**
 diff -Nuar a/vendor/magento/module-catalog-staging/Test/Unit/Model/Mview/View/Attribute/SubscriptionTest.php b/vendor/magento/module-catalog-staging/Test/Unit/Model/Mview/View/Attribute/SubscriptionTest.php
 new file mode 100644
-index 000000000..d396829ef
 --- /dev/null
 +++ b/vendor/magento/module-catalog-staging/Test/Unit/Model/Mview/View/Attribute/SubscriptionTest.php
 @@ -0,0 +1,302 @@
@@ -905,7 +896,6 @@ index 000000000..d396829ef
 +    }
 +}
 diff -Nuar a/vendor/magento/module-catalog-staging/Test/Unit/Model/Mview/View/SubscriptionFactoryTest.php b/vendor/magento/module-catalog-staging/Test/Unit/Model/Mview/View/SubscriptionFactoryTest.php
-index a0abb4230..4a0601569 100644
 --- a/vendor/magento/module-catalog-staging/Test/Unit/Model/Mview/View/SubscriptionFactoryTest.php
 +++ b/vendor/magento/module-catalog-staging/Test/Unit/Model/Mview/View/SubscriptionFactoryTest.php
 @@ -17,11 +17,6 @@ class SubscriptionFactoryTest extends \PHPUnit_Framework_TestCase
@@ -1040,7 +1030,6 @@ index a0abb4230..4a0601569 100644
          $this->assertEquals($subscriptionMock, $result);
      }
 diff -Nuar a/vendor/magento/module-catalog-staging/etc/di.xml b/vendor/magento/module-catalog-staging/etc/di.xml
-index 79f95ec08..e28ac70e7 100644
 --- a/vendor/magento/module-catalog-staging/etc/di.xml
 +++ b/vendor/magento/module-catalog-staging/etc/di.xml
 @@ -56,6 +56,35 @@
@@ -1081,7 +1070,6 @@ index 79f95ec08..e28ac70e7 100644
              <argument name="reindexPool" xsi:type="array">
 diff -Nuar a/vendor/magento/module-catalog-staging/etc/mview.xml b/vendor/magento/module-catalog-staging/etc/mview.xml
 deleted file mode 100644
-index 488972e05..000000000
 --- a/vendor/magento/module-catalog-staging/etc/mview.xml
 +++ /dev/null
 @@ -1,23 +0,0 @@
@@ -1110,7 +1098,6 @@ index 488972e05..000000000
 -</config>
 diff -Nuar a/vendor/magento/module-indexer/Setup/RecurringData.php b/vendor/magento/module-indexer/Setup/RecurringData.php
 new file mode 100644
-index 000000000..38ea0e5b7
 --- /dev/null
 +++ b/vendor/magento/module-indexer/Setup/RecurringData.php
 @@ -0,0 +1,56 @@

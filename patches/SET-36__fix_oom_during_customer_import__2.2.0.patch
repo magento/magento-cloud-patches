@@ -5,7 +5,6 @@ Date:   Thu Nov 16 18:55:15 2017 +0200
     SET-36: Memory limit exhausted during import of customers and addresses
 
 diff -Nuar a/vendor/magento/module-customer-import-export/Model/Import/Address.php b/vendor/magento/module-customer-import-export/Model/Import/Address.php
-index eb5742d24c7..70b8c34ef41 100644
 --- a/vendor/magento/module-customer-import-export/Model/Import/Address.php
 +++ b/vendor/magento/module-customer-import-export/Model/Import/Address.php
 @@ -238,6 +238,11 @@ class Address extends AbstractCustomer
@@ -80,7 +79,6 @@ index eb5742d24c7..70b8c34ef41 100644
       *
       * @return $this
 diff -Nuar a/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php b/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
-index 4e6687bff28..359822df6d9 100644
 --- a/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
 +++ b/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
 @@ -117,13 +117,18 @@ class Storage

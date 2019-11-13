@@ -78,7 +78,6 @@ diff -Naur a/vendor/magento/module-catalog/Model/Product/ProductFrontendAction/S
      }
 
 diff -Naur a/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php b/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php
-index 3d06e27542f0..a6c0dba6e175 100644
 --- a/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php
 +++ b/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php
 @@ -2904,7 +2904,7 @@ public function prepareSqlCondition($fieldName, $condition)
