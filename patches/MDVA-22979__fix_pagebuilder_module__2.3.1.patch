@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/magento/module-email/Block/Adminhtml/Template/Preview.php b/vendor/magento/module-email/Block/Adminhtml/Template/Preview.php
-index 5f22a36510c..7f3fe8e91eb 100644
 --- a/vendor/magento/module-email/Block/Adminhtml/Template/Preview.php
 +++ b/vendor/magento/module-email/Block/Adminhtml/Template/Preview.php
 @@ -53,19 +53,26 @@ class Preview extends \Magento\Backend\Block\Widget
@@ -34,7 +33,6 @@ index 5f22a36510c..7f3fe8e91eb 100644
  
          $template->setTemplateText($this->_maliciousCode->filter($template->getTemplateText()));
 diff -Nuar a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
-index b7d59ecc8..09f8e8510 100644
 --- a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
 +++ b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
 @@ -26,19 +26,28 @@ class Preview extends \Magento\Framework\App\Action\Action implements HttpPostAc
@@ -94,7 +92,6 @@ index b7d59ecc8..09f8e8510 100644
      }
  }
 diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Config.php b/vendor/magento/module-page-builder/Model/Stage/Config.php
-index 17288978e..baf3ce106 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Config.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Config.php
 @@ -135,7 +135,9 @@ class Config
@@ -110,7 +107,6 @@ index 17288978e..baf3ce106 100644
              'can_use_inline_editing_on_stage' => $this->isWysiwygProvisionedForEditingOnStage(),
 diff -Nuar a/vendor/magento/module-page-builder/Plugin/Framework/Session/SidResolver.php b/vendor/magento/module-page-builder/Plugin/Framework/Session/SidResolver.php
 new file mode 100644
-index 000000000..a1e9d943a
 --- /dev/null
 +++ b/vendor/magento/module-page-builder/Plugin/Framework/Session/SidResolver.php
 @@ -0,0 +1,49 @@
@@ -164,7 +160,6 @@ index 000000000..a1e9d943a
 +    }
 +}
 diff -Nuar a/vendor/magento/module-page-builder/etc/di.xml b/vendor/magento/module-page-builder/etc/di.xml
-index a147ab1b2..e7374870b 100644
 --- a/vendor/magento/module-page-builder/etc/di.xml
 +++ b/vendor/magento/module-page-builder/etc/di.xml
 @@ -140,4 +140,7 @@
