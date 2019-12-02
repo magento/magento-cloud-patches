@@ -1,10 +1,6 @@
-Index: vendor/magento/module-sales/Helper/Admin.php
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
---- vendor/magento/module-sales/Helper/Admin.php	(revision d46f8efde7d6e7c40859e833f462c30edc101476)
-+++ vendor/magento/module-sales/Helper/Admin.php	(revision 102b397919b1c82aa13118abb5345ad81c626370)
+diff -Nuar a/vendor/magento/module-sales/Helper/Admin.php b/vendor/magento/module-sales/Helper/Admin.php
+--- a/vendor/magento/module-sales/Helper/Admin.php
++++ b/vendor/magento/module-sales/Helper/Admin.php
 @@ -6,6 +6,8 @@
  
  namespace Magento\Sales\Helper;

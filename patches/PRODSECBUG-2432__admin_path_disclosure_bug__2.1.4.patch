@@ -1,9 +1,4 @@
----
- vendor/magento/framework/App/Router/ActionList.php | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento/framework/App/Router/ActionList.php
-index ea22fd6ab5b..ada0489ba90 100644
+diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento/framework/App/Router/ActionList.php
 --- a/vendor/magento/framework/App/Router/ActionList.php
 +++ b/vendor/magento/framework/App/Router/ActionList.php
 @@ -1,6 +1,5 @@

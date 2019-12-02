@@ -220,9 +220,9 @@
       "2.3.0 - 2.3.2": "PRODSECBUG-2432__admin_path_disclosure_bug__2.3.0.patch"
     },
     "Pre-auth SQL Injection": {
-      "2.1.4 - 2.1.17": "PRODSECBUG-2198__preauth_sql__2.1.4.patch",
-      "2.2.0 - 2.2.7": "PRODSECBUG-2198__preauth_sql__2.2.0.patch",
-      "2.3.0": "PRODSECBUG-2198__preauth_sql__2.3.0.patch"
+      "2.1.17": "PRODSECBUG-2198__preauth_sql__2.1.17.patch",
+      "2.2.8": "PRODSECBUG-2198__preauth_sql__2.2.8.patch",
+      "2.3.1": "PRODSECBUG-2198__preauth_sql__2.3.1.patch"
     },
     "Transaction MD5 hash field is removed by Authorize.net": {
       "2.2.0 - 2.2.7": "MAGETWO-98129__transaction_field_is_removed_by_authorize_net__2.2.0.patch"

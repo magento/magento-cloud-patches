@@ -1,5 +1,4 @@
-diff --git a/vendor/magento/module-catalog/Model/Product/ProductFrontendAction/Synchronizer.php b/vendor/magento/module-catalog/Model/Product/ProductFrontendAction/Synchronizer.php
-index 7a1926c..331c667 100644
+diff -Nuar a/vendor/magento/module-catalog/Model/Product/ProductFrontendAction/Synchronizer.php b/vendor/magento/module-catalog/Model/Product/ProductFrontendAction/Synchronizer.php
 --- a/vendor/magento/module-catalog/Model/Product/ProductFrontendAction/Synchronizer.php
 +++ b/vendor/magento/module-catalog/Model/Product/ProductFrontendAction/Synchronizer.php
 @@ -138,7 +138,9 @@ class Synchronizer
@@ -78,8 +77,7 @@ index 7a1926c..331c667 100644
          }
      }
  
-diff --git a/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php b/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php
-index 1449d6d..38085a3 100644
+diff -Nuar a/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php b/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php
 --- a/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php
 +++ b/vendor/magento/framework/DB/Adapter/Pdo/Mysql.php
 @@ -2904,7 +2904,7 @@ class Mysql extends \Zend_Db_Adapter_Pdo_Mysql implements AdapterInterface
