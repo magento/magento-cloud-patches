@@ -1,13 +1,6 @@
 diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento/framework/App/Router/ActionList.php
 --- a/vendor/magento/framework/App/Router/ActionList.php
 +++ b/vendor/magento/framework/App/Router/ActionList.php
-@@ -1,6 +1,5 @@
- <?php
- /**
-- *
-  * Copyright © Magento, Inc. All rights reserved.
-  * See COPYING.txt for license details.
-  */
 @@ -8,6 +7,9 @@ namespace Magento\Framework\App\Router;
  
  use Magento\Framework\Module\Dir\Reader as ModuleReader;
@@ -26,5 +19,3 @@ diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento
          if (strpos($namespace, self::NOT_ALLOWED_IN_NAMESPACE_PATH) !== false) {
              return null;
          }
--- 
-2.17.1

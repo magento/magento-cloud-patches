@@ -1,7 +1,6 @@
-Index: vendor/magento/module-authorizenet/Model/Directpost.php
-<+>UTF-8
-===================================================================
---- vendor/magento/module-authorizenet/Model/Directpost.php	(revision 01fbfeba9bd743266199e30260376a9c1b95frevision a0dade4d8bc15b651d8b1ea0e7e4e3580fb1d3ae)
+diff -Nuar a/vendor/magento/module-authorizenet/Model/Directpost.php b/vendor/magento/module-authorizenet/Model/Directpost.php
+--- a/vendor/magento/module-authorizenet/Model/Directpost.php
++++ b/vendor/magento/module-authorizenet/Model/Directpost.php
 @@ -543,15 +543,16 @@
      public function validateResponse()
      {
@@ -23,11 +22,9 @@ Index: vendor/magento/module-authorizenet/Model/Directpost.php
          return true;
      }
 
-Index: vendor/magento/module-authorizenet/Model/Directpost/Request.php
-<+>UTF-8
-===================================================================
---- vendor/magento/module-authorizenet/Model/Directpost/Request.php	(revision 01fbfeba9bd743266199e30260376a9c1b95fbf5)
-+++ vendor/magento/module-authorizenet/Model/Directpost/Request.php	(revision a0dade4d8bc15b651d8b1ea0e7e4e3580fb1d3ae)
+diff -Nuar a/vendor/magento/module-authorizenet/Model/Directpost/Request.php b/vendor/magento/module-authorizenet/Model/Directpost/Request.php
+--- a/vendor/magento/module-authorizenet/Model/Directpost/Request.php
++++ b/vendor/magento/module-authorizenet/Model/Directpost/Request.php
 @@ -7,6 +7,7 @@
  namespace Magento\Authorizenet\Model\Directpost;
 
@@ -197,13 +194,9 @@ Index: vendor/magento/module-authorizenet/Model/Directpost/Request.php
 +        $this->signatureKey = $signatureKey;
 +    }
  }
-Index: vendor/magento/module-authorizenet/Model/Directpost/Response.php
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
---- vendor/magento/module-authorizenet/Model/Directpost/Response.php	(revision 01fbfeba9bd743266199e30260376a9c1b95fbf5)
-+++ vendor/magento/module-authorizenet/Model/Directpost/Response.php	(revision a0dade4d8bc15b651d8b1ea0e7e4e3580fb1d3ae)
+diff -Nuar a/vendor/magento/module-authorizenet/Model/Directpost/Response.php b/vendor/magento/module-authorizenet/Model/Directpost/Response.php
+--- a/vendor/magento/module-authorizenet/Model/Directpost/Response.php
++++ b/vendor/magento/module-authorizenet/Model/Directpost/Response.php
 @@ -24,27 +24,33 @@
       */
      public function generateHash($merchantMd5, $merchantApiLogin, $amount, $transactionId)
@@ -302,13 +295,9 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +        return strtoupper(hash_hmac('sha512', $message, pack('H*', $signatureKey)));
 +    }
  }
-Index: vendor/magento/module-authorizenet/etc/adminhtml/system.xml
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
---- vendor/magento/module-authorizenet/etc/adminhtml/system.xml	(revision 01fbfeba9bd743266199e30260376a9c1b95fbf5)
-+++ vendor/magento/module-authorizenet/etc/adminhtml/system.xml	(revision a0dade4d8bc15b651d8b1ea0e7e4e3580fb1d3ae)
+diff -Nuar a/vendor/magento/module-authorizenet/etc/adminhtml/system.xml b/vendor/magento/module-authorizenet/etc/adminhtml/system.xml
+--- a/vendor/magento/module-authorizenet/etc/adminhtml/system.xml
++++ b/vendor/magento/module-authorizenet/etc/adminhtml/system.xml
 @@ -29,6 +29,10 @@
                      <label>Transaction Key</label>
                      <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
@@ -320,13 +309,9 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
                  <field id="trans_md5" translate="label" type="obscure" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="0">
                      <label>Merchant MD5</label>
                      <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
-Index: vendor/magento/module-authorizenet/etc/config.xml
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
---- vendor/magento/module-authorizenet/etc/config.xml	(revision 01fbfeba9bd743266199e30260376a9c1b95fbf5)
-+++ vendor/magento/module-authorizenet/etc/config.xml	(revision a0dade4d8bc15b651d8b1ea0e7e4e3580fb1d3ae)
+diff -Nuar a/vendor/magento/module-authorizenet/etc/config.xml b/vendor/magento/module-authorizenet/etc/config.xml
+--- a/vendor/magento/module-authorizenet/etc/config.xml
++++ b/vendor/magento/module-authorizenet/etc/config.xml
 @@ -22,6 +22,7 @@
                  <title>Credit Card Direct Post (Authorize.net)</title>
                  <trans_key backend_model="Magento\Config\Model\Config\Backend\Encrypted" />

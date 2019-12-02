@@ -1,4 +1,4 @@
-diff --git a/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php b/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php
+diff -Nuar a/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php b/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php
 new file mode 100644
 index 00000000000..c9899663487
 --- /dev/null
@@ -106,7 +106,7 @@ index 00000000000..c9899663487
 +        }
 +    }
 +}
-diff --git a/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php b/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php
+diff -Nuar a/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php b/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php
 new file mode 100644
 index 00000000000..9c54c8485db
 --- /dev/null
@@ -227,8 +227,7 @@ index 00000000000..9c54c8485db
 +        return [$topic, $envelopes];
 +    }
 +}
-diff --git a/vendor/magento/module-amqp/composer.json b/vendor/magento/module-amqp/composer.json
-index b50e951b46f..54ebfde3b68 100644
+diff -Nuar a/vendor/magento/module-amqp/composer.json b/vendor/magento/module-amqp/composer.json
 --- a/vendor/magento/module-amqp/composer.json
 +++ b/vendor/magento/module-amqp/composer.json
 @@ -8,6 +11,10 @@
@@ -244,8 +243,7 @@ index b50e951b46f..54ebfde3b68 100644
      "type": "magento2-module",
      "license": [
          "OSL-3.0",
-diff --git a/vendor/magento/module-amqp/etc/di.xml b/vendor/magento/module-amqp/etc/di.xml
-index 920bb72261e..8bcf290f4a9 100644
+diff -Nuar a/vendor/magento/module-amqp/etc/di.xml b/vendor/magento/module-amqp/etc/di.xml
 --- a/vendor/magento/module-amqp/etc/di.xml
 +++ b/vendor/magento/module-amqp/etc/di.xml
 @@ -72,4 +72,10 @@
@@ -259,8 +257,7 @@ index 920bb72261e..8bcf290f4a9 100644
 +        <plugin name="amqpStoreIdFieldForAsynchronousOperationsMassConsumerEnvelopeCallback" type="Magento\Amqp\Plugin\AsynchronousOperations\MassConsumerEnvelopeCallback"/>
 +    </type>
  </config>
-diff --git a/vendor/magento/module-amqp/etc/module.xml b/vendor/magento/module-amqp/etc/module.xml
-index 1768a9b121c..5f49dae67f9 100644
+diff -Nuar a/vendor/magento/module-amqp/etc/module.xml b/vendor/magento/module-amqp/etc/module.xml
 --- a/vendor/magento/module-amqp/etc/module.xml
 +++ b/vendor/magento/module-amqp/etc/module.xml
 @@ -6,5 +6,9 @@
@@ -274,8 +271,7 @@ index 1768a9b121c..5f49dae67f9 100644
 +        </sequence>
 +    </module>
  </config>
-diff --git a/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php b/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php
-index af1ef4400e4..618b16f549e 100644
+diff -Nuar a/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php b/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php
 --- a/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php
 +++ b/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php
 @@ -8,17 +8,10 @@ declare(strict_types=1);
@@ -406,7 +402,7 @@ index af1ef4400e4..618b16f549e 100644
          };
      }
  }
-diff --git a/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php b/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php
+diff -Nuar a/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php b/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php
 new file mode 100644
 index 00000000000..1327fcc2672
 --- /dev/null
@@ -550,7 +546,7 @@ index 00000000000..1327fcc2672
 +        return $this->queue;
 +    }
 +}
-diff --git a/dev/tests/api-functional/testsuite/Magento/WebapiAsync/Model/AsyncScheduleMultiStoreTest.php b/dev/tests/api-functional/testsuite/Magento/WebapiAsync/Model/AsyncScheduleMultiStoreTest.php
+diff -Nuar a/dev/tests/api-functional/testsuite/Magento/WebapiAsync/Model/AsyncScheduleMultiStoreTest.php b/dev/tests/api-functional/testsuite/Magento/WebapiAsync/Model/AsyncScheduleMultiStoreTest.php
 new file mode 100644
 index 00000000000..61ec73990c9
 --- /dev/null

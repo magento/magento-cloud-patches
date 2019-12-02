@@ -1,10 +1,6 @@
-Index: vendor/magento/module-sales/Helper/Admin.php
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
---- vendor/magento/module-sales/Helper/Admin.php	(revision 3b69a3b12138bbad688dde2bd89af36aef0cf967)
-+++ vendor/magento/module-sales/Helper/Admin.php	(revision 1f7017a41bddae5d538eb78e56cbd6374d158503)
+diff -Nuar a/vendor/magento/module-sales/Helper/Admin.php b/vendor/magento/module-sales/Helper/Admin.php
+--- a/vendor/magento/module-sales/Helper/Admin.php
++++ b/vendor/magento/module-sales/Helper/Admin.php
 @@ -7,6 +7,8 @@
 
  namespace Magento\Sales\Helper;
@@ -122,13 +118,9 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
              $urlScheme = parse_url($url, PHP_URL_SCHEME);
              $urlScheme = $urlScheme ? strtolower($urlScheme) : '';
              if ($urlScheme !== 'http' && $urlScheme !== 'https') {
-Index: vendor/magento/module-sales/Test/Unit/Helper/AdminTest.php
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
---- vendor/magento/module-sales/Test/Unit/Helper/AdminTest.php	(revision 3b69a3b12138bbad688dde2bd89af36aef0cf967)
-+++ vendor/magento/module-sales/Test/Unit/Helper/AdminTest.php	(revision f18c17278c29c594bc729b0da2e6e91150ab6541)
+diff -Nuar a/vendor/magento/module-sales/Test/Unit/Helper/AdminTest.php b/vendor/magento/module-sales/Test/Unit/Helper/AdminTest.php
+--- a/vendor/magento/module-sales/Test/Unit/Helper/AdminTest.php
++++ b/vendor/magento/module-sales/Test/Unit/Helper/AdminTest.php
 @@ -71,7 +71,7 @@
              ->disableOriginalConstructor()
              ->getMock();

@@ -1,5 +1,4 @@
-diff --git a/app/etc/di.xml b/app/etc/di.xml
-index de50840..4eaa739 100644
+diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
 --- a/app/etc/di.xml
 +++ b/app/etc/di.xml
 @@ -232,6 +233,11 @@

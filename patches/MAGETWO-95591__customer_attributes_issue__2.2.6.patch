@@ -1,5 +1,4 @@
-diff --git a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php
-index b9f9b739f4fa..fcd0fbc03278 100644
+diff -Nuar a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php
 --- a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php
 +++ b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php
 @@ -18,6 +18,8 @@
@@ -138,8 +137,7 @@ index b9f9b739f4fa..fcd0fbc03278 100644
       * @param string $path
       * @param array $params
       * @param array $response
-diff --git a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php
-index 7fe012a87d92..e56428a1ae77 100644
+diff -Nuar a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php
 --- a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php
 +++ b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php
 @@ -6,8 +6,15 @@
@@ -249,8 +247,7 @@ index 7fe012a87d92..e56428a1ae77 100644
       * @param DataObject $response
       * @param array|null $options
       * @return $this
-diff --git a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php
-index f493cbc88f18..a1aaab0995d7 100644
+diff -Nuar a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php
 --- a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php
 +++ b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php
 @@ -3,8 +3,10 @@
@@ -466,8 +463,7 @@ index f493cbc88f18..a1aaab0995d7 100644
 +            ->willReturnSelf();
 +    }
  }
-diff --git a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php
-index 9c747393cc72..750d38f60e13 100644
+diff -Nuar a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php
 --- a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php
 +++ b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php
 @@ -9,6 +9,7 @@
@@ -843,8 +839,7 @@ index 9c747393cc72..750d38f60e13 100644
 +        $this->getModel()->execute();
 +    }
  }
-diff --git a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php
-index b85b03852b62..3a0b2b4bf722 100644
+diff -Nuar a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php
 --- a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php
 +++ b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php
 @@ -9,8 +9,9 @@
@@ -903,8 +898,7 @@ index b85b03852b62..3a0b2b4bf722 100644
      }
 
      /**
-diff --git a/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml b/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml
-index 8a5f1919f78b..eeacc90fba91 100644
+diff -Nuar a/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml b/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml
 --- a/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml
 +++ b/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml
 @@ -40,13 +40,16 @@ function getFrontTab() {
@@ -925,8 +919,7 @@ index 8a5f1919f78b..eeacc90fba91 100644
          }
      }
  }
-diff --git a/vendor/magento/module-catalog/view/adminhtml/web/js/options.js b/vendor/magento/module-catalog/view/adminhtml/web/js/options.js
-index 6ea005915763..7adc0dcfdf40 100644
+diff -Nuar a/vendor/magento/module-catalog/view/adminhtml/web/js/options.js b/vendor/magento/module-catalog/view/adminhtml/web/js/options.js
 --- a/vendor/magento/module-catalog/view/adminhtml/web/js/options.js
 +++ b/vendor/magento/module-catalog/view/adminhtml/web/js/options.js
 @@ -20,7 +20,6 @@ define([
@@ -1004,8 +997,7 @@ index 6ea005915763..7adc0dcfdf40 100644
          });
          window.attributeOption = attributeOption;
          window.optionDefaultInputType = attributeOption.getOptionInputType();
-diff --git a/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php b/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php
-index 383c97a166d3..72d27152d639 100644
+diff -Nuar a/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php b/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php
 --- a/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php
 +++ b/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php
 @@ -16,6 +16,8 @@
@@ -1033,8 +1025,7 @@ index 383c97a166d3..72d27152d639 100644
              switch ($data['frontend_input']) {
                  case 'swatch_visual':
                      $data[Swatch::SWATCH_INPUT_TYPE_KEY] = Swatch::SWATCH_INPUT_TYPE_VISUAL;
-diff --git a/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js b/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js
-index 1a58e4b6f2e7..6ef046ae1955 100644
+diff -Nuar a/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js b/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js
 --- a/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js
 +++ b/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js
 @@ -16,7 +16,8 @@ define([
@@ -1133,8 +1124,7 @@ index 1a58e4b6f2e7..6ef046ae1955 100644
              });
          });
 
-diff --git a/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php b/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php
-index f1086f4871f3..2d9dea375e97 100644
+diff -Nuar a/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php b/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php
 --- a/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php
 +++ b/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php
 @@ -91,15 +91,18 @@ public function persist(FixtureInterface $fixture = null)
@@ -1201,8 +1191,7 @@ index f1086f4871f3..2d9dea375e97 100644
 +        return json_encode($options);
 +    }
  }
-diff --git a/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php b/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php
-index 083fa246c96e..f4adb9dec125 100644
+diff -Nuar a/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php b/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php
 --- a/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php
 +++ b/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php
 @@ -29,21 +29,32 @@ public function __construct(DataInterface $configuration, EventManagerInterface
@@ -1248,8 +1237,7 @@ index 083fa246c96e..f4adb9dec125 100644
 +        return json_encode($options);
      }
  }
-diff --git a/dev/tests/integration/testsuite/Magento/Catalog/Controller/Adminhtml/Product/AttributeTest.php b/dev/tests/integration/testsuite/Magento/Catalog/Controller/Adminhtml/Product/AttributeTest.php
-index 098b18d6f38c..45c1583d7640 100644
+diff -Nuar a/dev/tests/integration/testsuite/Magento/Catalog/Controller/Adminhtml/Product/AttributeTest.php b/dev/tests/integration/testsuite/Magento/Catalog/Controller/Adminhtml/Product/AttributeTest.php
 --- a/dev/tests/integration/testsuite/Magento/Catalog/Controller/Adminhtml/Product/AttributeTest.php
 +++ b/dev/tests/integration/testsuite/Magento/Catalog/Controller/Adminhtml/Product/AttributeTest.php
 @@ -282,13 +282,15 @@ public function testLargeOptionsDataSet()
@@ -1274,8 +1262,7 @@ index 098b18d6f38c..45c1583d7640 100644
          }
          $attributeData['serialized_options'] = json_encode($optionsData);
          $this->getRequest()->setPostValue($attributeData);
-diff --git a/dev/tests/integration/testsuite/Magento/Swatches/Controller/Adminhtml/Product/AttributeTest.php b/dev/tests/integration/testsuite/Magento/Swatches/Controller/Adminhtml/Product/AttributeTest.php
-index be9fd96d7589..493c4dcadc1e 100644
+diff -Nuar a/dev/tests/integration/testsuite/Magento/Swatches/Controller/Adminhtml/Product/AttributeTest.php b/dev/tests/integration/testsuite/Magento/Swatches/Controller/Adminhtml/Product/AttributeTest.php
 --- a/dev/tests/integration/testsuite/Magento/Swatches/Controller/Adminhtml/Product/AttributeTest.php
 +++ b/dev/tests/integration/testsuite/Magento/Swatches/Controller/Adminhtml/Product/AttributeTest.php
 @@ -7,6 +7,8 @@
@@ -1405,7 +1392,7 @@ index be9fd96d7589..493c4dcadc1e 100644
          $this->dispatch('backend/catalog/product_attribute/save');
          $entityTypeId = $this->_objectManager->create(
              \Magento\Eav\Model\Entity::class
-diff --git a/vendor/magento/framework/Serialize/Serializer/FormData.php b/vendor/magento/framework/Serialize/Serializer/FormData.php
+diff -Nuar a/vendor/magento/framework/Serialize/Serializer/FormData.php b/vendor/magento/framework/Serialize/Serializer/FormData.php
 new file mode 100644
 index 000000000000..077e91797d2b
 --- /dev/null
@@ -1466,7 +1453,7 @@ index 000000000000..077e91797d2b
 +        return $formData;
 +    }
 +}
-diff --git a/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php b/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php
+diff -Nuar a/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php b/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php
 new file mode 100644
 index 000000000000..7729a2da97ef
 --- /dev/null
@@ -1578,8 +1565,7 @@ index 000000000000..7729a2da97ef
 +        $this->formDataSerializer->unserialize($serializedData);
 +    }
 +}
-diff --git a/lib/web/mage/backend/validation.js b/lib/web/mage/backend/validation.js
-index d3ab7dd086a4..f141fb3eeb8d 100644
+diff -Nuar a/lib/web/mage/backend/validation.js b/lib/web/mage/backend/validation.js
 --- a/lib/web/mage/backend/validation.js
 +++ b/lib/web/mage/backend/validation.js
 @@ -171,6 +171,7 @@

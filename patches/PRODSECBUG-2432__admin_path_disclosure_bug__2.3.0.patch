@@ -1,18 +1,6 @@
----
- vendor/magento/framework/App/Router/ActionList.php | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento/framework/App/Router/ActionList.php
-index 9944e617b1c..1640d4a98d3 100644
+diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento/framework/App/Router/ActionList.php
 --- a/vendor/magento/framework/App/Router/ActionList.php
 +++ b/vendor/magento/framework/App/Router/ActionList.php
-@@ -1,6 +1,5 @@
- <?php
- /**
-- *
-  * Copyright © Magento, Inc. All rights reserved.
-  * See COPYING.txt for license details.
-  */
 @@ -10,6 +9,9 @@ use Magento\Framework\Serialize\SerializerInterface;
  use Magento\Framework\Serialize\Serializer\Serialize;
  use Magento\Framework\Module\Dir\Reader as ModuleReader;
@@ -31,6 +19,4 @@ index 9944e617b1c..1640d4a98d3 100644
          if (strpos($namespace, self::NOT_ALLOWED_IN_NAMESPACE_PATH) !== false) {
              return null;
          }
--- 
-2.17.1
 
