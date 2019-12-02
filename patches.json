@@ -211,13 +211,13 @@
       "2.3.0 - 2.3.1": "PRODSECBUG-2233__fix_xss_in_order_history__2.3.0.patch"
     },
     "Pass Store View scope in the Async/Bulk Web API": {
-      "2.3.1": "MAGETWO-99902__pass_store_view_scope_in async_web_api__2.3.1.patch",
-      "2.3.2": "MAGETWO-99902__pass_store_view_scope_in async_web_api__2.3.2.patch"
+      "2.3.1": "MAGETWO-99902__pass_store_view_scope_in_async_web_api__2.3.1.patch",
+      "2.3.2": "MAGETWO-99902__pass_store_view_scope_in_async_web_api__2.3.2.patch"
     },
     "Admin path disclosure bug": {
-      ">=2.1.4 <2.2.0": "PRODSECBUG-2432__admin_path_disclosure_bug__2.1.4.patch",
-      ">=2.2.0 <2.3.0": "PRODSECBUG-2432__admin_path_disclosure_bug__2.2.0.patch",
-      "2.3.0 - 2.3.2": "PRODSECBUG-2432__admin_path_disclosure_bug__2.3.0.patch"
+      "2.1.4 - 2.1.17": "PRODSECBUG-2432__admin_path_disclosure_bug__2.1.4.patch",
+      "2.2.0 - 2.2.8": "PRODSECBUG-2432__admin_path_disclosure_bug__2.2.0.patch",
+      "2.3.0 - 2.3.1": "PRODSECBUG-2432__admin_path_disclosure_bug__2.3.0.patch"
     },
     "Transaction MD5 hash field is removed by Authorize.net": {
       "2.2.0 - 2.2.7": "MAGETWO-98129__transaction_field_is_removed_by_authorize_net__2.2.0.patch"
