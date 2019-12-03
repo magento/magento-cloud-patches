@@ -212,7 +212,7 @@
     },
     "Pass Store View scope in the Async/Bulk Web API": {
       "2.3.1": "MAGETWO-99902__pass_store_view_scope_in_async_web_api__2.3.1.patch",
-      "2.3.2": "MAGETWO-99902__pass_store_view_scope_in_async_web_api__2.3.2.patch"
+      ">=2.3.2 <2.3.3": "MAGETWO-99902__pass_store_view_scope_in_async_web_api__2.3.2.patch"
     },
     "Admin path disclosure bug": {
       "2.1.4 - 2.1.17": "PRODSECBUG-2432__admin_path_disclosure_bug__2.1.4.patch",
