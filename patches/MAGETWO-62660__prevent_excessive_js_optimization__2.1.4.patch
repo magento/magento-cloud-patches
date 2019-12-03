@@ -1,6 +1,5 @@
-diff --git a/vendor/magento/module-deploy/Model/Deploy/JsDictionaryDeploy.php b/vendor/magento/module-deploy/Model/Deploy/JsDictionaryDeploy.php
+diff -Nuar a/vendor/magento/module-deploy/Model/Deploy/JsDictionaryDeploy.php b/vendor/magento/module-deploy/Model/Deploy/JsDictionaryDeploy.php
 new file mode 100644
-index 0000000..9c6a309a
 --- /dev/null
 +++ b/vendor/magento/module-deploy/Model/Deploy/JsDictionaryDeploy.php
 @@ -0,0 +1,89 @@
@@ -93,8 +92,7 @@ index 0000000..9c6a309a
 +        return Cli::RETURN_SUCCESS;
 +    }
 +}
-diff --git a/vendor/magento/module-deploy/Model/Deploy/LocaleQuickDeploy.php b/vendor/magento/module-deploy/Model/Deploy/LocaleQuickDeploy.php
-index 0d990b5..aa23833 100644
+diff -Nuar a/vendor/magento/module-deploy/Model/Deploy/LocaleQuickDeploy.php b/vendor/magento/module-deploy/Model/Deploy/LocaleQuickDeploy.php
 --- a/vendor/magento/module-deploy/Model/Deploy/LocaleQuickDeploy.php
 +++ b/vendor/magento/module-deploy/Model/Deploy/LocaleQuickDeploy.php
 @@ -6,16 +6,21 @@
@@ -257,8 +255,7 @@ index 0d990b5..aa23833 100644
       * @param string $path
       * @return void
       */
-diff --git a/vendor/magento/module-deploy/Model/DeployStrategyFactory.php b/vendor/magento/module-deploy/Model/DeployStrategyFactory.php
-index 536f344..7ba159b 100644
+diff -Nuar a/vendor/magento/module-deploy/Model/DeployStrategyFactory.php b/vendor/magento/module-deploy/Model/DeployStrategyFactory.php
 --- a/vendor/magento/module-deploy/Model/DeployStrategyFactory.php
 +++ b/vendor/magento/module-deploy/Model/DeployStrategyFactory.php
 @@ -23,6 +23,11 @@ class DeployStrategyFactory
@@ -281,9 +278,8 @@ index 536f344..7ba159b 100644
          ];
  
          if (!isset($strategyMap[$type])) {
-diff --git a/vendor/magento/module-deploy/Test/Unit/Model/Deploy/JsDictionaryDeployTest.php b/vendor/magento/module-deploy/Test/Unit/Model/Deploy/JsDictionaryDeployTest.php
+diff -Nuar a/vendor/magento/module-deploy/Test/Unit/Model/Deploy/JsDictionaryDeployTest.php b/vendor/magento/module-deploy/Test/Unit/Model/Deploy/JsDictionaryDeployTest.php
 new file mode 100644
-index 0000000..2533476
 --- /dev/null
 +++ b/vendor/magento/module-deploy/Test/Unit/Model/Deploy/JsDictionaryDeployTest.php
 @@ -0,0 +1,103 @@
@@ -390,8 +386,7 @@ index 0000000..2533476
 +        $this->model->deploy($area, $themePath, $locale);
 +    }
 +}
-diff --git a/vendor/magento/module-deploy/Test/Unit/Model/Deploy/LocaleQuickDeployTest.php b/vendor/magento/module-deploy/Test/Unit/Model/Deploy/LocaleQuickDeployTest.php
-index 6c693fe..d50c8ce 100644
+diff -Nuar a/vendor/magento/module-deploy/Test/Unit/Model/Deploy/LocaleQuickDeployTest.php b/vendor/magento/module-deploy/Test/Unit/Model/Deploy/LocaleQuickDeployTest.php
 --- a/vendor/magento/module-deploy/Test/Unit/Model/Deploy/LocaleQuickDeployTest.php
 +++ b/vendor/magento/module-deploy/Test/Unit/Model/Deploy/LocaleQuickDeployTest.php
 @@ -11,7 +11,10 @@

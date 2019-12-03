@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/amzn/amazon-pay-module/etc/di.xml b/vendor/amzn/amazon-pay-module/etc/di.xml
-index c954f48..e585eae 100644
 --- a/vendor/amzn/amazon-pay-module/etc/di.xml
 +++ b/vendor/amzn/amazon-pay-module/etc/di.xml
 @@ -39,24 +39,20 @@

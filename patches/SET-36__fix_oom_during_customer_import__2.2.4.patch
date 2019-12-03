@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/magento/module-customer-import-export/Model/Import/Address.php b/vendor/magento/module-import-export/Model/Import/Address.php
-index 1e1221e..41e0512 100644
 --- a/vendor/magento/module-customer-import-export/Model/Import/Address.php
 +++ b/vendor/magento/module-customer-import-export/Model/Import/Address.php
 @@ -253,6 +253,11 @@ class Address extends AbstractCustomer
@@ -73,7 +72,6 @@ index 1e1221e..41e0512 100644
       * Initialize country regions hash for clever recognition
       *
 diff -Nuar a/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php b/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
-index ae88e96..a6f7aa3 100644
 --- a/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
 +++ b/vendor/magento/module-customer-import-export/Model/ResourceModel/Import/Customer/Storage.php
 @@ -117,13 +117,18 @@ class Storage

@@ -837,7 +837,6 @@ diff -Naur a/vendor/magento/module-cron/Model/Schedule.php b/vendor/magento/modu
              self::STATUS_PENDING
 
 diff -Naur a/vendor/magento/module-cron/Model/ResourceModel/Schedule.php b/vendor/magento/module-cron/Model/ResourceModel/Schedule.php
-index dca4e22..25dd02c 100644
 --- a/vendor/magento/module-cron/Model/ResourceModel/Schedule.php
 +++ b/vendor/magento/module-cron/Model/ResourceModel/Schedule.php
 @@ -1,6 +1,6 @@
