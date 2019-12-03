@@ -1,6 +1,4 @@
 diff -Nuar a/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php b/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php
-new file mode 100644
-index 00000000000..c9899663487
 --- /dev/null
 +++ b/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php
 @@ -0,0 +1,102 @@
@@ -107,8 +105,6 @@ index 00000000000..c9899663487
 +    }
 +}
 diff -Nuar a/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php b/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php
-new file mode 100644
-index 00000000000..9c54c8485db
 --- /dev/null
 +++ b/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php
 @@ -0,0 +1,115 @@
@@ -417,8 +413,6 @@ diff -Nuar a/vendor/magento/module-asynchronous-operations/Model/MassConsumer.ph
      }
  }
 diff -Nuar a/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php b/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php
-new file mode 100644
-index 00000000000..1327fcc2672
 --- /dev/null
 +++ b/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php
 @@ -0,0 +1,138 @@

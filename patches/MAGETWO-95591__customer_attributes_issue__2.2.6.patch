@@ -1297,8 +1297,6 @@ diff -Nuar a/vendor/magento/framework/Serialize/Serializer/FormData.php b/vendor
 +    }
 +}
 diff -Nuar a/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php b/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php
-new file mode 100644
-index 000000000000..7729a2da97ef
 --- /dev/null
 +++ b/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php
 @@ -0,0 +1,106 @@
