@@ -207,6 +207,7 @@
       "2.3.2": "MDVA-22979__fix_pagebuilder_module__2.3.2.patch"
     },
     "Fix XSS in order history": {
+      "2.2.0 - 2.2.6": "PRODSECBUG-2233__fix_xss_in_order_history__2.2.0.patch",
       "2.2.7 - 2.2.8": "PRODSECBUG-2233__fix_xss_in_order_history__2.2.7.patch",
       "2.3.0 - 2.3.1": "PRODSECBUG-2233__fix_xss_in_order_history__2.3.0.patch"
     },
