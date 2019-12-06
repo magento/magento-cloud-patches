@@ -160,8 +160,8 @@ class ManagerTest extends TestCase
         $this->applierMock->expects($this->exactly(2))
             ->method('applyFile')
             ->willReturnMap([
-                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch1.patch', false, 'Patch 1 applied'],
-                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch2.patch', false, 'Patch 2 applied']
+                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch1.patch', true, 'Patch 1 applied'],
+                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch2.patch', true, 'Patch 2 applied']
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
