@@ -141,7 +141,7 @@ class ManagerTest extends TestCase
 
         $inputMock->method('getOption')
             ->with(Apply::OPT_GIT_INSTALLATION)
-            ->willReturn(false);
+            ->willReturn('0');
 
         $this->manager->applyComposerPatches($inputMock, $outputMock);
     }
@@ -169,7 +169,7 @@ class ManagerTest extends TestCase
         $inputMock->expects($this->once())
             ->method('getOption')
             ->with(Apply::OPT_GIT_INSTALLATION)
-            ->willReturn(false);
+            ->willReturn('1');
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $outputMock->expects($this->exactly(3))

@@ -118,7 +118,7 @@ class Manager
                         (string)$patchName,
                         (string)$packageName,
                         (string)$constraint,
-                        $deployedFromGit
+                        (bool)$deployedFromGit
                     );
 
                     if (null !== $message) {
