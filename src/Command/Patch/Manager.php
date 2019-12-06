@@ -156,7 +156,7 @@ class Manager
 
         foreach ($files as $file) {
             $output->writeln(
-                $this->applier->applyFile($file, $deployedFromGit)
+                $this->applier->applyFile($file, (bool)$deployedFromGit)
             );
         }
     }
