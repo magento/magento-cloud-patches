@@ -118,7 +118,7 @@ class Manager
                         (string)$patchName,
                         (string)$packageName,
                         (string)$constraint,
-                        $deployedFromGit
+                        (bool)$deployedFromGit
                     );
 
                     if (null !== $message) {
@@ -156,7 +156,7 @@ class Manager
 
         foreach ($files as $file) {
             $output->writeln(
-                $this->applier->applyFile($file, $deployedFromGit)
+                $this->applier->applyFile($file, (bool)$deployedFromGit)
             );
         }
     }
