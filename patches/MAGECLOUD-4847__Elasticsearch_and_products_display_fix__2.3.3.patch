@@ -1,7 +1,6 @@
-diff --git a/app/code/Magento/Catalog/Model/Indexer/Category/Flat/Action/Full.php b/app/code/Magento/Catalog/Model/Indexer/Category/Flat/Action/Full.php
-index a62e3d8f83b..57fb3d64dea 100644
---- a/app/code/Magento/Catalog/Model/Indexer/Category/Flat/Action/Full.php
-+++ b/app/code/Magento/Catalog/Model/Indexer/Category/Flat/Action/Full.php
+diff -Nuar a/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php b/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php
+--- a/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php
++++ b/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php
 @@ -79,6 +79,7 @@ class Full extends \Magento\Catalog\Model\Indexer\Category\Flat\AbstractAction
                      }
                      $category['store_id'] = $store->getId();
@@ -28,10 +27,9 @@ index a62e3d8f83b..57fb3d64dea 100644
          );
          $actualStoreTables = $this->getActualStoreTablesForCategoryFlat();
  
-diff --git a/app/code/Magento/Catalog/Model/Indexer/Product/Flat/AbstractAction.php b/app/code/Magento/Catalog/Model/Indexer/Product/Flat/AbstractAction.php
-index a0acacd4dfd..565ac1b1219 100644
---- a/app/code/Magento/Catalog/Model/Indexer/Product/Flat/AbstractAction.php
-+++ b/app/code/Magento/Catalog/Model/Indexer/Product/Flat/AbstractAction.php
+diff -Nuar a/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php b/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php
+--- a/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php
++++ b/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php
 @@ -222,7 +222,7 @@ abstract class AbstractAction
                      ['t' => $this->_productIndexerHelper->getTable($relation->getTable())],
                      ['entity_table.entity_id', $relation->getChildFieldName(), new \Zend_Db_Expr('1')]
@@ -41,10 +39,9 @@ index a0acacd4dfd..565ac1b1219 100644
                      "entity_table.{$metadata->getLinkField()} = t.{$relation->getParentFieldName()}",
                      []
                  )->join(
-diff --git a/app/code/Magento/CatalogSearch/Model/ResourceModel/Advanced/Collection.php b/app/code/Magento/CatalogSearch/Model/ResourceModel/Advanced/Collection.php
-index 5200056e559..bd19485f5aa 100644
---- a/app/code/Magento/CatalogSearch/Model/ResourceModel/Advanced/Collection.php
-+++ b/app/code/Magento/CatalogSearch/Model/ResourceModel/Advanced/Collection.php
+diff -Nuar a/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php b/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php
+--- a/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php
++++ b/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php
 @@ -394,7 +394,8 @@ class Collection extends \Magento\Catalog\Model\ResourceModel\Product\Collection
              'collection' => $this,
              'searchResult' => $searchResult,
@@ -55,10 +52,9 @@ index 5200056e559..bd19485f5aa 100644
              ]
          );
      }
-diff --git a/app/code/Magento/CatalogSearch/Model/ResourceModel/Fulltext/Collection.php b/app/code/Magento/CatalogSearch/Model/ResourceModel/Fulltext/Collection.php
-index 057b1755f25..adf3de86846 100644
---- a/app/code/Magento/CatalogSearch/Model/ResourceModel/Fulltext/Collection.php
-+++ b/app/code/Magento/CatalogSearch/Model/ResourceModel/Fulltext/Collection.php
+diff -Nuar a/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php b/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php
+--- a/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php
++++ b/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php
 @@ -486,12 +486,12 @@ class Collection extends \Magento\Catalog\Model\ResourceModel\Product\Collection
      {
          return $this->searchCriteriaResolverFactory->create(
@@ -95,10 +91,9 @@ index 057b1755f25..adf3de86846 100644
              ]
          );
      }
-diff --git a/app/code/Magento/Checkout/etc/frontend/sections.xml b/app/code/Magento/Checkout/etc/frontend/sections.xml
-index 90c2878f501..46dd8d91065 100644
---- a/app/code/Magento/Checkout/etc/frontend/sections.xml
-+++ b/app/code/Magento/Checkout/etc/frontend/sections.xml
+diff -Nuar a/vendor/magento/module-checkout/etc/frontend/sections.xml b/vendor/magento/module-checkout/etc/frontend/sections.xml
+--- a/vendor/magento/module-checkout/etc/frontend/sections.xml
++++ b/vendor/magento/module-checkout/etc/frontend/sections.xml
 @@ -41,7 +41,6 @@
      </action>
      <action name="rest/*/V1/carts/*/payment-information">
@@ -107,10 +102,9 @@ index 90c2878f501..46dd8d91065 100644
          <section name="last-ordered-items"/>
      </action>
      <action name="rest/*/V1/guest-carts/*/payment-information">
-diff --git a/app/code/Magento/DownloadableGraphQl/Model/ResourceModel/GetPurchasedDownloadableProducts.php b/app/code/Magento/DownloadableGraphQl/Model/ResourceModel/GetPurchasedDownloadableProducts.php
-index e8c29e90609..ffba2702b6d 100644
---- a/app/code/Magento/DownloadableGraphQl/Model/ResourceModel/GetPurchasedDownloadableProducts.php
-+++ b/app/code/Magento/DownloadableGraphQl/Model/ResourceModel/GetPurchasedDownloadableProducts.php
+diff -Nuar a/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php b/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php
+--- a/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php
++++ b/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php
 @@ -41,13 +41,13 @@ class GetPurchasedDownloadableProducts
      {
          $connection = $this->resourceConnection->getConnection();
@@ -127,10 +121,9 @@ index e8c29e90609..ffba2702b6d 100644
                  "$downloadablePurchasedTable.purchased_id = item.purchased_id"
              )
              ->where("$downloadablePurchasedTable.customer_id = ?", $customerId)
-diff --git a/app/code/Magento/Eav/Block/Adminhtml/Attribute/Edit/Options/Options.php b/app/code/Magento/Eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
-index 72f4086c1c5..7af7bf447c4 100644
---- a/app/code/Magento/Eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
-+++ b/app/code/Magento/Eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
+diff -Nuar a/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php b/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
+--- a/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
++++ b/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
 @@ -4,16 +4,14 @@
   * See COPYING.txt for license details.
   */
@@ -265,10 +258,9 @@ index 72f4086c1c5..7af7bf447c4 100644
          }
  
          return [$value];
-diff --git a/app/code/Magento/Eav/Model/ResourceModel/Entity/Attribute.php b/app/code/Magento/Eav/Model/ResourceModel/Entity/Attribute.php
-index 2a1b8600f83..f01d6cb4792 100644
---- a/app/code/Magento/Eav/Model/ResourceModel/Entity/Attribute.php
-+++ b/app/code/Magento/Eav/Model/ResourceModel/Entity/Attribute.php
+diff -Nuar a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php
+--- a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php
++++ b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php
 @@ -477,6 +477,7 @@ class Attribute extends AbstractDb
          if (!empty($option['delete'][$optionId])) {
              if ($intOptionId) {
@@ -319,10 +311,9 @@ index 2a1b8600f83..f01d6cb4792 100644
      /**
       * Save option values records per store
       *
-diff --git a/app/code/Magento/Elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php b/app/code/Magento/Elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
-index 93f4caa10ad..54fd556105b 100644
---- a/app/code/Magento/Elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
-+++ b/app/code/Magento/Elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
+diff -Nuar a/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php b/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
+--- a/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
++++ b/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
 @@ -278,7 +278,7 @@ class Elasticsearch implements ClientInterface
                                  'match_mapping_type' => 'string',
                                  'mapping' => [
@@ -341,10 +332,9 @@ index 93f4caa10ad..54fd556105b 100644
                                      ]
                                  ),
                              ],
-diff --git a/app/code/Magento/Elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php b/app/code/Magento/Elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
-index 6876b23bbb1..728b27bce99 100644
---- a/app/code/Magento/Elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
-+++ b/app/code/Magento/Elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
+diff -Nuar a/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php b/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
+--- a/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
++++ b/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
 @@ -62,6 +62,11 @@ class StaticField implements FieldProviderInterface
       */
      private $fieldNameResolver;
@@ -393,10 +383,9 @@ index 6876b23bbb1..728b27bce99 100644
              $attributeAdapter = $this->attributeAdapterProvider->getByAttributeCode($attribute->getAttributeCode());
              $fieldName = $this->fieldNameResolver->getFieldName($attributeAdapter);
  
-diff --git a/app/code/Magento/Elasticsearch/Model/Client/Elasticsearch.php b/app/code/Magento/Elasticsearch/Model/Client/Elasticsearch.php
-index f9b82730444..f5be5beb5b4 100644
---- a/app/code/Magento/Elasticsearch/Model/Client/Elasticsearch.php
-+++ b/app/code/Magento/Elasticsearch/Model/Client/Elasticsearch.php
+diff -Nuar a/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php b/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php
+--- a/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php
++++ b/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php
 @@ -271,7 +271,7 @@ class Elasticsearch implements ClientInterface
                                  'match_mapping' => 'string',
                                  'mapping' => [
@@ -415,10 +404,9 @@ index f9b82730444..f5be5beb5b4 100644
                                  ],
                              ],
                          ]
-diff --git a/app/code/Magento/Elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php b/app/code/Magento/Elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
-index b15d99dcc2d..acbd05f31a9 100644
---- a/app/code/Magento/Elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
-+++ b/app/code/Magento/Elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
+diff -Nuar a/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php b/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
+--- a/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
++++ b/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
 @@ -25,16 +25,32 @@ class SearchResultApplier implements SearchResultApplierInterface
       */
      private $searchResult;
@@ -514,10 +502,9 @@ index b15d99dcc2d..acbd05f31a9 100644
 +        return ($pageNumber - 1) * $pageSize;
 +    }
  }
-diff --git a/app/code/Magento/Elasticsearch/etc/di.xml b/app/code/Magento/Elasticsearch/etc/di.xml
-index 55df6a5a37f..d9709f8dac5 100644
---- a/app/code/Magento/Elasticsearch/etc/di.xml
-+++ b/app/code/Magento/Elasticsearch/etc/di.xml
+diff -Nuar a/vendor/magento/module-elasticsearch/etc/di.xml b/vendor/magento/module-elasticsearch/etc/di.xml
+--- a/vendor/magento/module-elasticsearch/etc/di.xml
++++ b/vendor/magento/module-elasticsearch/etc/di.xml
 @@ -558,4 +558,11 @@
              </argument>
          </arguments>
@@ -530,10 +517,9 @@ index 55df6a5a37f..d9709f8dac5 100644
 +        </arguments>
 +    </type>
  </config>
-diff --git a/app/code/Magento/Elasticsearch6/Model/Client/Elasticsearch.php b/app/code/Magento/Elasticsearch6/Model/Client/Elasticsearch.php
-index 34129a5af00..2f266e0ec85 100644
---- a/app/code/Magento/Elasticsearch6/Model/Client/Elasticsearch.php
-+++ b/app/code/Magento/Elasticsearch6/Model/Client/Elasticsearch.php
+diff -Nuar a/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php b/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php
+--- a/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php
++++ b/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php
 @@ -271,7 +271,7 @@ class Elasticsearch implements ClientInterface
                                  'match_mapping_type' => 'string',
                                  'mapping' => [
@@ -552,10 +538,9 @@ index 34129a5af00..2f266e0ec85 100644
                                      'copy_to' => '_search'
                                  ],
                              ],
-diff --git a/app/code/Magento/SalesRule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php b/app/code/Magento/SalesRule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
-index 89a0d6e5797..56c08864c90 100644
---- a/app/code/Magento/SalesRule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
-+++ b/app/code/Magento/SalesRule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
+diff -Nuar a/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php b/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
+--- a/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
++++ b/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
 @@ -1,12 +1,19 @@
  <?php
  /**
@@ -617,10 +602,9 @@ index 89a0d6e5797..56c08864c90 100644
 +            ->setBody($html);
      }
  }
-diff --git a/app/code/Magento/Swatches/view/frontend/web/js/swatch-renderer.js b/app/code/Magento/Swatches/view/frontend/web/js/swatch-renderer.js
-index d6302cff83b..2f8061b7410 100644
---- a/app/code/Magento/Swatches/view/frontend/web/js/swatch-renderer.js
-+++ b/app/code/Magento/Swatches/view/frontend/web/js/swatch-renderer.js
+diff -Nuar a/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js b/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js
+--- a/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js
++++ b/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js
 @@ -754,7 +754,7 @@ define([
                      $widget.options.jsonConfig.optionPrices
                  ]);
@@ -630,10 +614,9 @@ index d6302cff83b..2f8061b7410 100644
                  $widget._loadMedia();
              }
  
-diff --git a/lib/internal/Magento/Framework/Session/SaveHandler.php b/lib/internal/Magento/Framework/Session/SaveHandler.php
-index 7959130d1e4..3a857059676 100644
---- a/lib/internal/Magento/Framework/Session/SaveHandler.php
-+++ b/lib/internal/Magento/Framework/Session/SaveHandler.php
+diff -Nuar a/vendor/magento/framework/Session/SaveHandler.php b/vendor/magento/framework/Session/SaveHandler.php
+--- a/vendor/magento/framework/Session/SaveHandler.php
++++ b/vendor/magento/framework/Session/SaveHandler.php
 @@ -6,7 +6,7 @@
  namespace Magento\Framework\Session;
  
@@ -773,10 +756,9 @@ index 7959130d1e4..3a857059676 100644
 +        }
      }
  }
-diff --git a/lib/internal/Magento/Framework/Session/SaveHandler/Redis.php b/lib/internal/Magento/Framework/Session/SaveHandler/Redis.php
-index cd1cef5da6d..a30d70e60e0 100644
---- a/lib/internal/Magento/Framework/Session/SaveHandler/Redis.php
-+++ b/lib/internal/Magento/Framework/Session/SaveHandler/Redis.php
+diff -Nuar a/vendor/magento/framework/Session/SaveHandler/Redis.php b/vendor/magento/framework/Session/SaveHandler/Redis.php
+--- a/vendor/magento/framework/Session/SaveHandler/Redis.php
++++ b/vendor/magento/framework/Session/SaveHandler/Redis.php
 @@ -14,6 +14,9 @@ use Magento\Framework\Phrase;
  use Magento\Framework\Filesystem;
  use Magento\Framework\App\Filesystem\DirectoryList;
