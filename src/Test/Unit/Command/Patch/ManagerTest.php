@@ -141,7 +141,7 @@ class ManagerTest extends TestCase
 
         $inputMock->method('getOption')
             ->with(Apply::OPT_GIT_INSTALLATION)
-            ->willReturn(false);
+            ->willReturn('0');
 
         $this->manager->applyComposerPatches($inputMock, $outputMock);
     }
@@ -160,8 +160,8 @@ class ManagerTest extends TestCase
         $this->applierMock->expects($this->exactly(2))
             ->method('applyFile')
             ->willReturnMap([
-                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch1.patch', false, 'Patch 1 applied'],
-                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch2.patch', false, 'Patch 2 applied']
+                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch1.patch', true, 'Patch 1 applied'],
+                [__DIR__ . '/_files/' . Manager::HOT_FIXES_DIR . '/patch2.patch', true, 'Patch 2 applied']
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
@@ -169,7 +169,7 @@ class ManagerTest extends TestCase
         $inputMock->expects($this->once())
             ->method('getOption')
             ->with(Apply::OPT_GIT_INSTALLATION)
-            ->willReturn(false);
+            ->willReturn('1');
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $outputMock->expects($this->exactly(3))
