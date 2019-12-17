@@ -1,5 +1,4 @@
 diff -Nuar a/vendor/magento/module-cron/Console/Command/CronCommand.php b/vendor/magento/module-cron/Console/Command/CronCommand.php
-index 6a9686c514e..4df6888f461 100644
 --- a/vendor/magento/module-cron/Console/Command/CronCommand.php
 +++ b/vendor/magento/module-cron/Console/Command/CronCommand.php
 @@ -9,10 +9,12 @@ use Symfony\Component\Console\Command\Command;

@@ -1,6 +1,5 @@
 Ticket MAGETWO-57414
 diff -Naur a/vendor/magento/framework/App/StaticResource.php b/vendor/magento/framework/App/StaticResource.php
-index d591deb..6344322 100644
 --- a/vendor/magento/framework/App/StaticResource.php
 +++ b/vendor/magento/framework/App/StaticResource.php
 @@ -94,24 +94,40 @@ class StaticResource implements \Magento\Framework\AppInterface

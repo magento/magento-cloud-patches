@@ -1,5 +1,4 @@
 diff -Naur a/vendor/magento/module-deploy/Process/Queue.php b/vendor/magento/module-deploy/Process/Queue.php
-index d8089457ce5b..ca75bf1acb73 100644
 --- a/vendor/magento/module-deploy/Process/Queue.php
 +++ b/vendor/magento/module-deploy/Process/Queue.php
 @@ -3,14 +3,16 @@
