@@ -185,7 +185,7 @@
       "2.3.3": "MAGECLOUD-4442__fix_backward_compatibility_of_new_mail_interfaces__2.3.3.patch"
     },
     "Catalog Product pagination does not work on Elasticsearch 6.x": {
-      "2.3.3": "MAGECLOUD-4847__Elasticsearch_and_products_display_fix__2.3.3.patch"
+      "2.3.3": "MAGECLOUD-4847__elasticsearch_and_products_display_fix__2.3.3.patch"
     },
     "Catalog Product collection method chaining is broken": {
       "2.3.3": "MC-21820__fix_broken_method_chaining__2.3.3.patch"
