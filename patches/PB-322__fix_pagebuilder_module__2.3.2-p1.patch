@@ -1,31 +1,3 @@
-From 962bfe5398bb6d1070e2024fdb79940d1de3ea46 Mon Sep 17 00:00:00 2001
-From: Dave Macaulay <macaulay@adobe.com>
-Date: Tue, 10 Dec 2019 13:50:52 -0600
-Subject: [PATCH] PB-322: Admin preview
-
----
- .../Controller/Adminhtml/Stage/Preview.php    |  71 ++++
- .../Controller/ContentType/Preview.php        |   2 +
- .../PageBuilder/Model/Filter/Template.php     | 334 ++++++++++++++++++
- .../PageBuilder/Model/Stage/Config.php        |   4 +-
- .../PageBuilder/Model/Stage/Preview.php       | 134 +++++++
- .../Model/Stage/Renderer/Block.php            |  16 +-
- .../Model/Stage/Renderer/CmsStaticBlock.php   |  21 +-
- .../Model/Stage/Renderer/WidgetDirective.php  |  16 +-
- .../Block/Product/ProductsListPlugin.php      |  48 +++
- .../PageBuilder/Plugin/DesignLoader.php       |  98 +++++
- .../Plugin/Filter/TemplatePlugin.php          | 299 +---------------
- .../Magento/PageBuilder/etc/adminhtml/di.xml  |   3 +
- vendor/magento/module-page-builder/etc/di.xml       |   1 +
- .../layout/pagebuilder_stage_preview.xml      |  14 +
- 14 files changed, 755 insertions(+), 306 deletions(-)
- create mode 100644 vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
- create mode 100644 vendor/magento/module-page-builder/Model/Filter/Template.php
- create mode 100644 vendor/magento/module-page-builder/Model/Stage/Preview.php
- create mode 100644 vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
- create mode 100644 vendor/magento/module-page-builder/Plugin/DesignLoader.php
- create mode 100644 vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml
-
 diff --git a/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php b/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
 new file mode 100644
 index 000000000..be64e560d
