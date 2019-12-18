@@ -1,4 +1,4 @@
-diff --git a/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php b/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
+diff -Nuar a/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php b/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
 new file mode 100644
 index 000000000..be64e560d
 --- /dev/null
@@ -75,7 +75,7 @@ index 000000000..be64e560d
 +        );
 +    }
 +}
-diff --git a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
+diff -Nuar a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
 index 09f8e8510..2ab6363b3 100644
 --- a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
 +++ b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
@@ -88,7 +88,7 @@ index 09f8e8510..2ab6363b3 100644
   * @api
   */
  class Preview extends \Magento\Framework\App\Action\Action implements HttpPostActionInterface
-diff --git a/vendor/magento/module-page-builder/Model/Filter/Template.php b/vendor/magento/module-page-builder/Model/Filter/Template.php
+diff -Nuar a/vendor/magento/module-page-builder/Model/Filter/Template.php b/vendor/magento/module-page-builder/Model/Filter/Template.php
 new file mode 100644
 index 000000000..4aeb03c6d
 --- /dev/null
@@ -428,7 +428,7 @@ index 000000000..4aeb03c6d
 +        return null;
 +    }
 +}
-diff --git a/vendor/magento/module-page-builder/Model/Stage/Config.php b/vendor/magento/module-page-builder/Model/Stage/Config.php
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Config.php b/vendor/magento/module-page-builder/Model/Stage/Config.php
 index 7b081d111..9fa18d86d 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Config.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Config.php
@@ -443,7 +443,7 @@ index 7b081d111..9fa18d86d 100644
              'render_url' => $this->urlBuilder->getUrl('pagebuilder/stage/render'),
              'column_grid_default' => $this->scopeConfig->getValue(self::XML_PATH_COLUMN_GRID_DEFAULT),
              'column_grid_max' => $this->scopeConfig->getValue(self::XML_PATH_COLUMN_GRID_MAX),
-diff --git a/vendor/magento/module-page-builder/Model/Stage/Preview.php b/vendor/magento/module-page-builder/Model/Stage/Preview.php
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Preview.php b/vendor/magento/module-page-builder/Model/Stage/Preview.php
 new file mode 100644
 index 000000000..dd03d29da
 --- /dev/null
@@ -583,7 +583,7 @@ index 000000000..dd03d29da
 +        return $this->isPreview;
 +    }
 +}
-diff --git a/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
 index aaa5c316a..c9be7e404 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
@@ -635,7 +635,7 @@ index aaa5c316a..c9be7e404 100644
          }
  
          return $result;
-diff --git a/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
 index dbbac9711..b84216676 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
@@ -699,7 +699,7 @@ index dbbac9711..b84216676 100644
          } else {
              $result['error'] = __('Block disabled');
          }
-diff --git a/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
 index 61bc37cf7..09c63e632 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
@@ -748,7 +748,7 @@ index 61bc37cf7..09c63e632 100644
          } catch (\Exception $e) {
              $result['error'] = __($e->getMessage());
          }
-diff --git a/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php b/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
+diff -Nuar a/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php b/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
 index b339f3e2b..1827868c2 100644
 --- a/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
 +++ b/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
@@ -794,7 +794,7 @@ index b339f3e2b..1827868c2 100644
          $sortOption = $subject->getData('sort_order');
          if (isset($sortOption)) {
              $sortedResult = $this->sorting->applySorting($sortOption, $result);
-diff --git a/vendor/magento/module-page-builder/Plugin/DesignLoader.php b/vendor/magento/module-page-builder/Plugin/DesignLoader.php
+diff -Nuar a/vendor/magento/module-page-builder/Plugin/DesignLoader.php b/vendor/magento/module-page-builder/Plugin/DesignLoader.php
 new file mode 100644
 index 000000000..4d9131c4c
 --- /dev/null
@@ -898,7 +898,7 @@ index 000000000..4d9131c4c
 +        }
 +    }
 +}
-diff --git a/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php b/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
+diff -Nuar a/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php b/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
 index 5263a87af..e6d994b5a 100644
 --- a/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
 +++ b/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
@@ -1229,7 +1229,7 @@ index 5263a87af..e6d994b5a 100644
 +        return $this->templateFilter->filter($result);
      }
  }
-diff --git a/vendor/magento/module-page-builder/composer.json b/vendor/magento/module-page-builder/composer.json
+diff -Nuar a/vendor/magento/module-page-builder/composer.json b/vendor/magento/module-page-builder/composer.json
 index 52647de44..7afe13da3 100644
 --- a/vendor/magento/module-page-builder/composer.json
 +++ b/vendor/magento/module-page-builder/composer.json
@@ -1241,7 +1241,7 @@ index 52647de44..7afe13da3 100644
          "magento/module-config": "~101.1.3",
          "magento/module-ui": "*",
          "magento/module-variable": "*",
-diff --git a/vendor/magento/module-page-builder/etc/adminhtml/di.xml b/vendor/magento/module-page-builder/etc/adminhtml/di.xml
+diff -Nuar a/vendor/magento/module-page-builder/etc/adminhtml/di.xml b/vendor/magento/module-page-builder/etc/adminhtml/di.xml
 index d361008c8..fcc0da726 100644
 --- a/vendor/magento/module-page-builder/etc/adminhtml/di.xml
 +++ b/vendor/magento/module-page-builder/etc/adminhtml/di.xml
@@ -1255,7 +1255,7 @@ index d361008c8..fcc0da726 100644
      <virtualType name="Magento\PageBuilder\Block\Adminhtml\ContentType\Edit\ModalCloseButton" type="Magento\PageBuilder\Block\Adminhtml\ContentType\Edit\CloseButton">
          <arguments>
              <argument name="targetName" xsi:type="string">ns = pagebuilder_modal_form, index = modal</argument>
-diff --git a/vendor/magento/module-page-builder/etc/module.xml b/vendor/magento/module-page-builder/etc/module.xml
+diff -Nuar a/vendor/magento/module-page-builder/etc/module.xml b/vendor/magento/module-page-builder/etc/module.xml
 index 68ae74483..7cc75d339 100644
 --- a/vendor/magento/module-page-builder/etc/module.xml
 +++ b/vendor/magento/module-page-builder/etc/module.xml
@@ -1273,7 +1273,7 @@ index 68ae74483..7cc75d339 100644
              <module name="Magento_Backend"/>
              <module name="Magento_Ui"/>
              <module name="Magento_Theme"/>
-diff --git a/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml b/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml
+diff -Nuar a/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml b/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml
 new file mode 100644
 index 000000000..49fb5e1a7
 --- /dev/null
