@@ -204,8 +204,8 @@
     },
     "Fix pagebuilder module": {
       "2.3.1": "COMPOSER-2.3.1-PB-319-Admin-preview.patch",
-      ">=2.3.2 <= 2.3.2-p1": "COMPOSER-2.3.2-PB-320-Admin-preview.patch",
-      "2.3.2-p2": "COMPOSER-2.3.2-p2-PB-322-Admin-preview.patch",
+      "2.3.2": "COMPOSER-2.3.2-PB-320-Admin-preview.patch",
+      ">=2.3.2-p1 <=2.3.2-p2": "COMPOSER-2.3.2-p2-PB-322-Admin-preview.patch",
       "2.3.3": "COMPOSER-2.3.3-PB-323-Admin-preview.patch"
     }
   },
