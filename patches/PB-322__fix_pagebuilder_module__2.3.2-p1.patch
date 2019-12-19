@@ -1,6 +1,5 @@
 diff -Nuar a/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php b/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
 new file mode 100644
-index 000000000..be64e560d
 --- /dev/null
 +++ b/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
 @@ -0,0 +1,71 @@
@@ -76,7 +75,6 @@ index 000000000..be64e560d
 +    }
 +}
 diff -Nuar a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
-index 09f8e8510..2ab6363b3 100644
 --- a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
 +++ b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
 @@ -17,6 +17,8 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
@@ -90,7 +88,6 @@ index 09f8e8510..2ab6363b3 100644
  class Preview extends \Magento\Framework\App\Action\Action implements HttpPostActionInterface
 diff -Nuar a/vendor/magento/module-page-builder/Model/Filter/Template.php b/vendor/magento/module-page-builder/Model/Filter/Template.php
 new file mode 100644
-index 000000000..4aeb03c6d
 --- /dev/null
 +++ b/vendor/magento/module-page-builder/Model/Filter/Template.php
 @@ -0,0 +1,334 @@
@@ -429,7 +426,6 @@ index 000000000..4aeb03c6d
 +    }
 +}
 diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Config.php b/vendor/magento/module-page-builder/Model/Stage/Config.php
-index 7b081d111..9fa18d86d 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Config.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Config.php
 @@ -135,9 +135,7 @@ class Config
@@ -445,7 +441,6 @@ index 7b081d111..9fa18d86d 100644
              'column_grid_max' => $this->scopeConfig->getValue(self::XML_PATH_COLUMN_GRID_MAX),
 diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Preview.php b/vendor/magento/module-page-builder/Model/Stage/Preview.php
 new file mode 100644
-index 000000000..dd03d29da
 --- /dev/null
 +++ b/vendor/magento/module-page-builder/Model/Stage/Preview.php
 @@ -0,0 +1,134 @@
@@ -584,7 +579,6 @@ index 000000000..dd03d29da
 +    }
 +}
 diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
-index aaa5c316a..c9be7e404 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
 @@ -9,6 +9,7 @@ declare(strict_types=1);
@@ -636,7 +630,6 @@ index aaa5c316a..c9be7e404 100644
  
          return $result;
 diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
-index dbbac9711..b84216676 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
 @@ -9,6 +9,8 @@ declare(strict_types=1);
@@ -700,7 +693,6 @@ index dbbac9711..b84216676 100644
              $result['error'] = __('Block disabled');
          }
 diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
-index 61bc37cf7..09c63e632 100644
 --- a/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
 +++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
 @@ -9,6 +9,7 @@ declare(strict_types=1);
@@ -750,7 +742,6 @@ index 61bc37cf7..09c63e632 100644
          }
 diff -Nuar a/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php b/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
 new file mode 100644
-index 000000000..600d89770
 --- /dev/null
 +++ b/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
 @@ -0,0 +1,48 @@
@@ -804,7 +795,6 @@ index 000000000..600d89770
 +}
 diff -Nuar a/vendor/magento/module-page-builder/Plugin/DesignLoader.php b/vendor/magento/module-page-builder/Plugin/DesignLoader.php
 new file mode 100644
-index 000000000..4d9131c4c
 --- /dev/null
 +++ b/vendor/magento/module-page-builder/Plugin/DesignLoader.php
 @@ -0,0 +1,98 @@
@@ -907,7 +897,6 @@ index 000000000..4d9131c4c
 +    }
 +}
 diff -Nuar a/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php b/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
-index 5263a87af..e6d994b5a 100644
 --- a/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
 +++ b/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
 @@ -7,56 +7,29 @@ declare(strict_types=1);
@@ -1238,7 +1227,6 @@ index 5263a87af..e6d994b5a 100644
      }
  }
 diff -Nuar a/vendor/magento/module-page-builder/etc/adminhtml/di.xml b/vendor/magento/module-page-builder/etc/adminhtml/di.xml
-index d361008c8..fcc0da726 100644
 --- a/vendor/magento/module-page-builder/etc/adminhtml/di.xml
 +++ b/vendor/magento/module-page-builder/etc/adminhtml/di.xml
 @@ -6,6 +6,9 @@
@@ -1252,7 +1240,6 @@ index d361008c8..fcc0da726 100644
          <arguments>
              <argument name="targetName" xsi:type="string">ns = pagebuilder_modal_form, index = modal</argument>
 diff -Nuar a/vendor/magento/module-page-builder/etc/di.xml b/vendor/magento/module-page-builder/etc/di.xml
-index e7374870b..082341278 100644
 --- a/vendor/magento/module-page-builder/etc/di.xml
 +++ b/vendor/magento/module-page-builder/etc/di.xml
 @@ -131,6 +131,7 @@
@@ -1265,7 +1252,6 @@ index e7374870b..082341278 100644
          <arguments>
 diff -Nuar a/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml b/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml
 new file mode 100644
-index 000000000..49fb5e1a7
 --- /dev/null
 +++ b/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml
 @@ -0,0 +1,14 @@
