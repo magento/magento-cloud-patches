@@ -1,0 +1,16 @@
+diff -Nuar a/vendor/magento/module-email/Model/AbstractTemplate.php b/vendor/magento/module-email/Model/AbstractTemplate.php
+--- a/vendor/magento/module-email/Model/AbstractTemplate.php
++++ b/vendor/magento/module-email/Model/AbstractTemplate.php
+@@ -534,10 +534,9 @@ protected function cancelDesignConfig()
+      */
+     public function setForcedArea($templateId)
+     {
+-        if ($this->area) {
+-            throw new \LogicException(__('Area is already set'));
++        if (!isset($this->area)) {
++            $this->area = $this->emailConfig->getTemplateArea($templateId);
+         }
+-        $this->area = $this->emailConfig->getTemplateArea($templateId);
+         return $this;
+     }
+ 
