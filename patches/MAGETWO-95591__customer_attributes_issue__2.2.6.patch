@@ -1,0 +1,1419 @@
+diff -Nuar a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php
+--- a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php
++++ b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Save.php
+@@ -18,6 +18,8 @@
+ use Magento\Eav\Model\Adminhtml\System\Config\Source\Inputtype\Validator;
+ use Magento\Eav\Model\Adminhtml\System\Config\Source\Inputtype\ValidatorFactory;
+ use Magento\Eav\Model\ResourceModel\Entity\Attribute\Group\CollectionFactory;
++use Magento\Framework\App\ObjectManager;
++use Magento\Framework\Serialize\Serializer\FormData;
+ use Magento\Framework\Cache\FrontendInterface;
+ use Magento\Framework\Controller\ResultFactory;
+ use Magento\Framework\Controller\Result\Json;
+@@ -68,6 +70,11 @@ class Save extends Attribute
+      */
+     private $layoutFactory;
+
++    /**
++     * @var FormData
++     */
++    private $formDataSerializer;
++
+     /**
+      * @param Context $context
+      * @param FrontendInterface $attributeLabelCache
+@@ -80,6 +87,7 @@ class Save extends Attribute
+      * @param FilterManager $filterManager
+      * @param Product $productHelper
+      * @param LayoutFactory $layoutFactory
++     * @param FormData|null $formDataSerializer
+      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+     public function __construct(
+@@ -93,7 +101,8 @@ public function __construct(
+         CollectionFactory $groupCollectionFactory,
+         FilterManager $filterManager,
+         Product $productHelper,
+-        LayoutFactory $layoutFactory
++        LayoutFactory $layoutFactory,
++        FormData $formDataSerializer = null
+     ) {
+         parent::__construct($context, $attributeLabelCache, $coreRegistry, $resultPageFactory);
+         $this->buildFactory = $buildFactory;
+@@ -103,19 +112,37 @@ public function __construct(
+         $this->validatorFactory = $validatorFactory;
+         $this->groupCollectionFactory = $groupCollectionFactory;
+         $this->layoutFactory = $layoutFactory;
++        $this->formDataSerializer = $formDataSerializer ?? ObjectManager::getInstance()->get(FormData::class);
+     }
+
+     /**
+-     * @return Redirect
++     * @inheritdoc
++     *
+      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+      * @SuppressWarnings(PHPMD.NPathComplexity)
+      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+      */
+     public function execute()
+     {
++        try {
++            $optionData = $this->formDataSerializer->unserialize(
++                $this->getRequest()->getParam('serialized_options', '[]')
++            );
++        } catch (\InvalidArgumentException $e) {
++            $message = __("The attribute couldn't be saved due to an error. Verify your information and try again. "
++                . "If the error persists, please try again later.");
++            $this->messageManager->addErrorMessage($message);
++
++            return $this->returnResult('catalog/*/edit', ['_current' => true], ['error' => true]);
++        }
++
+         $data = $this->getRequest()->getPostValue();
++        $data = array_replace_recursive(
++            $data,
++            $optionData
++        );
++
+         if ($data) {
+-            $this->preprocessOptionsData($data);
+             $setId = $this->getRequest()->getParam('set');
+
+             $attributeSet = null;
+@@ -124,7 +151,7 @@ public function execute()
+                 $name = trim($name);
+
+                 try {
+-                    /** @var $attributeSet Set */
++                    /** @var Set $attributeSet */
+                     $attributeSet = $this->buildFactory->create()
+                         ->setEntityTypeId($this->_entityTypeId)
+                         ->setSkeletonId($setId)
+@@ -147,7 +174,7 @@ public function execute()
+
+             $attributeId = $this->getRequest()->getParam('attribute_id');
+
+-            /** @var $model ProductAttributeInterface */
++            /** @var ProductAttributeInterface $model */
+             $model = $this->attributeFactory->create();
+             if ($attributeId) {
+                 $model->load($attributeId);
+@@ -180,7 +207,7 @@ public function execute()
+
+             //validate frontend_input
+             if (isset($data['frontend_input'])) {
+-                /** @var $inputType Validator */
++                /** @var Validator $inputType */
+                 $inputType = $this->validatorFactory->create();
+                 if (!$inputType->isValid($data['frontend_input'])) {
+                     foreach ($inputType->getMessages() as $message) {
+@@ -313,28 +340,8 @@ public function execute()
+     }
+
+     /**
+-     * Extract options data from serialized options field and append to data array.
+-     *
+-     * This logic is required to overcome max_input_vars php limit
+-     * that may vary and/or be inaccessible to change on different instances.
++     * Provides an initialized Result object.
+      *
+-     * @param array $data
+-     * @return void
+-     */
+-    private function preprocessOptionsData(&$data)
+-    {
+-        if (isset($data['serialized_options'])) {
+-            $serializedOptions = json_decode($data['serialized_options'], JSON_OBJECT_AS_ARRAY);
+-            foreach ($serializedOptions as $serializedOption) {
+-                $option = [];
+-                parse_str($serializedOption, $option);
+-                $data = array_replace_recursive($data, $option);
+-            }
+-        }
+-        unset($data['serialized_options']);
+-    }
+-
+-    /**
+      * @param string $path
+      * @param array $params
+      * @param array $response
+diff -Nuar a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php
+--- a/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php
++++ b/vendor/magento/module-catalog/Controller/Adminhtml/Product/Attribute/Validate.php
+@@ -6,8 +6,15 @@
+  */
+ namespace Magento\Catalog\Controller\Adminhtml\Product\Attribute;
+
++use Magento\Framework\Serialize\Serializer\FormData;
++use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\DataObject;
+
++/**
++ * Product attribute validate controller.
++ *
++ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
++ */
+ class Validate extends \Magento\Catalog\Controller\Adminhtml\Product\Attribute
+ {
+     const DEFAULT_MESSAGE_KEY = 'message';
+@@ -27,6 +34,11 @@ class Validate extends \Magento\Catalog\Controller\Adminhtml\Product\Attribute
+      */
+     private $multipleAttributeList;
+
++    /**
++     * @var FormData
++     */
++    private $formDataSerializer;
++
+     /**
+      * Constructor
+      *
+@@ -37,6 +49,7 @@ class Validate extends \Magento\Catalog\Controller\Adminhtml\Product\Attribute
+      * @param \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
+      * @param \Magento\Framework\View\LayoutFactory $layoutFactory
+      * @param array $multipleAttributeList
++     * @param FormData|null $formDataSerializer
+      */
+     public function __construct(
+         \Magento\Backend\App\Action\Context $context,
+@@ -45,16 +58,19 @@ public function __construct(
+         \Magento\Framework\View\Result\PageFactory $resultPageFactory,
+         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
+         \Magento\Framework\View\LayoutFactory $layoutFactory,
+-        array $multipleAttributeList = []
++        array $multipleAttributeList = [],
++        FormData $formDataSerializer = null
+     ) {
+         parent::__construct($context, $attributeLabelCache, $coreRegistry, $resultPageFactory);
+         $this->resultJsonFactory = $resultJsonFactory;
+         $this->layoutFactory = $layoutFactory;
+         $this->multipleAttributeList = $multipleAttributeList;
++        $this->formDataSerializer = $formDataSerializer ?? ObjectManager::getInstance()->get(FormData::class);
+     }
+
+     /**
+-     * @return \Magento\Framework\Controller\ResultInterface
++     * @inheritdoc
++     *
+      * @SuppressWarnings(PHPMD.NPathComplexity)
+      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+      */
+@@ -62,6 +78,16 @@ public function execute()
+     {
+         $response = new DataObject();
+         $response->setError(false);
++        try {
++            $optionsData = $this->formDataSerializer->unserialize(
++                $this->getRequest()->getParam('serialized_options', '[]')
++            );
++        } catch (\InvalidArgumentException $e) {
++            $message = __("The attribute couldn't be validated due to an error. Verify your information and try again. "
++                . "If the error persists, please try again later.");
++            $this->setMessageToResponse($response, [$message]);
++            $response->setError(true);
++        }
+
+         $attributeCode = $this->getRequest()->getParam('attribute_code');
+         $frontendLabel = $this->getRequest()->getParam('frontend_label');
+@@ -101,10 +127,10 @@ public function execute()
+         }
+
+         $multipleOption = $this->getRequest()->getParam("frontend_input");
+-        $multipleOption = null == $multipleOption ? 'select' : $multipleOption;
++        $multipleOption = (null === $multipleOption) ? 'select' : $multipleOption;
+
+         if (isset($this->multipleAttributeList[$multipleOption]) && !(null == ($multipleOption))) {
+-            $options = $this->getRequest()->getParam($this->multipleAttributeList[$multipleOption]);
++            $options = $optionsData[$this->multipleAttributeList[$multipleOption]] ?? null;
+             $this->checkUniqueOption(
+                 $response,
+                 $options
+@@ -122,7 +148,8 @@ public function execute()
+     }
+
+     /**
+-     * Throws Exception if not unique values into options
++     * Throws Exception if not unique values into options.
++     *
+      * @param array $optionsValues
+      * @param array $deletedOptions
+      * @return bool
+@@ -156,6 +183,8 @@ private function setMessageToResponse($response, $messages)
+     }
+
+     /**
++     * Performs checking the uniqueness of the attribute options.
++     *
+      * @param DataObject $response
+      * @param array|null $options
+      * @return $this
+diff -Nuar a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php
+--- a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php
++++ b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/SaveTest.php
+@@ -3,8 +3,10 @@
+  * Copyright © Magento, Inc. All rights reserved.
+  * See COPYING.txt for license details.
+  */
++
+ namespace Magento\Catalog\Test\Unit\Controller\Adminhtml\Product\Attribute;
+
++use Magento\Catalog\Api\Data\ProductAttributeInterface;
+ use Magento\Catalog\Controller\Adminhtml\Product\Attribute\Save;
+ use Magento\Catalog\Test\Unit\Controller\Adminhtml\Product\AttributeTest;
+ use Magento\Catalog\Model\Product\AttributeSet\BuildFactory;
+@@ -13,11 +15,16 @@
+ use Magento\Eav\Api\Data\AttributeSetInterface;
+ use Magento\Eav\Model\Adminhtml\System\Config\Source\Inputtype\ValidatorFactory;
+ use Magento\Eav\Model\ResourceModel\Entity\Attribute\Group\CollectionFactory;
++use Magento\Framework\Message\ManagerInterface;
++use Magento\Framework\Serialize\Serializer\FormData;
++use Magento\Framework\Controller\ResultFactory;
+ use Magento\Framework\Filter\FilterManager;
+ use Magento\Catalog\Helper\Product as ProductHelper;
++use Magento\Framework\View\Element\Messages;
+ use Magento\Framework\View\LayoutFactory;
+ use Magento\Backend\Model\View\Result\Redirect as ResultRedirect;
+ use Magento\Eav\Model\Adminhtml\System\Config\Source\Inputtype\Validator as InputTypeValidator;
++use Magento\Framework\View\LayoutInterface;
+
+ /**
+  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+@@ -79,6 +86,21 @@ class SaveTest extends AttributeTest
+      */
+     protected $inputTypeValidatorMock;
+
++    /**
++     * @var ManagerInterface|\PHPUnit_Framework_MockObject_MockObject
++     */
++    private $messageManagerMock;
++
++    /**
++     * @var FormData|\PHPUnit_Framework_MockObject_MockObject
++     */
++    private $formDataSerializerMock;
++
++    /**
++     * @var ProductAttributeInterface|\PHPUnit_Framework_MockObject_MockObject
++     */
++    private $productAttributeMock;
++
+     protected function setUp()
+     {
+         parent::setUp();
+@@ -108,6 +130,7 @@ protected function setUp()
+             ->disableOriginalConstructor()
+             ->getMock();
+         $this->redirectMock = $this->getMockBuilder(ResultRedirect::class)
++            ->setMethods(['setData', 'setPath'])
+             ->disableOriginalConstructor()
+             ->getMock();
+         $this->attributeSetMock = $this->getMockBuilder(AttributeSetInterface::class)
+@@ -119,6 +142,15 @@ protected function setUp()
+         $this->inputTypeValidatorMock = $this->getMockBuilder(InputTypeValidator::class)
+             ->disableOriginalConstructor()
+             ->getMock();
++        $this->messageManagerMock = $this->getMockBuilder(\Magento\Framework\Message\ManagerInterface::class)
++            ->disableOriginalConstructor()
++            ->getMockForAbstractClass();
++        $this->formDataSerializerMock = $this->getMockBuilder(FormData::class)
++            ->disableOriginalConstructor()
++            ->getMock();
++        $this->productAttributeMock = $this->getMockBuilder(ProductAttributeInterface::class)
++            ->setMethods(['getId', 'get'])
++            ->getMockForAbstractClass();
+
+         $this->buildFactoryMock->expects($this->any())
+             ->method('create')
+@@ -126,6 +158,9 @@ protected function setUp()
+         $this->validatorFactoryMock->expects($this->any())
+             ->method('create')
+             ->willReturn($this->inputTypeValidatorMock);
++        $this->attributeFactoryMock
++            ->method('create')
++            ->willReturn($this->productAttributeMock);
+     }
+
+     /**
+@@ -135,6 +170,7 @@ protected function getModel()
+     {
+         return $this->objectManager->getObject(Save::class, [
+             'context' => $this->contextMock,
++            'messageManager' => $this->messageManagerMock,
+             'attributeLabelCache' => $this->attributeLabelCacheMock,
+             'coreRegistry' => $this->coreRegistryMock,
+             'resultPageFactory' => $this->resultPageFactoryMock,
+@@ -145,11 +181,22 @@ protected function getModel()
+             'validatorFactory' => $this->validatorFactoryMock,
+             'groupCollectionFactory' => $this->groupCollectionFactoryMock,
+             'layoutFactory' => $this->layoutFactoryMock,
++            'formDataSerializer' => $this->formDataSerializerMock,
+         ]);
+     }
+
+     public function testExecuteWithEmptyData()
+     {
++        $this->requestMock->expects($this->any())
++            ->method('getParam')
++            ->willReturnMap([
++                ['isAjax', null, null],
++                ['serialized_options', '[]', ''],
++            ]);
++        $this->formDataSerializerMock->expects($this->once())
++            ->method('unserialize')
++            ->with('')
++            ->willReturn([]);
+         $this->requestMock->expects($this->once())
+             ->method('getPostValue')
+             ->willReturn([]);
+@@ -170,6 +217,22 @@ public function testExecute()
+             'frontend_input' => 'test_frontend_input',
+         ];
+
++        $this->requestMock->expects($this->any())
++            ->method('getParam')
++            ->willReturnMap([
++                ['isAjax', null, null],
++                ['serialized_options', '[]', ''],
++            ]);
++        $this->formDataSerializerMock->expects($this->once())
++            ->method('unserialize')
++            ->with('')
++            ->willReturn([]);
++        $this->productAttributeMock->expects($this->once())
++            ->method('getId')
++            ->willReturn(1);
++        $this->productAttributeMock->expects($this->once())
++            ->method('getAttributeCode')
++            ->willReturn('test_code');
+         $this->requestMock->expects($this->once())
+             ->method('getPostValue')
+             ->willReturn($data);
+@@ -203,4 +266,74 @@ public function testExecute()
+
+         $this->assertInstanceOf(ResultRedirect::class, $this->getModel()->execute());
+     }
++
++    /**
++     * @return void
++     * @throws \Magento\Framework\Exception\NotFoundException
++     */
++    public function testExecuteWithOptionsDataError()
++    {
++        $serializedOptions = '{"key":"value"}';
++        $message = "The attribute couldn't be saved due to an error. Verify your information and try again. "
++            . "If the error persists, please try again later.";
++
++        $this->requestMock->expects($this->any())
++            ->method('getParam')
++            ->willReturnMap([
++                ['isAjax', null, true],
++                ['serialized_options', '[]', $serializedOptions],
++            ]);
++        $this->formDataSerializerMock->expects($this->once())
++            ->method('unserialize')
++            ->with($serializedOptions)
++            ->willThrowException(new \InvalidArgumentException('Some exception'));
++        $this->messageManagerMock->expects($this->once())
++            ->method('addErrorMessage')
++            ->with($message);
++        $this->addReturnResultConditions('catalog/*/edit', ['_current' => true], ['error' => true]);
++
++        $this->getModel()->execute();
++    }
++
++    /**
++     * @param string $path
++     * @param array $params
++     * @param array $response
++     * @return void
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    private function addReturnResultConditions(string $path = '', array $params = [], array $response = [])
++    {
++        $layoutMock = $this->getMockBuilder(LayoutInterface::class)
++            ->setMethods(['initMessages', 'getMessagesBlock'])
++            ->getMockForAbstractClass();
++        $this->layoutFactoryMock->expects($this->once())
++            ->method('create')
++            ->with()
++            ->willReturn($layoutMock);
++        $layoutMock->expects($this->once())
++            ->method('initMessages')
++            ->with();
++        $messageBlockMock = $this->getMockBuilder(Messages::class)
++            ->disableOriginalConstructor()
++            ->getMock();
++        $layoutMock->expects($this->once())
++            ->method('getMessagesBlock')
++            ->willReturn($messageBlockMock);
++        $messageBlockMock->expects($this->once())
++            ->method('getGroupedHtml')
++            ->willReturn('message1');
++        $this->resultFactoryMock->expects($this->once())
++            ->method('create')
++            ->with(ResultFactory::TYPE_JSON)
++            ->willReturn($this->redirectMock);
++        $response = array_merge($response, [
++            'messages' => ['message1'],
++            'params' => $params,
++        ]);
++        $this->redirectMock->expects($this->once())
++            ->method('setData')
++            ->with($response)
++            ->willReturnSelf();
++    }
+ }
+diff -Nuar a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php
+--- a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php
++++ b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/Attribute/ValidateTest.php
+@@ -9,6 +9,7 @@
+ use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+ use Magento\Catalog\Test\Unit\Controller\Adminhtml\Product\AttributeTest;
+ use Magento\Eav\Model\Entity\Attribute\Set as AttributeSet;
++use Magento\Framework\Serialize\Serializer\FormData;
+ use Magento\Framework\Controller\Result\Json as ResultJson;
+ use Magento\Framework\Controller\Result\JsonFactory as ResultJsonFactory;
+ use Magento\Framework\Escaper;
+@@ -61,6 +62,11 @@ class ValidateTest extends AttributeTest
+      */
+     protected $layoutMock;
+
++    /**
++     * @var FormData|\PHPUnit_Framework_MockObject_MockObject
++     */
++    private $formDataSerializer;
++
+     protected function setUp()
+     {
+         parent::setUp();
+@@ -86,6 +92,9 @@ protected function setUp()
+             ->getMock();
+         $this->layoutMock = $this->getMockBuilder(LayoutInterface::class)
+             ->getMockForAbstractClass();
++        $this->formDataSerializer = $this->getMockBuilder(FormData::class)
++            ->disableOriginalConstructor()
++            ->getMock();
+
+         $this->contextMock->expects($this->any())
+             ->method('getObjectManager')
+@@ -100,25 +109,28 @@ protected function getModel()
+         return $this->objectManager->getObject(
+             Validate::class,
+             [
+-            'context' => $this->contextMock,
+-            'attributeLabelCache' => $this->attributeLabelCacheMock,
+-            'coreRegistry' => $this->coreRegistryMock,
+-            'resultPageFactory' => $this->resultPageFactoryMock,
+-            'resultJsonFactory' => $this->resultJsonFactoryMock,
+-            'layoutFactory' => $this->layoutFactoryMock,
+-            'multipleAttributeList' => ['select' => 'option']
++                'context' => $this->contextMock,
++                'attributeLabelCache' => $this->attributeLabelCacheMock,
++                'coreRegistry' => $this->coreRegistryMock,
++                'resultPageFactory' => $this->resultPageFactoryMock,
++                'resultJsonFactory' => $this->resultJsonFactoryMock,
++                'layoutFactory' => $this->layoutFactoryMock,
++                'multipleAttributeList' => ['select' => 'option'],
++                'formDataSerializer' => $this->formDataSerializer,
+             ]
+         );
+     }
+
+     public function testExecute()
+     {
++        $serializedOptions = '{"key":"value"}';
+         $this->requestMock->expects($this->any())
+             ->method('getParam')
+             ->willReturnMap([
+                 ['frontend_label', null, 'test_frontend_label'],
+                 ['attribute_code', null, 'test_attribute_code'],
+                 ['new_attribute_set_name', null, 'test_attribute_set_name'],
++                ['serialized_options', '[]', $serializedOptions],
+             ]);
+         $this->objectManagerMock->expects($this->exactly(2))
+             ->method('create')
+@@ -160,6 +172,7 @@ public function testExecute()
+      */
+     public function testUniqueValidation(array $options, $isError)
+     {
++        $serializedOptions = '{"key":"value"}';
+         $countFunctionCalls = ($isError) ? 6 : 5;
+         $this->requestMock->expects($this->exactly($countFunctionCalls))
+             ->method('getParam')
+@@ -167,10 +180,15 @@ public function testUniqueValidation(array $options, $isError)
+                 ['frontend_label', null, null],
+                 ['attribute_code', null, "test_attribute_code"],
+                 ['new_attribute_set_name', null, 'test_attribute_set_name'],
+-                ['option', null, $options],
+-                ['message_key', null, Validate::DEFAULT_MESSAGE_KEY]
++                ['message_key', null, Validate::DEFAULT_MESSAGE_KEY],
++                ['serialized_options', '[]', $serializedOptions],
+             ]);
+
++        $this->formDataSerializer->expects($this->once())
++            ->method('unserialize')
++            ->with($serializedOptions)
++            ->willReturn($options);
++
+         $this->objectManagerMock->expects($this->once())
+             ->method('create')
+             ->willReturn($this->attributeMock);
+@@ -203,68 +221,84 @@ public function provideUniqueData()
+         return [
+             'no values' => [
+                 [
+-                    'delete' => [
+-                        "option_0" => "",
+-                        "option_1" => "",
+-                        "option_2" => "",
+-                    ]
+-                ], false
++                    'option' => [
++                        'delete' => [
++                            "option_0" => "",
++                            "option_1" => "",
++                            "option_2" => "",
++                        ],
++                    ],
++
++                ],
++                false,
+             ],
+             'valid options' => [
+                 [
+-                    'value' => [
+-                        "option_0" => [1, 0],
+-                        "option_1" => [2, 0],
+-                        "option_2" => [3, 0],
++                    'option' => [
++                        'value' => [
++                            "option_0" => [1, 0],
++                            "option_1" => [2, 0],
++                            "option_2" => [3, 0],
++                        ],
++                        'delete' => [
++                            "option_0" => "",
++                            "option_1" => "",
++                            "option_2" => "",
++                        ],
+                     ],
+-                    'delete' => [
+-                        "option_0" => "",
+-                        "option_1" => "",
+-                        "option_2" => "",
+-                    ]
+-                ], false
++                ],
++                false,
+             ],
+             'duplicate options' => [
+                 [
+-                    'value' => [
+-                        "option_0" => [1, 0],
+-                        "option_1" => [1, 0],
+-                        "option_2" => [3, 0],
++                    'option' => [
++                        'value' => [
++                            "option_0" => [1, 0],
++                            "option_1" => [1, 0],
++                            "option_2" => [3, 0],
++                        ],
++                        'delete' => [
++                            "option_0" => "",
++                            "option_1" => "",
++                            "option_2" => "",
++                        ],
+                     ],
+-                    'delete' => [
+-                        "option_0" => "",
+-                        "option_1" => "",
+-                        "option_2" => "",
+-                    ]
+-                ], true
++                ],
++                true,
+             ],
+             'duplicate and deleted' => [
+                 [
+-                    'value' => [
+-                        "option_0" => [1, 0],
+-                        "option_1" => [1, 0],
+-                        "option_2" => [3, 0],
++                    'option' => [
++                        'value' => [
++                            "option_0" => [1, 0],
++                            "option_1" => [1, 0],
++                            "option_2" => [3, 0],
++                        ],
++                        'delete' => [
++                            "option_0" => "",
++                            "option_1" => "1",
++                            "option_2" => "",
++                        ],
+                     ],
+-                    'delete' => [
+-                        "option_0" => "",
+-                        "option_1" => "1",
+-                        "option_2" => "",
+-                    ]
+-                ], false
++                ],
++                false,
+             ],
+             'empty and deleted' => [
+                 [
+-                    'value' => [
+-                        "option_0" => [1, 0],
+-                        "option_1" => [2, 0],
+-                        "option_2" => ["", ""],
++                    'option' => [
++                        'value' => [
++                            "option_0" => [1, 0],
++                            "option_1" => [2, 0],
++                            "option_2" => ["", ""],
++                        ],
++                        'delete' => [
++                            "option_0" => "",
++                            "option_1" => "",
++                            "option_2" => "1",
++                        ],
+                     ],
+-                    'delete' => [
+-                        "option_0" => "",
+-                        "option_1" => "",
+-                        "option_2" => "1",
+-                    ]
+-                ], false
++                ],
++                false,
+             ],
+         ];
+     }
+@@ -278,6 +312,7 @@ public function provideUniqueData()
+      */
+     public function testEmptyOption(array $options, $result)
+     {
++        $serializedOptions = '{"key":"value"}';
+         $this->requestMock->expects($this->any())
+             ->method('getParam')
+             ->willReturnMap([
+@@ -285,10 +320,15 @@ public function testEmptyOption(array $options, $result)
+                 ['frontend_input', 'select', 'multipleselect'],
+                 ['attribute_code', null, "test_attribute_code"],
+                 ['new_attribute_set_name', null, 'test_attribute_set_name'],
+-                ['option', null, $options],
+                 ['message_key', Validate::DEFAULT_MESSAGE_KEY, 'message'],
++                ['serialized_options', '[]', $serializedOptions],
+             ]);
+
++        $this->formDataSerializer->expects($this->once())
++            ->method('unserialize')
++            ->with($serializedOptions)
++            ->willReturn($options);
++
+         $this->objectManagerMock->expects($this->once())
+             ->method('create')
+             ->willReturn($this->attributeMock);
+@@ -320,32 +360,38 @@ public function provideEmptyOption()
+         return [
+             'empty admin scope options' => [
+                 [
+-                    'value' => [
+-                        "option_0" => [''],
++                    'option' => [
++                        'value' => [
++                            "option_0" => [''],
++                        ],
+                     ],
+                 ],
+                 (object) [
+                     'error' => true,
+                     'message' => 'The value of Admin scope can\'t be empty.',
+-                ]
++                ],
+             ],
+             'not empty admin scope options' => [
+                 [
+-                    'value' => [
+-                        "option_0" => ['asdads'],
++                    'option' => [
++                        'value' => [
++                            "option_0" => ['asdads'],
++                        ],
+                     ],
+                 ],
+                 (object) [
+                     'error' => false,
+-                ]
++                ],
+             ],
+             'empty admin scope options and deleted' => [
+                 [
+-                    'value' => [
+-                        "option_0" => [''],
+-                    ],
+-                    'delete' => [
+-                        'option_0' => '1',
++                    'option' => [
++                        'value' => [
++                            "option_0" => [''],
++                        ],
++                        'delete' => [
++                            'option_0' => '1',
++                        ],
+                     ],
+                 ],
+                 (object) [
+@@ -354,11 +400,13 @@ public function provideEmptyOption()
+             ],
+             'empty admin scope options and not deleted' => [
+                 [
+-                    'value' => [
+-                        "option_0" => [''],
+-                    ],
+-                    'delete' => [
+-                        'option_0' => '0',
++                    'option' => [
++                        'value' => [
++                            "option_0" => [''],
++                        ],
++                        'delete' => [
++                            'option_0' => '0',
++                        ],
+                     ],
+                 ],
+                 (object) [
+@@ -368,4 +416,55 @@ public function provideEmptyOption()
+             ],
+         ];
+     }
++
++    /**
++     * @return void
++     * @throws \Magento\Framework\Exception\NotFoundException
++     */
++    public function testExecuteWithOptionsDataError()
++    {
++        $serializedOptions = '{"key":"value"}';
++        $message = "The attribute couldn't be validated due to an error. Verify your information and try again. "
++            . "If the error persists, please try again later.";
++        $this->requestMock->expects($this->any())
++            ->method('getParam')
++            ->willReturnMap([
++                ['frontend_label', null, 'test_frontend_label'],
++                ['attribute_code', null, 'test_attribute_code'],
++                ['new_attribute_set_name', null, 'test_attribute_set_name'],
++                ['message_key', Validate::DEFAULT_MESSAGE_KEY, 'message'],
++                ['serialized_options', '[]', $serializedOptions],
++            ]);
++
++        $this->formDataSerializer->expects($this->once())
++            ->method('unserialize')
++            ->with($serializedOptions)
++            ->willThrowException(new \InvalidArgumentException('Some exception'));
++
++        $this->objectManagerMock->expects($this->once())
++            ->method('create')
++            ->willReturnMap([
++                [\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class, [], $this->attributeMock],
++                [\Magento\Eav\Model\Entity\Attribute\Set::class, [], $this->attributeSetMock]
++            ]);
++
++        $this->attributeMock->expects($this->once())
++            ->method('loadByCode')
++            ->willReturnSelf();
++        $this->attributeSetMock->expects($this->never())
++            ->method('setEntityTypeId')
++            ->willReturnSelf();
++        $this->resultJsonFactoryMock->expects($this->once())
++            ->method('create')
++            ->willReturn($this->resultJson);
++        $this->resultJson->expects($this->once())
++            ->method('setJsonData')
++            ->with(json_encode([
++                'error' => true,
++                'message' => $message,
++            ]))
++            ->willReturnSelf();
++
++        $this->getModel()->execute();
++    }
+ }
+diff -Nuar a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php
+--- a/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php
++++ b/vendor/magento/module-catalog/Test/Unit/Controller/Adminhtml/Product/AttributeTest.php
+@@ -9,8 +9,9 @@
+ use Magento\Catalog\Controller\Adminhtml\Product\Attribute;
+ use Magento\Framework\App\RequestInterface;
+ use Magento\Framework\Cache\FrontendInterface;
++use Magento\Framework\Message\ManagerInterface;
+ use Magento\Framework\Registry;
+-use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
++use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
+ use Magento\Framework\View\Result\PageFactory;
+ use Magento\Framework\Controller\ResultFactory;
+
+@@ -20,7 +21,7 @@
+ class AttributeTest extends \PHPUnit\Framework\TestCase
+ {
+     /**
+-     * @var ObjectManager
++     * @var ObjectManagerHelper
+      */
+     protected $objectManager;
+
+@@ -54,9 +55,14 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
+      */
+     protected $resultFactoryMock;
+
++    /**
++     * @var ManagerInterface|\PHPUnit_Framework_MockObject_MockObject
++     */
++    private $messageManager;
++
+     protected function setUp()
+     {
+-        $this->objectManager = new ObjectManager($this);
++        $this->objectManager = new ObjectManagerHelper($this);
+         $this->contextMock = $this->getMockBuilder(Context::class)
+             ->disableOriginalConstructor()
+             ->getMock();
+@@ -74,6 +80,9 @@ protected function setUp()
+         $this->resultFactoryMock = $this->getMockBuilder(ResultFactory::class)
+             ->disableOriginalConstructor()
+             ->getMock();
++        $this->messageManager = $this->getMockBuilder(ManagerInterface::class)
++            ->disableOriginalConstructor()
++            ->getMock();
+
+         $this->contextMock->expects($this->any())
+             ->method('getRequest')
+@@ -81,6 +90,9 @@ protected function setUp()
+         $this->contextMock->expects($this->any())
+             ->method('getResultFactory')
+             ->willReturn($this->resultFactoryMock);
++        $this->contextMock->expects($this->once())
++            ->method('getMessageManager')
++            ->willReturn($this->messageManager);
+     }
+
+     /**
+diff -Nuar a/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml b/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml
+--- a/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml
++++ b/vendor/magento/module-catalog/view/adminhtml/templates/catalog/product/attribute/js.phtml
+@@ -40,13 +40,16 @@ function getFrontTab() {
+
+ function checkOptionsPanelVisibility(){
+     if($('manage-options-panel')){
+-        var panel = $('manage-options-panel').up('.fieldset');
++        var panel = $('manage-options-panel').up('.fieldset'),
++            activePanelClass = 'selected-type-options';
+
+         if($('frontend_input') && ($('frontend_input').value=='select' || $('frontend_input').value=='multiselect')){
+             panel.show();
++            panel.addClass(activePanelClass);
+         }
+         else {
+             panel.hide();
++            panel.removeClass(activePanelClass);
+         }
+     }
+ }
+diff -Nuar a/vendor/magento/module-catalog/view/adminhtml/web/js/options.js b/vendor/magento/module-catalog/view/adminhtml/web/js/options.js
+--- a/vendor/magento/module-catalog/view/adminhtml/web/js/options.js
++++ b/vendor/magento/module-catalog/view/adminhtml/web/js/options.js
+@@ -20,7 +20,6 @@ define([
+
+     return function (config) {
+         var optionPanel = jQuery('#manage-options-panel'),
+-            optionsValues = [],
+             editForm = jQuery('#edit_form'),
+             attributeOption = {
+                 table: $('attribute-options-table'),
+@@ -145,7 +144,9 @@ define([
+
+                     return optionDefaultInputType;
+                 }
+-            };
++            },
++            tableBody = jQuery(),
++            activePanelClass = 'selected-type-options';
+
+         if ($('add_new_option_button')) {
+             Event.observe('add_new_option_button', 'click', attributeOption.add.bind(attributeOption, {}, true));
+@@ -180,30 +181,32 @@ define([
+                 });
+             });
+         }
+-        editForm.on('submit', function () {
+-            optionPanel.find('input')
+-                .each(function () {
+-                    if (this.disabled) {
+-                        return;
++        editForm.on('beforeSubmit', function () {
++            var optionContainer = optionPanel.find('table tbody'),
++                optionsValues;
++
++            if (optionPanel.hasClass(activePanelClass)) {
++                optionsValues = jQuery.map(
++                    optionContainer.find('tr'),
++                    function (row) {
++                        return jQuery(row).find('input, select, textarea').serialize();
+                     }
+-
+-                    if (this.type === 'checkbox' || this.type === 'radio') {
+-                        if (this.checked) {
+-                            optionsValues.push(this.name + '=' + jQuery(this).val());
+-                        }
+-                    } else {
+-                        optionsValues.push(this.name + '=' + jQuery(this).val());
+-                    }
+-                });
+-            jQuery('<input>')
+-                .attr({
+-                    type: 'hidden',
+-                    name: 'serialized_options'
+-                })
+-                .val(JSON.stringify(optionsValues))
+-                .prependTo(editForm);
+-            optionPanel.find('table')
+-                .replaceWith(jQuery('<div>').text(jQuery.mage.__('Sending attribute values as package.')));
++                );
++                jQuery('<input>')
++                    .attr({
++                        type: 'hidden',
++                        name: 'serialized_options'
++                    })
++                    .val(JSON.stringify(optionsValues))
++                    .prependTo(editForm);
++            }
++            tableBody = optionContainer.detach();
++        });
++        editForm.on('afterValidate.error highlight.validate', function () {
++            if (optionPanel.hasClass(activePanelClass)) {
++                optionPanel.find('table').append(tableBody);
++                jQuery('input[name="serialized_options"]').remove();
++            }
+         });
+         window.attributeOption = attributeOption;
+         window.optionDefaultInputType = attributeOption.getOptionInputType();
+diff -Nuar a/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php b/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php
+--- a/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php
++++ b/vendor/magento/module-swatches/Controller/Adminhtml/Product/Attribute/Plugin/Save.php
+@@ -16,6 +16,8 @@
+ class Save
+ {
+     /**
++     * Performs the conversion of the frontend input value.
++     *
+      * @param Attribute\Save $subject
+      * @param RequestInterface $request
+      * @return array
+@@ -26,15 +28,6 @@ public function beforeDispatch(Attribute\Save $subject, RequestInterface $reques
+         $data = $request->getPostValue();
+
+         if (isset($data['frontend_input'])) {
+-            //Data is serialized to overcome issues caused by max_input_vars value if it's modification is unavailable.
+-            //See subject controller code and comments for more info.
+-            if (isset($data['serialized_swatch_values'])
+-                && in_array($data['frontend_input'], ['swatch_visual', 'swatch_text'])
+-            ) {
+-                $data['serialized_options'] = $data['serialized_swatch_values'];
+-                unset($data['serialized_swatch_values']);
+-            }
+-
+             switch ($data['frontend_input']) {
+                 case 'swatch_visual':
+                     $data[Swatch::SWATCH_INPUT_TYPE_KEY] = Swatch::SWATCH_INPUT_TYPE_VISUAL;
+diff -Nuar a/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js b/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js
+--- a/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js
++++ b/vendor/magento/module-swatches/view/adminhtml/web/js/product-attributes.js
+@@ -16,7 +16,8 @@ define([
+     'use strict';
+
+     return function (optionConfig) {
+-        var swatchProductAttributes = {
++        var activePanelClass = 'selected-type-options',
++            swatchProductAttributes = {
+                 frontendInput: $('#frontend_input'),
+                 isFilterable: $('#is_filterable'),
+                 isFilterableInSearch: $('#is_filterable_in_search'),
+@@ -337,6 +338,7 @@ define([
+                  */
+                 _showPanel: function (el) {
+                     el.closest('.fieldset').show();
++                    el.addClass(activePanelClass);
+                     this._render(el.attr('id'));
+                 },
+
+@@ -346,6 +348,7 @@ define([
+                  */
+                 _hidePanel: function (el) {
+                     el.closest('.fieldset').hide();
++                    el.removeClass(activePanelClass);
+                 },
+
+                 /**
+@@ -413,7 +416,11 @@ define([
+             };
+
+         $(function () {
+-            var editForm = $('#edit_form');
++            var editForm = $('#edit_form'),
++                swatchVisualPanel = $('#swatch-visual-options-panel'),
++                swatchTextPanel = $('#swatch-text-options-panel'),
++                tableBody = $(),
++                activePanel = $();
+
+             $('#frontend_input').bind('change', function () {
+                 swatchProductAttributes.bindAttributeInputType();
+@@ -429,30 +436,35 @@ define([
+                 .collapsable()
+                 .collapse('hide');
+
+-            editForm.on('submit', function () {
+-                var activePanel,
+-                    swatchValues = [],
+-                    swatchVisualPanel = $('#swatch-visual-options-panel'),
+-                    swatchTextPanel = $('#swatch-text-options-panel');
++            editForm.on('beforeSubmit', function () {
++                var optionContainer, optionsValues;
+
+-                activePanel = swatchTextPanel.is(':visible') ? swatchTextPanel : swatchVisualPanel;
++                activePanel = swatchTextPanel.hasClass(activePanelClass) ? swatchTextPanel : swatchVisualPanel;
++                optionContainer = activePanel.find('table tbody');
+
+-                activePanel.find('table input')
+-                    .each(function () {
+-                        swatchValues.push(this.name + '=' + $(this).val());
+-                    });
++                if (activePanel.hasClass(activePanelClass)) {
++                    optionsValues = $.map(
++                        optionContainer.find('tr'),
++                        function (row) {
++                            return $(row).find('input, select, textarea').serialize();
++                        }
++                    );
++                    $('<input>')
++                        .attr({
++                            type: 'hidden',
++                            name: 'serialized_options'
++                        })
++                        .val(JSON.stringify(optionsValues))
++                        .prependTo(editForm);
++                }
+
+-                $('<input>').attr({
+-                        type: 'hidden',
+-                        name: 'serialized_swatch_values'
+-                    })
+-                    .val(JSON.stringify(swatchValues))
+-                    .prependTo(editForm);
+-
+-                [swatchVisualPanel, swatchTextPanel].forEach(function (el) {
+-                    $(el).find('table')
+-                        .replaceWith($('<div>').text($.mage.__('Sending swatch values as package.')));
+-                });
++                tableBody = optionContainer.detach();
++            });
++            editForm.on('afterValidate.error highlight.validate', function () {
++                if (activePanel.hasClass(activePanelClass)) {
++                    activePanel.find('table').append(tableBody);
++                    $('input[name="serialized_options"]').remove();
++                }
+             });
+         });
+
+diff -Nuar a/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php b/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php
+--- a/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php
++++ b/dev/tests/functional/tests/app/Magento/Catalog/Test/Handler/CatalogProductAttribute/Curl.php
+@@ -91,15 +91,18 @@ public function persist(FixtureInterface $fixture = null)
+         $data['frontend_label'] = [0 => $data['frontend_label']];
+
+         if (isset($data['options'])) {
++            $optionsData = [];
+             foreach ($data['options'] as $key => $values) {
++                $optionRowData = [];
+                 $index = 'option_' . $key;
+                 if ($values['is_default'] == 'Yes') {
+-                    $data['default'][] = $index;
++                    $optionRowData['default'][] = $index;
+                 }
+-                $data['option']['value'][$index] = [$values['admin'], $values['view']];
+-                $data['option']['order'][$index] = $key;
++                $optionRowData['option']['value'][$index] = [$values['admin'], $values['view']];
++                $optionRowData['option']['order'][$index] = $key;
++                $optionsData[] = $optionRowData;
+             }
+-            unset($data['options']);
++            $data['options'] = $optionsData;
+         }
+
+         $data = $this->changeStructureOfTheData($data);
+@@ -134,11 +137,39 @@ public function persist(FixtureInterface $fixture = null)
+     }
+
+     /**
++     * Additional data handling.
++     *
+      * @param array $data
+      * @return array
+      */
+-    protected function changeStructureOfTheData(array $data)
++    protected function changeStructureOfTheData(array $data): array
+     {
++        if (!isset($data['options'])) {
++            return $data;
++        }
++
++        $serializedOptions = $this->getSerializeOptions($data['options']);
++        if ($serializedOptions) {
++            $data['serialized_options'] = $serializedOptions;
++            unset($data['options']);
++        }
++
+         return $data;
+     }
++
++    /**
++     * Provides serialized product attribute options.
++     *
++     * @param array $data
++     * @return string
++     */
++    protected function getSerializeOptions(array $data): string
++    {
++        $options = [];
++        foreach ($data as $optionRowData) {
++            $options[] = http_build_query($optionRowData);
++        }
++
++        return json_encode($options);
++    }
+ }
+diff -Nuar a/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php b/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php
+--- a/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php
++++ b/dev/tests/functional/tests/app/Magento/Swatches/Test/Handler/SwatchProductAttribute/Curl.php
+@@ -29,21 +29,32 @@ public function __construct(DataInterface $configuration, EventManagerInterface
+         ];
+     }
+
++    /**
++     * @inheritdoc
++     */
++    protected function changeStructureOfTheData(array $data): array
++    {
++        return parent::changeStructureOfTheData($data);
++    }
++
+     /**
+      * Re-map options from default options structure to swatches structure,
+      * as swatches was initially created with name convention differ from other attributes.
+      *
+-     * @param array $data
+-     * @return array
++     * @inheritdoc
+      */
+-    protected function changeStructureOfTheData(array $data)
++    protected function getSerializeOptions(array $data): string
+     {
+-        $data = parent::changeStructureOfTheData($data);
+-        $data['optiontext'] = $data['option'];
+-        $data['swatchtext'] = [
+-            'value' => $data['option']['value']
+-        ];
+-        unset($data['option']);
+-        return $data;
++        $options = [];
++        foreach ($data as $optionRowData) {
++            $optionRowData['optiontext'] = $optionRowData['option'];
++            $optionRowData['swatchtext'] = [
++                'value' => $optionRowData['option']['value']
++            ];
++            unset($optionRowData['option']);
++            $options[] = http_build_query($optionRowData);
++        }
++
++        return json_encode($options);
+     }
+ }
+diff -Nuar a/vendor/magento/framework/Serialize/Serializer/FormData.php b/vendor/magento/framework/Serialize/Serializer/FormData.php
+--- /dev/null
++++ b/vendor/magento/framework/Serialize/Serializer/FormData.php
+@@ -0,0 +1,55 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\Framework\Serialize\Serializer;
++
++use Magento\Framework\Serialize\Serializer\Json;
++
++/**
++ * Class for processing of serialized form data.
++ */
++class FormData
++{
++    /**
++     * @var Json
++     */
++    private $serializer;
++
++    /**
++     * @param Json $serializer
++     */
++    public function __construct(Json $serializer)
++    {
++        $this->serializer = $serializer;
++    }
++
++    /**
++     * Provides form data from the serialized data.
++     *
++     * @param string $serializedData
++     * @return array
++     * @throws \InvalidArgumentException
++     */
++    public function unserialize(string $serializedData): array
++    {
++        $encodedFields = $this->serializer->unserialize($serializedData);
++
++        if (!is_array($encodedFields)) {
++            throw new \InvalidArgumentException('Unable to unserialize value.');
++        }
++
++        $formData = [];
++        foreach ($encodedFields as $item) {
++            $decodedFieldData = [];
++            parse_str($item, $decodedFieldData);
++            $formData = array_replace_recursive($formData, $decodedFieldData);
++        }
++
++        return $formData;
++    }
++}
+diff -Nuar a/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php b/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php
+--- /dev/null
++++ b/vendor/magento/framework/Serialize/Test/Unit/Serializer/FormDataTest.php
+@@ -0,0 +1,106 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++namespace Magento\Framework\Serialize\Test\Unit\Serializer;
++
++use Magento\Framework\Serialize\Serializer\FormData;
++use Magento\Framework\Serialize\Serializer\Json;
++use Psr\Log\InvalidArgumentException;
++
++/**
++ * Test for Magento\Framework\Serialize\Serializer\FormData class.
++ */
++class FormDataTest extends \PHPUnit\Framework\TestCase
++{
++    /**
++     * @var Json|\PHPUnit_Framework_MockObject_MockObject
++     */
++    private $jsonSerializerMock;
++
++    /**
++     * @var FormData
++     */
++    private $formDataSerializer;
++
++    /**
++     * @inheritdoc
++     */
++    protected function setUp()
++    {
++        $this->jsonSerializerMock = $this->createMock(Json::class);
++        $this->formDataSerializer = new FormData($this->jsonSerializerMock);
++    }
++
++    /**
++     * @param string $serializedData
++     * @param array $encodedFields
++     * @param array $expectedFormData
++     * @return void
++     * @dataProvider unserializeDataProvider
++     */
++    public function testUnserialize(string $serializedData, array $encodedFields, array $expectedFormData)
++    {
++        $this->jsonSerializerMock->expects($this->once())
++            ->method('unserialize')
++            ->with($serializedData)
++            ->willReturn($encodedFields);
++
++        $this->assertEquals($expectedFormData, $this->formDataSerializer->unserialize($serializedData));
++    }
++
++    /**
++     * @return array
++     */
++    public function unserializeDataProvider(): array
++    {
++        return [
++            [
++                'serializedData' =>
++                    '["option[order][option_0]=1","option[value][option_0]=1","option[delete][option_0]="]',
++                'encodedFields' => [
++                    'option[order][option_0]=1',
++                    'option[value][option_0]=1',
++                    'option[delete][option_0]=',
++                    ],
++                'expectedFormData' => [
++                    'option' => [
++                        'order' => [
++                            'option_0' => '1',
++                        ],
++                        'value' => [
++                            'option_0' => '1',
++                        ],
++                        'delete' => [
++                            'option_0' => '',
++                        ],
++                    ],
++                ],
++            ],
++            [
++                'serializedData' => '[]',
++                'encodedFields' => [],
++                'expectedFormData' => [],
++            ],
++        ];
++    }
++
++    /**
++     * @return void
++     * @expectedException InvalidArgumentException
++     * @expectedExceptionMessage Unable to unserialize value.
++     */
++    public function testUnserializeWithWrongSerializedData()
++    {
++        $serializedData = 'test';
++
++        $this->jsonSerializerMock->expects($this->once())
++            ->method('unserialize')
++            ->with($serializedData)
++            ->willReturn('test');
++
++        $this->formDataSerializer->unserialize($serializedData);
++    }
++}
+diff -Nuar a/lib/web/mage/backend/validation.js b/lib/web/mage/backend/validation.js
+--- a/lib/web/mage/backend/validation.js
++++ b/lib/web/mage/backend/validation.js
+@@ -171,6 +171,7 @@
+                 this._submit();
+             } else {
+                 this._showErrors(response);
++                $(this.element[0]).trigger('afterValidate.error');
+                 $('body').trigger('processStop');
+             }
+         },
