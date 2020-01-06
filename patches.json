@@ -185,7 +185,7 @@
       "2.3.3": "MAGECLOUD-4442__fix_backward_compatibility_of_new_mail_interfaces__2.3.3.patch"
     },
     "Catalog Product pagination does not work on Elasticsearch 6.x": {
-      "2.3.3": "MC-21696__fix_broken_pagination_on_ES6__2.3.3.patch"
+      "2.3.3": "MAGECLOUD-4847__elasticsearch_and_products_display_fix__2.3.3.patch"
     },
     "Catalog Product collection method chaining is broken": {
       "2.3.3": "MC-21820__fix_broken_method_chaining__2.3.3.patch"
@@ -205,8 +205,37 @@
     "Fix pagebuilder module": {
       "2.3.1": "PB-319__fix_pagebuilder_module__2.3.1.patch",
       "2.3.2": "PB-320__fix_pagebuilder_module__2.3.2.patch",
-      ">=2.3.2-p1 <=2.3.2-p2": "PB-322__fix_pagebuilder_module__2.3.2-p1.patch",
+      ">=2.3.2-p1 <2.3.3": "PB-322__fix_pagebuilder_module__2.3.2-p1.patch",
       "2.3.3": "PB-323__fix_pagebuilder_module__2.3.3.patch"
+    },
+    "Fix XSS in order history": {
+      "2.2.0 - 2.2.6": "PRODSECBUG-2233__fix_xss_in_order_history__2.2.0.patch",
+      "2.2.7 - 2.2.8": "PRODSECBUG-2233__fix_xss_in_order_history__2.2.7.patch",
+      "2.3.0 - 2.3.1": "PRODSECBUG-2233__fix_xss_in_order_history__2.3.0.patch"
+    },
+    "Pass Store View scope in the Async/Bulk Web API": {
+      "2.3.1": "MAGETWO-99902__pass_store_view_scope_in_async_web_api__2.3.1.patch",
+      ">=2.3.2 <2.3.3": "MAGETWO-99902__pass_store_view_scope_in_async_web_api__2.3.2.patch"
+    },
+    "Admin path disclosure bug": {
+      "2.1.4 - 2.1.17": "PRODSECBUG-2432__admin_path_disclosure_bug__2.1.4.patch",
+      "2.2.0 - 2.2.8": "PRODSECBUG-2432__admin_path_disclosure_bug__2.2.0.patch",
+      "2.3.0 - 2.3.1": "PRODSECBUG-2432__admin_path_disclosure_bug__2.3.0.patch"
+    },
+    "Transaction MD5 hash field is removed by Authorize.net": {
+      "2.2.0 - 2.2.7": "MAGETWO-98129__transaction_field_is_removed_by_authorize_net__2.2.0.patch"
+    },
+    "Customer attributes issue": {
+      "2.2.6": "MAGETWO-95591__customer_attributes_issue__2.2.6.patch"
+    },
+    "Optimize retrieving product attributes": {
+      "2.2.5": "MAGETWO-93083__optimize_retrieving_product_attributes__2.2.5.patch"
+    },
+    "Cannot change the applied theme": {
+      "2.2.5": "MAGETWO-93036__cannot_change_the_applied_theme__2.2.5.patch"
+    },
+    "Fix for multi-site configuration issue": {
+      "2.2.4": "MAGETWO-92926__fix_for_multi-site_configuration_issue__2.2.4.patch"
     }
   },
   "monolog/monolog": {
