@@ -1,0 +1,779 @@
+diff -Nuar a/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php b/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php
+--- a/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php
++++ b/vendor/magento/module-catalog/Model/Indexer/Category/Flat/Action/Full.php
+@@ -79,6 +79,7 @@ class Full extends \Magento\Catalog\Model\Indexer\Category\Flat\AbstractAction
+                     }
+                     $category['store_id'] = $store->getId();
+                     $data[] = $this->prepareValuesToInsert(
++                        // phpcs:ignore Magento2.Performance.ForeachArrayMerge
+                         array_merge($category, $attributesData[$category[$linkField]])
+                     );
+                 }
+@@ -183,7 +184,7 @@ class Full extends \Magento\Catalog\Model\Indexer\Category\Flat\AbstractAction
+         foreach ($this->storeManager->getStores() as $store) {
+             $actualStoreTables[] = sprintf(
+                 '%s_store_%s',
+-                $this->connection->getTableName('catalog_category_flat'),
++                $this->connection->getTableName($this->getTableName('catalog_category_flat')),
+                 $store->getId()
+             );
+         }
+@@ -199,7 +200,7 @@ class Full extends \Magento\Catalog\Model\Indexer\Category\Flat\AbstractAction
+     private function deleteAbandonedStoreCategoryFlatTables(): void
+     {
+         $existentTables = $this->connection->getTables(
+-            $this->connection->getTableName('catalog_category_flat_store_%')
++            $this->connection->getTableName($this->getTableName('catalog_category_flat_store_%'))
+         );
+         $actualStoreTables = $this->getActualStoreTablesForCategoryFlat();
+ 
+diff -Nuar a/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php b/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php
+--- a/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php
++++ b/vendor/magento/module-catalog/Model/Indexer/Product/Flat/AbstractAction.php
+@@ -222,7 +222,7 @@ abstract class AbstractAction
+                     ['t' => $this->_productIndexerHelper->getTable($relation->getTable())],
+                     ['entity_table.entity_id', $relation->getChildFieldName(), new \Zend_Db_Expr('1')]
+                 )->join(
+-                    ['entity_table' => $this->_connection->getTableName('catalog_product_entity')],
++                    ['entity_table' => $this->_productIndexerHelper->getTable('catalog_product_entity')],
+                     "entity_table.{$metadata->getLinkField()} = t.{$relation->getParentFieldName()}",
+                     []
+                 )->join(
+diff -Nuar a/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php b/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php
+--- a/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php
++++ b/vendor/magento/module-catalog-search/Model/ResourceModel/Advanced/Collection.php
+@@ -394,7 +394,8 @@ class Collection extends \Magento\Catalog\Model\ResourceModel\Product\Collection
+             'collection' => $this,
+             'searchResult' => $searchResult,
+             /** This variable sets by serOrder method, but doesn't have a getter method. */
+-            'orders' => $this->_orders
++            'orders' => $this->_orders,
++            'size' => $this->getPageSize(),
+             ]
+         );
+     }
+diff -Nuar a/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php b/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php
+--- a/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php
++++ b/vendor/magento/module-catalog-search/Model/ResourceModel/Fulltext/Collection.php
+@@ -486,12 +486,12 @@ class Collection extends \Magento\Catalog\Model\ResourceModel\Product\Collection
+     {
+         return $this->searchCriteriaResolverFactory->create(
+             [
+-            'builder' => $this->getSearchCriteriaBuilder(),
+-            'collection' => $this,
+-            'searchRequestName' => $this->searchRequestName,
+-            'currentPage' => $this->_curPage,
+-            'size' => $this->getPageSize(),
+-            'orders' => $this->searchOrders,
++                'builder' => $this->getSearchCriteriaBuilder(),
++                'collection' => $this,
++                'searchRequestName' => $this->searchRequestName,
++                'currentPage' => (int)$this->_curPage,
++                'size' => $this->getPageSize(),
++                'orders' => $this->searchOrders,
+             ]
+         );
+     }
+@@ -506,10 +506,12 @@ class Collection extends \Magento\Catalog\Model\ResourceModel\Product\Collection
+     {
+         return $this->searchResultApplierFactory->create(
+             [
+-            'collection' => $this,
+-            'searchResult' => $searchResult,
+-            /** This variable sets by serOrder method, but doesn't have a getter method. */
+-            'orders' => $this->_orders,
++                'collection' => $this,
++                'searchResult' => $searchResult,
++                /** This variable sets by serOrder method, but doesn't have a getter method. */
++                'orders' => $this->_orders,
++                'size' => $this->getPageSize(),
++                'currentPage' => (int)$this->_curPage,
+             ]
+         );
+     }
+diff -Nuar a/vendor/magento/module-checkout/etc/frontend/sections.xml b/vendor/magento/module-checkout/etc/frontend/sections.xml
+--- a/vendor/magento/module-checkout/etc/frontend/sections.xml
++++ b/vendor/magento/module-checkout/etc/frontend/sections.xml
+@@ -41,7 +41,6 @@
+     </action>
+     <action name="rest/*/V1/carts/*/payment-information">
+         <section name="cart"/>
+-        <section name="checkout-data"/>
+         <section name="last-ordered-items"/>
+     </action>
+     <action name="rest/*/V1/guest-carts/*/payment-information">
+diff -Nuar a/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php b/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php
+--- a/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php
++++ b/vendor/magento/module-downloadable-graph-ql/Model/ResourceModel/GetPurchasedDownloadableProducts.php
+@@ -41,13 +41,13 @@ class GetPurchasedDownloadableProducts
+     {
+         $connection = $this->resourceConnection->getConnection();
+         $allowedItemsStatuses = [Item::LINK_STATUS_PENDING_PAYMENT, Item::LINK_STATUS_PAYMENT_REVIEW];
+-        $downloadablePurchasedTable = $connection->getTableName('downloadable_link_purchased');
++        $downloadablePurchasedTable = $this->resourceConnection->getTableName('downloadable_link_purchased');
+ 
+         /* The fields names are hardcoded since there's no existing name reference in the code */
+         $selectQuery = $connection->select()
+             ->from($downloadablePurchasedTable)
+             ->joinLeft(
+-                ['item' => $connection->getTableName('downloadable_link_purchased_item')],
++                ['item' => $this->resourceConnection->getTableName('downloadable_link_purchased_item')],
+                 "$downloadablePurchasedTable.purchased_id = item.purchased_id"
+             )
+             ->where("$downloadablePurchasedTable.customer_id = ?", $customerId)
+diff -Nuar a/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php b/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
+--- a/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
++++ b/vendor/magento/module-eav/Block/Adminhtml/Attribute/Edit/Options/Options.php
+@@ -4,16 +4,14 @@
+  * See COPYING.txt for license details.
+  */
+ 
+-/**
+- * Attribute add/edit form options tab
+- *
+- * @author     Magento Core Team <core@magentocommerce.com>
+- */
+ namespace Magento\Eav\Block\Adminhtml\Attribute\Edit\Options;
+ 
+ use Magento\Store\Model\ResourceModel\Store\Collection;
++use Magento\Eav\Model\Entity\Attribute\AbstractAttribute;
+ 
+ /**
++ * Attribute add/edit form options tab
++ *
+  * @api
+  * @since 100.0.2
+  */
+@@ -61,6 +59,7 @@ class Options extends \Magento\Backend\Block\Template
+ 
+     /**
+      * Is true only for system attributes which use source model
++     *
+      * Option labels and position for such attributes are kept in source model and thus cannot be overridden
+      *
+      * @return bool
+@@ -96,12 +95,16 @@ class Options extends \Magento\Backend\Block\Template
+     {
+         $stores = $this->getStores();
+         if (is_array($stores)) {
+-            usort($stores, function ($storeA, $storeB) {
+-                if ($storeA->getSortOrder() == $storeB->getSortOrder()) {
+-                    return $storeA->getId() < $storeB->getId() ? -1 : 1;
++            usort(
++                $stores,
++                function ($storeA, $storeB) {
++                    if ($storeA->getSortOrder() == $storeB->getSortOrder()) {
++                        return $storeA->getId() < $storeB->getId() ? -1 : 1;
++                    }
++
++                    return ($storeA->getSortOrder() < $storeB->getSortOrder()) ? -1 : 1;
+                 }
+-                return ($storeA->getSortOrder() < $storeB->getSortOrder()) ? -1 : 1;
+-            });
++            );
+         }
+         return $stores;
+     }
+@@ -130,12 +133,14 @@ class Options extends \Magento\Backend\Block\Template
+     }
+ 
+     /**
+-     * @param \Magento\Eav\Model\Entity\Attribute\AbstractAttribute $attribute
++     * Preparing values of attribute options
++     *
++     * @param AbstractAttribute $attribute
+      * @param array|\Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection $optionCollection
+      * @return array
+      */
+     protected function _prepareOptionValues(
+-        \Magento\Eav\Model\Entity\Attribute\AbstractAttribute $attribute,
++        AbstractAttribute $attribute,
+         $optionCollection
+     ) {
+         $type = $attribute->getFrontendInput();
+@@ -149,6 +154,41 @@ class Options extends \Magento\Backend\Block\Template
+ 
+         $values = [];
+         $isSystemAttribute = is_array($optionCollection);
++        if ($isSystemAttribute) {
++            $values = $this->getPreparedValues($optionCollection, $isSystemAttribute, $inputType, $defaultValues);
++        } else {
++            $optionCollection->setPageSize(200);
++            $pageCount = $optionCollection->getLastPageNumber();
++            $currentPage = 1;
++            while ($currentPage <= $pageCount) {
++                $optionCollection->clear();
++                $optionCollection->setCurPage($currentPage);
++                $values = array_merge(
++                    $values,
++                    $this->getPreparedValues($optionCollection, $isSystemAttribute, $inputType, $defaultValues)
++                );
++                $currentPage++;
++            }
++        }
++
++        return $values;
++    }
++
++    /**
++     * Return prepared values of system or user defined attribute options
++     *
++     * @param array|\Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection $optionCollection
++     * @param bool $isSystemAttribute
++     * @param string $inputType
++     * @param array $defaultValues
++     */
++    private function getPreparedValues(
++        $optionCollection,
++        bool $isSystemAttribute,
++        string $inputType,
++        array $defaultValues
++    ) {
++        $values = [];
+         foreach ($optionCollection as $option) {
+             $bunch = $isSystemAttribute ? $this->_prepareSystemAttributeOptionValues(
+                 $option,
+@@ -169,12 +209,13 @@ class Options extends \Magento\Backend\Block\Template
+ 
+     /**
+      * Retrieve option values collection
++     *
+      * It is represented by an array in case of system attribute
+      *
+-     * @param \Magento\Eav\Model\Entity\Attribute\AbstractAttribute $attribute
++     * @param AbstractAttribute $attribute
+      * @return array|\Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection
+      */
+-    protected function _getOptionValuesCollection(\Magento\Eav\Model\Entity\Attribute\AbstractAttribute $attribute)
++    protected function _getOptionValuesCollection(AbstractAttribute $attribute)
+     {
+         if ($this->canManageOptionDefaultOnly()) {
+             $options = $this->_universalFactory->create(
+@@ -226,7 +267,7 @@ class Options extends \Magento\Backend\Block\Template
+         foreach ($this->getStores() as $store) {
+             $storeId = $store->getId();
+             $value['store' . $storeId] = $storeId ==
+-                \Magento\Store\Model\Store::DEFAULT_STORE_ID ? $valuePrefix . $this->escapeHtml($option['label']) : '';
++            \Magento\Store\Model\Store::DEFAULT_STORE_ID ? $valuePrefix . $this->escapeHtml($option['label']) : '';
+         }
+ 
+         return [$value];
+diff -Nuar a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php
+--- a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php
++++ b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute.php
+@@ -477,6 +477,7 @@ class Attribute extends AbstractDb
+         if (!empty($option['delete'][$optionId])) {
+             if ($intOptionId) {
+                 $connection->delete($table, ['option_id = ?' => $intOptionId]);
++                $this->clearSelectedOptionInEntities($object, $intOptionId);
+             }
+             return false;
+         }
+@@ -495,6 +496,41 @@ class Attribute extends AbstractDb
+         return $intOptionId;
+     }
+ 
++    /**
++     * Clear selected option in entities
++     *
++     * @param EntityAttribute|AbstractModel $object
++     * @param int $optionId
++     * @return void
++     */
++    private function clearSelectedOptionInEntities(AbstractModel $object, int $optionId)
++    {
++        $backendTable = $object->getBackendTable();
++        $attributeId = $object->getAttributeId();
++        if (!$backendTable || !$attributeId) {
++            return;
++        }
++
++        $connection = $this->getConnection();
++        $where = $connection->quoteInto('attribute_id = ?', $attributeId);
++        $update = [];
++
++        if ($object->getBackendType() === 'varchar') {
++            $where.= ' AND ' . $connection->prepareSqlCondition('value', ['finset' => $optionId]);
++            $concat = $connection->getConcatSql(["','", 'value', "','"]);
++            $expr = $connection->quoteInto(
++                "TRIM(BOTH ',' FROM REPLACE($concat,',?,',','))",
++                $optionId
++            );
++            $update['value'] = new \Zend_Db_Expr($expr);
++        } else {
++            $where.= $connection->quoteInto(' AND value = ?', $optionId);
++            $update['value'] = null;
++        }
++
++        $connection->update($backendTable, $update, $where);
++    }
++
+     /**
+      * Save option values records per store
+      *
+diff -Nuar a/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php b/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
+--- a/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
++++ b/vendor/magento/module-elasticsearch/Elasticsearch5/Model/Client/Elasticsearch.php
+@@ -278,7 +278,7 @@ class Elasticsearch implements ClientInterface
+                                 'match_mapping_type' => 'string',
+                                 'mapping' => [
+                                     'type' => 'integer',
+-                                    'index' => false,
++                                    'index' => true,
+                                 ],
+                             ],
+                         ],
+@@ -289,7 +289,7 @@ class Elasticsearch implements ClientInterface
+                                 'mapping' => $this->prepareFieldInfo(
+                                     [
+                                         'type' => 'text',
+-                                        'index' => false,
++                                        'index' => true,
+                                     ]
+                                 ),
+                             ],
+diff -Nuar a/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php b/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
+--- a/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
++++ b/vendor/magento/module-elasticsearch/Model/Adapter/FieldMapper/Product/FieldProvider/StaticField.php
+@@ -62,6 +62,11 @@ class StaticField implements FieldProviderInterface
+      */
+     private $fieldNameResolver;
+ 
++    /**
++     * @var array
++     */
++    private $excludedAttributes;
++
+     /**
+      * @param Config $eavConfig
+      * @param FieldTypeConverterInterface $fieldTypeConverter
+@@ -70,6 +75,7 @@ class StaticField implements FieldProviderInterface
+      * @param FieldIndexResolver $fieldIndexResolver
+      * @param AttributeProvider $attributeAdapterProvider
+      * @param FieldName\ResolverInterface|null $fieldNameResolver
++     * @param array $excludedAttributes
+      */
+     public function __construct(
+         Config $eavConfig,
+@@ -78,7 +84,8 @@ class StaticField implements FieldProviderInterface
+         FieldTypeResolver $fieldTypeResolver,
+         FieldIndexResolver $fieldIndexResolver,
+         AttributeProvider $attributeAdapterProvider,
+-        FieldName\ResolverInterface $fieldNameResolver = null
++        FieldName\ResolverInterface $fieldNameResolver = null,
++        array $excludedAttributes = []
+     ) {
+         $this->eavConfig = $eavConfig;
+         $this->fieldTypeConverter = $fieldTypeConverter;
+@@ -88,6 +95,7 @@ class StaticField implements FieldProviderInterface
+         $this->attributeAdapterProvider = $attributeAdapterProvider;
+         $this->fieldNameResolver = $fieldNameResolver ?: ObjectManager::getInstance()
+             ->get(FieldName\ResolverInterface::class);
++        $this->excludedAttributes = $excludedAttributes;
+     }
+ 
+     /**
+@@ -103,6 +111,9 @@ class StaticField implements FieldProviderInterface
+         $allAttributes = [];
+ 
+         foreach ($attributes as $attribute) {
++            if (in_array($attribute->getAttributeCode(), $this->excludedAttributes, true)) {
++                continue;
++            }
+             $attributeAdapter = $this->attributeAdapterProvider->getByAttributeCode($attribute->getAttributeCode());
+             $fieldName = $this->fieldNameResolver->getFieldName($attributeAdapter);
+ 
+diff -Nuar a/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php b/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php
+--- a/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php
++++ b/vendor/magento/module-elasticsearch/Model/Client/Elasticsearch.php
+@@ -271,7 +271,7 @@ class Elasticsearch implements ClientInterface
+                                 'match_mapping' => 'string',
+                                 'mapping' => [
+                                     'type' => 'integer',
+-                                    'index' => 'no'
++                                    'index' => 'not_analyzed',
+                                 ],
+                             ],
+                         ],
+@@ -281,7 +281,7 @@ class Elasticsearch implements ClientInterface
+                                 'match_mapping' => 'string',
+                                 'mapping' => [
+                                     'type' => 'string',
+-                                    'index' => 'no'
++                                    'index' => 'not_analyzed',
+                                 ],
+                             ],
+                         ]
+diff -Nuar a/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php b/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
+--- a/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
++++ b/vendor/magento/module-elasticsearch/Model/ResourceModel/Fulltext/Collection/SearchResultApplier.php
+@@ -25,16 +25,32 @@ class SearchResultApplier implements SearchResultApplierInterface
+      */
+     private $searchResult;
+ 
++    /**
++     * @var int
++     */
++    private $size;
++
++    /**
++     * @var int
++     */
++    private $currentPage;
++
+     /**
+      * @param Collection $collection
+      * @param SearchResultInterface $searchResult
++     * @param int $size
++     * @param int $currentPage
+      */
+     public function __construct(
+         Collection $collection,
+-        SearchResultInterface $searchResult
++        SearchResultInterface $searchResult,
++        int $size,
++        int $currentPage
+     ) {
+         $this->collection = $collection;
+         $this->searchResult = $searchResult;
++        $this->size = $size;
++        $this->currentPage = $currentPage;
+     }
+ 
+     /**
+@@ -44,10 +60,13 @@ class SearchResultApplier implements SearchResultApplierInterface
+     {
+         if (empty($this->searchResult->getItems())) {
+             $this->collection->getSelect()->where('NULL');
++
+             return;
+         }
++
++        $items = $this->sliceItems($this->searchResult->getItems(), $this->size, $this->currentPage);
+         $ids = [];
+-        foreach ($this->searchResult->getItems() as $item) {
++        foreach ($items as $item) {
+             $ids[] = (int)$item->getId();
+         }
+         $this->collection->getSelect()->where('e.entity_id IN (?)', $ids);
+@@ -55,4 +74,45 @@ class SearchResultApplier implements SearchResultApplierInterface
+         $this->collection->getSelect()->reset(\Magento\Framework\DB\Select::ORDER);
+         $this->collection->getSelect()->order("FIELD(e.entity_id,$orderList)");
+     }
++
++    /**
++     * Slice current items
++     *
++     * @param array $items
++     * @param int $size
++     * @param int $currentPage
++     * @return array
++     */
++    private function sliceItems(array $items, int $size, int $currentPage): array
++    {
++        if ($size !== 0) {
++            // Check that current page is in a range of allowed page numbers, based on items count and items per page,
++            // than calculate offset for slicing items array.
++            $itemsCount = count($items);
++            $maxAllowedPageNumber = ceil($itemsCount/$size);
++            if ($currentPage < 1) {
++                $currentPage = 1;
++            }
++            if ($currentPage > $maxAllowedPageNumber) {
++                $currentPage = $maxAllowedPageNumber;
++            }
++
++            $offset = $this->getOffset($currentPage, $size);
++            $items = array_slice($items, $offset, $size);
++        }
++
++        return $items;
++    }
++
++    /**
++     * Get offset for given page.
++     *
++     * @param int $pageNumber
++     * @param int $pageSize
++     * @return int
++     */
++    private function getOffset(int $pageNumber, int $pageSize): int
++    {
++        return ($pageNumber - 1) * $pageSize;
++    }
+ }
+diff -Nuar a/vendor/magento/module-elasticsearch/etc/di.xml b/vendor/magento/module-elasticsearch/etc/di.xml
+--- a/vendor/magento/module-elasticsearch/etc/di.xml
++++ b/vendor/magento/module-elasticsearch/etc/di.xml
+@@ -558,4 +558,11 @@
+             </argument>
+         </arguments>
+     </type>
++    <type name="Magento\Elasticsearch\Model\Adapter\FieldMapper\Product\FieldProvider\StaticField">
++        <arguments>
++            <argument name="excludedAttributes" xsi:type="array">
++                <item name="price" xsi:type="string">price</item>
++            </argument>
++        </arguments>
++    </type>
+ </config>
+diff -Nuar a/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php b/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php
+--- a/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php
++++ b/vendor/magento/module-elasticsearch-6/Model/Client/Elasticsearch.php
+@@ -271,7 +271,7 @@ class Elasticsearch implements ClientInterface
+                                 'match_mapping_type' => 'string',
+                                 'mapping' => [
+                                     'type' => 'integer',
+-                                    'index' => false,
++                                    'index' => true,
+                                 ],
+                             ],
+                         ],
+@@ -281,7 +281,7 @@ class Elasticsearch implements ClientInterface
+                                 'match_mapping_type' => 'string',
+                                 'mapping' => [
+                                     'type' => 'text',
+-                                    'index' => false,
++                                    'index' => true,
+                                     'copy_to' => '_search'
+                                 ],
+                             ],
+diff -Nuar a/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php b/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
+--- a/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
++++ b/vendor/magento/module-sales-rule/Controller/Adminhtml/Promo/Quote/NewActionHtml.php
+@@ -1,12 +1,19 @@
+ <?php
+ /**
+- *
+  * Copyright © Magento, Inc. All rights reserved.
+  * See COPYING.txt for license details.
+  */
+ namespace Magento\SalesRule\Controller\Adminhtml\Promo\Quote;
+ 
+-class NewActionHtml extends \Magento\SalesRule\Controller\Adminhtml\Promo\Quote
++use Magento\Framework\App\Action\HttpPostActionInterface;
++use Magento\Rule\Model\Condition\AbstractCondition;
++use Magento\SalesRule\Controller\Adminhtml\Promo\Quote;
++use Magento\SalesRule\Model\Rule;
++
++/**
++ * New action html action
++ */
++class NewActionHtml extends Quote implements HttpPostActionInterface
+ {
+     /**
+      * New action html action
+@@ -15,8 +22,10 @@ class NewActionHtml extends \Magento\SalesRule\Controller\Adminhtml\Promo\Quote
+      */
+     public function execute()
+     {
+-        $id = $this->getRequest()->getParam('id');
+-        $formName = $this->getRequest()->getParam('form');
++        $id = $this->getRequest()
++            ->getParam('id');
++        $formName = $this->getRequest()
++            ->getParam('form_namespace');
+         $typeArr = explode('|', str_replace('-', '/', $this->getRequest()->getParam('type')));
+         $type = $typeArr[0];
+ 
+@@ -27,7 +36,7 @@ class NewActionHtml extends \Magento\SalesRule\Controller\Adminhtml\Promo\Quote
+         )->setType(
+             $type
+         )->setRule(
+-            $this->_objectManager->create(\Magento\SalesRule\Model\Rule::class)
++            $this->_objectManager->create(Rule::class)
+         )->setPrefix(
+             'actions'
+         );
+@@ -35,12 +44,14 @@ class NewActionHtml extends \Magento\SalesRule\Controller\Adminhtml\Promo\Quote
+             $model->setAttribute($typeArr[1]);
+         }
+ 
+-        if ($model instanceof \Magento\Rule\Model\Condition\AbstractCondition) {
++        if ($model instanceof AbstractCondition) {
+             $model->setJsFormObject($formName);
++            $model->setFormName($formName);
+             $html = $model->asHtmlRecursive();
+         } else {
+             $html = '';
+         }
+-        $this->getResponse()->setBody($html);
++        $this->getResponse()
++            ->setBody($html);
+     }
+ }
+diff -Nuar a/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js b/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js
+--- a/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js
++++ b/vendor/magento/module-swatches/view/frontend/web/js/swatch-renderer.js
+@@ -754,7 +754,7 @@ define([
+                     $widget.options.jsonConfig.optionPrices
+                 ]);
+ 
+-            if (checkAdditionalData['update_product_preview_image'] === '1') {
++            if (parseInt(checkAdditionalData['update_product_preview_image'], 10) === 1) {
+                 $widget._loadMedia();
+             }
+ 
+diff -Nuar a/vendor/magento/framework/Session/SaveHandler.php b/vendor/magento/framework/Session/SaveHandler.php
+--- a/vendor/magento/framework/Session/SaveHandler.php
++++ b/vendor/magento/framework/Session/SaveHandler.php
+@@ -6,7 +6,7 @@
+ namespace Magento\Framework\Session;
+ 
+ use Magento\Framework\Session\Config\ConfigInterface;
+-use \Magento\Framework\Exception\SessionException;
++use Magento\Framework\Exception\SessionException;
+ 
+ /**
+  * Magento session save handler
+@@ -21,8 +21,21 @@ class SaveHandler implements SaveHandlerInterface
+     protected $saveHandlerAdapter;
+ 
+     /**
+-     * Constructor
+-     *
++     * @var SaveHandlerFactory
++     */
++    private $saveHandlerFactory;
++
++    /**
++     * @var ConfigInterface
++     */
++    private $sessionConfig;
++
++    /**
++     * @var string
++     */
++    private $defaultHandler;
++
++    /**
+      * @param SaveHandlerFactory $saveHandlerFactory
+      * @param ConfigInterface $sessionConfig
+      * @param string $default
+@@ -32,19 +45,9 @@ class SaveHandler implements SaveHandlerInterface
+         ConfigInterface $sessionConfig,
+         $default = self::DEFAULT_HANDLER
+     ) {
+-        /**
+-         * Session handler
+-         *
+-         * Save handler may be set to custom value in deployment config, which will override everything else.
+-         * Otherwise, try to read PHP settings for session.save_handler value. Otherwise, use 'files' as default.
+-         */
+-        $saveMethod = $sessionConfig->getOption('session.save_handler') ?: $default;
+-
+-        try {
+-            $this->saveHandlerAdapter = $saveHandlerFactory->create($saveMethod);
+-        } catch (SessionException $e) {
+-            $this->saveHandlerAdapter = $saveHandlerFactory->create($default);
+-        }
++        $this->saveHandlerFactory = $saveHandlerFactory;
++        $this->sessionConfig = $sessionConfig;
++        $this->defaultHandler = $default;
+     }
+ 
+     /**
+@@ -56,7 +59,7 @@ class SaveHandler implements SaveHandlerInterface
+      */
+     public function open($savePath, $name)
+     {
+-        return $this->saveHandlerAdapter->open($savePath, $name);
++        return $this->callSafely('open', $savePath, $name);
+     }
+ 
+     /**
+@@ -66,7 +69,7 @@ class SaveHandler implements SaveHandlerInterface
+      */
+     public function close()
+     {
+-        return $this->saveHandlerAdapter->close();
++        return $this->callSafely('close');
+     }
+ 
+     /**
+@@ -77,7 +80,7 @@ class SaveHandler implements SaveHandlerInterface
+      */
+     public function read($sessionId)
+     {
+-        return $this->saveHandlerAdapter->read($sessionId);
++        return $this->callSafely('read', $sessionId);
+     }
+ 
+     /**
+@@ -89,7 +92,7 @@ class SaveHandler implements SaveHandlerInterface
+      */
+     public function write($sessionId, $data)
+     {
+-        return $this->saveHandlerAdapter->write($sessionId, $data);
++        return $this->callSafely('write', $sessionId, $data);
+     }
+ 
+     /**
+@@ -100,12 +103,11 @@ class SaveHandler implements SaveHandlerInterface
+      */
+     public function destroy($sessionId)
+     {
+-        return $this->saveHandlerAdapter->destroy($sessionId);
++        return $this->callSafely('destroy', $sessionId);
+     }
+ 
+     /**
+-     * Garbage Collection - remove old session data older
+-     * than $maxLifetime (in seconds)
++     * Garbage Collection - remove old session data older than $maxLifetime (in seconds)
+      *
+      * @param int $maxLifetime
+      * @return bool
+@@ -113,6 +115,30 @@ class SaveHandler implements SaveHandlerInterface
+      */
+     public function gc($maxLifetime)
+     {
+-        return $this->saveHandlerAdapter->gc($maxLifetime);
++        return $this->callSafely('gc', $maxLifetime);
++    }
++
++    /**
++     * Call save handler adapter method.
++     *
++     * In case custom handler failed, default files handler is used.
++     *
++     * @param string $method
++     * @param mixed $arguments
++     *
++     * @return mixed
++     */
++    private function callSafely(string $method, ...$arguments)
++    {
++        try {
++            if ($this->saveHandlerAdapter === null) {
++                $saveMethod = $this->sessionConfig->getOption('session.save_handler') ?: $this->defaultHandler;
++                $this->saveHandlerAdapter = $this->saveHandlerFactory->create($saveMethod);
++            }
++            return $this->saveHandlerAdapter->{$method}(...$arguments);
++        } catch (SessionException $exception) {
++            $this->saveHandlerAdapter = $this->saveHandlerFactory->create($this->defaultHandler);
++            return $this->saveHandlerAdapter->{$method}(...$arguments);
++        }
+     }
+ }
+diff -Nuar a/vendor/magento/framework/Session/SaveHandler/Redis.php b/vendor/magento/framework/Session/SaveHandler/Redis.php
+--- a/vendor/magento/framework/Session/SaveHandler/Redis.php
++++ b/vendor/magento/framework/Session/SaveHandler/Redis.php
+@@ -14,6 +14,9 @@ use Magento\Framework\Phrase;
+ use Magento\Framework\Filesystem;
+ use Magento\Framework\App\Filesystem\DirectoryList;
+ 
++/**
++ * Redis session save handler
++ */
+ class Redis implements \SessionHandlerInterface
+ {
+     /**
+@@ -40,7 +43,6 @@ class Redis implements \SessionHandlerInterface
+      * @param ConfigInterface $config
+      * @param LoggerInterface $logger
+      * @param Filesystem $filesystem
+-     * @throws SessionException
+      */
+     public function __construct(ConfigInterface $config, LoggerInterface $logger, Filesystem $filesystem)
+     {

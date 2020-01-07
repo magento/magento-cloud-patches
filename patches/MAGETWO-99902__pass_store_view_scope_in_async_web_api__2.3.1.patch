@@ -1,0 +1,542 @@
+diff -Nuar a/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php b/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php
+--- /dev/null
++++ b/vendor/magento/module-amqp/Plugin/AsynchronousOperations/MassConsumerEnvelopeCallback.php
+@@ -0,0 +1,102 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\Amqp\Plugin\AsynchronousOperations;
++
++use Magento\Framework\Exception\NoSuchEntityException;
++use Magento\Store\Model\StoreManagerInterface;
++use Magento\Framework\MessageQueue\EnvelopeFactory;
++use PhpAmqpLib\Wire\AMQPTable;
++use Magento\Framework\MessageQueue\EnvelopeInterface;
++use Magento\AsynchronousOperations\Model\MassConsumerEnvelopeCallback as SubjectMassConsumerEnvelopeCallback;
++use Psr\Log\LoggerInterface;
++
++/**
++ * Plugin to get 'store_id' from the new custom header 'store_id' in amqp
++ * 'application_headers' properties and setCurrentStore by value 'store_id'.
++ */
++class MassConsumerEnvelopeCallback
++{
++    /**
++     * @var StoreManagerInterface
++     */
++    private $storeManager;
++
++    /**
++     * @var EnvelopeFactory
++     */
++    private $envelopeFactory;
++
++    /**
++     * @var LoggerInterface
++     */
++    private $logger;
++
++    /**
++     * @param EnvelopeFactory $envelopeFactory
++     * @param StoreManagerInterface $storeManager
++     * @param LoggerInterface $logger
++     */
++    public function __construct(
++        EnvelopeFactory $envelopeFactory,
++        StoreManagerInterface $storeManager,
++        LoggerInterface $logger
++    ) {
++        $this->storeManager = $storeManager;
++        $this->envelopeFactory = $envelopeFactory;
++        $this->logger = $logger;
++    }
++
++    /**
++     * Check if amqpProperties['application_headers'] have 'store_id' and use it to setCurrentStore
++     * Restore original store value in consumer process after execution.
++     * Reject queue messages because of wrong store_id.
++     *
++     * @param SubjectMassConsumerEnvelopeCallback $subject
++     * @param callable $proceed
++     * @param EnvelopeInterface $message
++     * @return void
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    public function aroundExecute(
++        SubjectMassConsumerEnvelopeCallback $subject,
++        callable $proceed,
++        EnvelopeInterface $message
++    ): void {
++        $amqpProperties = $message->getProperties();
++        if (isset($amqpProperties['application_headers'])) {
++            $headers = $amqpProperties['application_headers'];
++            if ($headers instanceof AMQPTable) {
++                $headers = $headers->getNativeData();
++            }
++            if (isset($headers['store_id'])) {
++                $storeId = $headers['store_id'];
++                try {
++                    $currentStoreId = $this->storeManager->getStore()->getId();
++                } catch (NoSuchEntityException $e) {
++                    $this->logger->error(
++                        sprintf(
++                            "Can't set currentStoreId during processing queue. Message rejected. Error %s.",
++                            $e->getMessage()
++                        )
++                    );
++                    $subject->getQueue()->reject($message, false, $e->getMessage());
++
++                    return;
++                }
++                if ($storeId !== $currentStoreId) {
++                    $this->storeManager->setCurrentStore($storeId);
++                }
++            }
++        }
++        $proceed($message);
++        if (isset($storeId, $currentStoreId) && $storeId !== $currentStoreId) {
++            $this->storeManager->setCurrentStore($currentStoreId);//restore original store value
++        }
++    }
++}
+diff -Nuar a/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php b/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php
+--- /dev/null
++++ b/vendor/magento/module-amqp/Plugin/Framework/Amqp/Bulk/Exchange.php
+@@ -0,0 +1,115 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\Amqp\Plugin\Framework\Amqp\Bulk;
++
++use Magento\Framework\Exception\NoSuchEntityException;
++use Magento\Store\Model\StoreManagerInterface;
++use Magento\Framework\MessageQueue\EnvelopeFactory;
++use PhpAmqpLib\Exception\AMQPInvalidArgumentException;
++use PhpAmqpLib\Wire\AMQPTable;
++use Magento\Framework\Amqp\Bulk\Exchange as SubjectExchange;
++use Magento\Framework\MessageQueue\EnvelopeInterface;
++use Psr\Log\LoggerInterface;
++
++/**
++ * Plugin to set 'store_id' to the new custom header 'store_id' in amqp 'application_headers'.
++ */
++class Exchange
++{
++    /**
++     * @var StoreManagerInterface
++     */
++    private $storeManager;
++
++    /**
++     * @var EnvelopeFactory
++     */
++    private $envelopeFactory;
++
++    /**
++     * @var LoggerInterface
++     */
++    private $logger;
++
++    /**
++     * @param EnvelopeFactory $envelopeFactory
++     * @param StoreManagerInterface $storeManager
++     * @param LoggerInterface $logger
++     */
++    public function __construct(
++        EnvelopeFactory $envelopeFactory,
++        StoreManagerInterface $storeManager,
++        LoggerInterface $logger
++    ) {
++        $this->storeManager = $storeManager;
++        $this->envelopeFactory = $envelopeFactory;
++        $this->logger = $logger;
++    }
++
++    /**
++     * Set current store_id in amqpProperties['application_headers']
++     * so consumer may check store_id and execute operation in correct store scope.
++     * Prevent publishing inconsistent messages because of store_id not defined or wrong.
++     *
++     * @param SubjectExchange $subject
++     * @param string $topic
++     * @param EnvelopeInterface[] $envelopes
++     * @return array
++     * @throws AMQPInvalidArgumentException
++     * @throws \LogicException
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    public function beforeEnqueue(SubjectExchange $subject, $topic, array $envelopes): array
++    {
++        try {
++            $storeId = $this->storeManager->getStore()->getId();
++        } catch (NoSuchEntityException $e) {
++            $errorMessage = sprintf(
++                "Can't get current storeId and inject to amqp message. Error %s.",
++                $e->getMessage()
++            );
++            $this->logger->error($errorMessage);
++            throw new \LogicException($errorMessage);
++        }
++
++        $updatedEnvelopes = [];
++        foreach ($envelopes as $envelope) {
++            $properties = $envelope->getProperties();
++            if (empty($properties)) {
++                $properties = [];
++            }
++            if (isset($properties['application_headers'])) {
++                $headers = $properties['application_headers'];
++                if ($headers instanceof AMQPTable) {
++                    try {
++                        $headers->set('store_id', $storeId);
++                    // phpcs:ignore Magento2.Exceptions.ThrowCatch
++                    } catch (AMQPInvalidArgumentException $ea) {
++                        $errorMessage = sprintf("Can't set storeId to amqp message. Error %s.", $ea->getMessage());
++                        $this->logger->error($errorMessage);
++                        throw new AMQPInvalidArgumentException($errorMessage);
++                    }
++                }
++            } else {
++                $properties['application_headers'] = new AMQPTable(['store_id' => $storeId]);
++            }
++            $updatedEnvelopes[] = $this->envelopeFactory->create(
++                [
++                    'body' => $envelope->getBody(),
++                    'properties' => $properties,
++                ]
++            );
++        }
++        if (!empty($updatedEnvelopes)) {
++            $envelopes = $updatedEnvelopes;
++        }
++
++        return [$topic, $envelopes];
++    }
++}
+diff -Nuar a/vendor/magento/module-amqp/composer.json b/vendor/magento/module-amqp/composer.json
+--- a/vendor/magento/module-amqp/composer.json
++++ b/vendor/magento/module-amqp/composer.json
+@@ -8,6 +11,10 @@
+         "magento/framework": "102.0.*",
+         "magento/framework-amqp": "100.3.*",
+         "magento/framework-message-queue": "100.3.*",
++        "magento/module-store": "101.0.*",
+         "php": "~7.1.3||~7.2.0"
+     },
++    "suggest": {
++        "magento/module-asynchronous-operations": "*",
++    },
+     "type": "magento2-module",
+     "license": [
+         "OSL-3.0",
+diff -Nuar a/vendor/magento/module-amqp/etc/di.xml b/vendor/magento/module-amqp/etc/di.xml
+--- a/vendor/magento/module-amqp/etc/di.xml
++++ b/vendor/magento/module-amqp/etc/di.xml
+@@ -72,4 +72,10 @@
+             <argument name="instanceName" xsi:type="string">\Magento\Framework\Amqp\Bulk\Exchange</argument>
+         </arguments>
+     </virtualType>
++    <type name="Magento\Framework\Amqp\Bulk\Exchange">
++        <plugin name="amqpStoreIdFieldForAmqpBulkExchange" type="Magento\Amqp\Plugin\Framework\Amqp\Bulk\Exchange"/>
++    </type>
++    <type name="Magento\AsynchronousOperations\Model\MassConsumerEnvelopeCallback">
++        <plugin name="amqpStoreIdFieldForAsynchronousOperationsMassConsumerEnvelopeCallback" type="Magento\Amqp\Plugin\AsynchronousOperations\MassConsumerEnvelopeCallback"/>
++    </type>
+ </config>
+diff -Nuar a/vendor/magento/module-amqp/etc/module.xml b/vendor/magento/module-amqp/etc/module.xml
+--- a/vendor/magento/module-amqp/etc/module.xml
++++ b/vendor/magento/module-amqp/etc/module.xml
+@@ -6,5 +6,9 @@
+  */
+ -->
+ <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+-    <module name="Magento_Amqp" />
++    <module name="Magento_Amqp">
++        <sequence>
++            <module name="Magento_Store"/>
++        </sequence>
++    </module>
+ </config>
+diff -Nuar a/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php b/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php
+--- a/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php
++++ b/vendor/magento/module-asynchronous-operations/Model/MassConsumer.php
+@@ -8,17 +8,10 @@ declare(strict_types=1);
+ 
+ namespace Magento\AsynchronousOperations\Model;
+
+-use Magento\Framework\App\ResourceConnection;
+-use Psr\Log\LoggerInterface;
+-use Magento\Framework\MessageQueue\MessageLockException;
+-use Magento\Framework\MessageQueue\ConnectionLostException;
+-use Magento\Framework\Exception\NotFoundException;
+ use Magento\Framework\MessageQueue\CallbackInvoker;
+ use Magento\Framework\MessageQueue\ConsumerConfigurationInterface;
+ use Magento\Framework\MessageQueue\EnvelopeInterface;
+ use Magento\Framework\MessageQueue\QueueInterface;
+-use Magento\Framework\MessageQueue\LockInterface;
+-use Magento\Framework\MessageQueue\MessageController;
+ use Magento\Framework\MessageQueue\ConsumerInterface;
+ 
+ /**
+@@ -33,57 +27,31 @@ class MassConsumer implements ConsumerInterface
+      */
+     private $invoker;
+ 
+-    /**
+-     * @var \Magento\Framework\App\ResourceConnection
+-     */
+-    private $resource;
+-
+     /**
+      * @var \Magento\Framework\MessageQueue\ConsumerConfigurationInterface
+      */
+     private $configuration;
+-
+-    /**
+-     * @var \Magento\Framework\MessageQueue\MessageController
+-     */
+-    private $messageController;
+-
+-    /**
+-     * @var LoggerInterface
+-     */
+-    private $logger;
+
+     /**
+-     * @var OperationProcessor
++     * @var MassConsumerEnvelopeCallbackFactory
+      */
+-    private $operationProcessor;
++    private $massConsumerEnvelopeCallback;
+
+     /**
+      * Initialize dependencies.
+      *
+      * @param CallbackInvoker $invoker
+-     * @param ResourceConnection $resource
+-     * @param MessageController $messageController
+      * @param ConsumerConfigurationInterface $configuration
+-     * @param OperationProcessorFactory $operationProcessorFactory
+-     * @param LoggerInterface $logger
++     * @param MassConsumerEnvelopeCallbackFactory $massConsumerEnvelopeCallback
+      */
+     public function __construct(
+         CallbackInvoker $invoker,
+-        ResourceConnection $resource,
+-        MessageController $messageController,
+         ConsumerConfigurationInterface $configuration,
+-        OperationProcessorFactory $operationProcessorFactory,
+-        LoggerInterface $logger
++        MassConsumerEnvelopeCallbackFactory $massConsumerEnvelopeCallback
+     ) {
+         $this->invoker = $invoker;
+-        $this->resource = $resource;
+-        $this->messageController = $messageController;
+         $this->configuration = $configuration;
+-        $this->operationProcessor = $operationProcessorFactory->create([
+-            'configuration' => $configuration
+-        ]);
+-        $this->logger = $logger;
++        $this->massConsumerEnvelopeCallback = $massConsumerEnvelopeCallback;
+     }
+
+     /**
+@@ -108,38 +84,15 @@ class MassConsumer implements ConsumerInterface
+      */
+     private function getTransactionCallback(QueueInterface $queue)
+     {
+-        return function (EnvelopeInterface $message) use ($queue) {
+-            /** @var LockInterface $lock */
+-            $lock = null;
+-            try {
+-                $topicName = $message->getProperties()['topic_name'];
+-                $lock = $this->messageController->lock($message, $this->configuration->getConsumerName());
++        $callbackInstance =  $this->massConsumerEnvelopeCallback->create(
++            [
++                'configuration' => $this->configuration,
++                'queue' => $queue,
++            ]
++        );
+
+-                $allowedTopics = $this->configuration->getTopicNames();
+-                if (in_array($topicName, $allowedTopics)) {
+-                    $this->operationProcessor->process($message->getBody());
+-                } else {
+-                    $queue->reject($message);
+-                    return;
+-                }
+-                $queue->acknowledge($message);
+-            } catch (MessageLockException $exception) {
+-                $queue->acknowledge($message);
+-            } catch (ConnectionLostException $e) {
+-                if ($lock) {
+-                    $this->resource->getConnection()
+-                        ->delete($this->resource->getTableName('queue_lock'), ['id = ?' => $lock->getId()]);
+-                }
+-            } catch (NotFoundException $e) {
+-                $queue->acknowledge($message);
+-                $this->logger->warning($e->getMessage());
+-            } catch (\Exception $e) {
+-                $queue->reject($message, false, $e->getMessage());
+-                if ($lock) {
+-                    $this->resource->getConnection()
+-                        ->delete($this->resource->getTableName('queue_lock'), ['id = ?' => $lock->getId()]);
+-                }
+-            }
++        return function (EnvelopeInterface $message) use ($callbackInstance) {
++            $callbackInstance->execute($message);
+         };
+     }
+ }
+diff -Nuar a/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php b/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php
+--- /dev/null
++++ b/vendor/magento/module-asynchronous-operations/Model/MassConsumerEnvelopeCallback.php
+@@ -0,0 +1,138 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\AsynchronousOperations\Model;
++
++use Magento\Framework\App\ResourceConnection;
++use Psr\Log\LoggerInterface;
++use Magento\Framework\MessageQueue\MessageLockException;
++use Magento\Framework\MessageQueue\ConnectionLostException;
++use Magento\Framework\Exception\NotFoundException;
++use Magento\Framework\MessageQueue\ConsumerConfigurationInterface;
++use Magento\Framework\MessageQueue\EnvelopeInterface;
++use Magento\Framework\MessageQueue\QueueInterface;
++use Magento\Framework\MessageQueue\LockInterface;
++use Magento\Framework\MessageQueue\MessageController;
++
++/**
++ * Class used as public callback function by async consumer.
++ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
++ */
++class MassConsumerEnvelopeCallback
++{
++    /**
++     * @var QueueInterface
++     */
++    private $queue;
++
++    /**
++     * @var ResourceConnection
++     */
++    private $resource;
++
++    /**
++     * @var ConsumerConfigurationInterface
++     */
++    private $configuration;
++
++    /**
++     * @var MessageController
++     */
++    private $messageController;
++
++    /**
++     * @var LoggerInterface
++     */
++    private $logger;
++
++    /**
++     * @var OperationProcessor
++     */
++    private $operationProcessor;
++
++    /**
++     * @param ResourceConnection $resource
++     * @param MessageController $messageController
++     * @param ConsumerConfigurationInterface $configuration
++     * @param OperationProcessorFactory $operationProcessorFactory
++     * @param LoggerInterface $logger
++     * @param QueueInterface $queue
++     */
++    public function __construct(
++        ResourceConnection $resource,
++        MessageController $messageController,
++        ConsumerConfigurationInterface $configuration,
++        OperationProcessorFactory $operationProcessorFactory,
++        LoggerInterface $logger,
++        QueueInterface $queue
++    ) {
++        $this->resource = $resource;
++        $this->messageController = $messageController;
++        $this->configuration = $configuration;
++        $this->operationProcessor = $operationProcessorFactory->create(
++            [
++                'configuration' => $configuration,
++            ]
++        );
++        $this->logger = $logger;
++        $this->queue = $queue;
++    }
++
++    /**
++     * Get transaction callback. This handles the case of async.
++     *
++     * @param EnvelopeInterface $message
++     * @return void
++     */
++    public function execute(EnvelopeInterface $message): void
++    {
++        $queue = $this->queue;
++        /** @var LockInterface $lock */
++        $lock = null;
++        try {
++            $topicName = $message->getProperties()['topic_name'];
++            $lock = $this->messageController->lock($message, $this->configuration->getConsumerName());
++
++            $allowedTopics = $this->configuration->getTopicNames();
++            if (in_array($topicName, $allowedTopics)) {
++                $this->operationProcessor->process($message->getBody());
++            } else {
++                $queue->reject($message);
++
++                return;
++            }
++            $queue->acknowledge($message);
++        } catch (MessageLockException $exception) {
++            $queue->acknowledge($message);
++        } catch (ConnectionLostException $e) {
++            if ($lock) {
++                $this->resource->getConnection()
++                    ->delete($this->resource->getTableName('queue_lock'), ['id = ?' => $lock->getId()]);
++            }
++        } catch (NotFoundException $e) {
++            $queue->acknowledge($message);
++            $this->logger->warning($e->getMessage());
++        } catch (\Exception $e) {
++            $queue->reject($message, false, $e->getMessage());
++            if ($lock) {
++                $this->resource->getConnection()
++                    ->delete($this->resource->getTableName('queue_lock'), ['id = ?' => $lock->getId()]);
++            }
++        }
++    }
++
++    /**
++     * Get message queue.
++     *
++     * @return QueueInterface
++     */
++    public function getQueue(): QueueInterface
++    {
++        return $this->queue;
++    }
++}
