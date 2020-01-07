@@ -1,0 +1,1341 @@
+diff -Nuar a/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php b/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/module-page-builder/Controller/Adminhtml/Stage/Preview.php
+@@ -0,0 +1,71 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\PageBuilder\Controller\Adminhtml\Stage;
++
++use Magento\Framework\Controller\ResultFactory;
++use Magento\Framework\App\Action\HttpPostActionInterface;
++
++/**
++ * Preview controller to render blocks preview on Stage
++ *
++ * @api
++ */
++class Preview extends \Magento\Backend\App\Action implements HttpPostActionInterface
++{
++    const ADMIN_RESOURCE = 'Magento_Backend::content';
++
++    /**
++     * @var \Magento\PageBuilder\Model\Stage\RendererPool
++     */
++    private $rendererPool;
++
++    /**
++     * @var \Magento\PageBuilder\Model\Stage\Preview
++     */
++    private $preview;
++
++    /**
++     * @param \Magento\Backend\App\Action\Context $context
++     * @param \Magento\PageBuilder\Model\Stage\RendererPool $rendererPool
++     * @param \Magento\PageBuilder\Model\Stage\Preview $preview
++     */
++    public function __construct(
++        \Magento\Backend\App\Action\Context $context,
++        \Magento\PageBuilder\Model\Stage\RendererPool $rendererPool,
++        \Magento\PageBuilder\Model\Stage\Preview $preview
++    ) {
++        parent::__construct($context);
++
++        $this->rendererPool = $rendererPool;
++        $this->preview = $preview;
++    }
++
++    /**
++     * Generates an HTML preview for the stage
++     *
++     * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\ResultInterface|mixed
++     * @throws \Exception
++     */
++    public function execute()
++    {
++        return $this->preview->startPreviewMode(
++            function () {
++                $pageResult = $this->resultFactory->create(ResultFactory::TYPE_PAGE);
++                // Some template filters and directive processors expect this to be called in order to function.
++                $pageResult->initLayout();
++
++                $params = $this->getRequest()->getParams();
++                $renderer = $this->rendererPool->getRenderer($params['role']);
++                $result = ['data' => $renderer->render($params)];
++
++                return $this->resultFactory->create(ResultFactory::TYPE_JSON)->setData($result);
++            }
++        );
++    }
++}
+diff -Nuar a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
+--- a/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
++++ b/vendor/magento/module-page-builder/Controller/ContentType/Preview.php
+@@ -17,6 +17,8 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
+  * This isn't placed within the adminhtml folder as it has to extend from the front-end controllers app action to
+  * ensure the content is rendered in the storefront scope.
+  *
++ * @deprecated use \Magento\PageBuilder\Controller\Adminhtml\Stage\Preview
++ *
+  * @api
+  */
+ class Preview extends \Magento\Framework\App\Action\Action implements HttpPostActionInterface
+@@ -26,19 +28,28 @@ class Preview extends \Magento\Framework\App\Action\Action implements HttpPostAc
+      */
+     private $rendererPool;
+ 
++    /**
++     * @var \Magento\Backend\Model\Auth
++     */
++    private $auth;
++
+     /**
+      * Constructor
+      *
+      * @param \Magento\Backend\App\Action\Context $context
+      * @param \Magento\PageBuilder\Model\Stage\RendererPool $rendererPool
++     * @param \Magento\Backend\Model\Auth $auth
+      */
+     public function __construct(
+         \Magento\Backend\App\Action\Context $context,
+-        \Magento\PageBuilder\Model\Stage\RendererPool $rendererPool
++        \Magento\PageBuilder\Model\Stage\RendererPool $rendererPool,
++        \Magento\Backend\Model\Auth $auth = null
+     ) {
+         parent::__construct($context);
+ 
+         $this->rendererPool = $rendererPool;
++        $this->auth = $auth ?? \Magento\Framework\App\ObjectManager::getInstance()
++                ->get(\Magento\Backend\Model\Auth::class);
+     }
+ 
+     /**
+@@ -48,14 +59,18 @@ class Preview extends \Magento\Framework\App\Action\Action implements HttpPostAc
+      */
+     public function execute()
+     {
+-        $pageResult = $this->resultFactory->create(ResultFactory::TYPE_PAGE);
+-        // Some template filters and directive processors expect this to be called in order to function.
+-        $pageResult->initLayout();
++        if ($this->auth->isLoggedIn()) {
++            $pageResult = $this->resultFactory->create(ResultFactory::TYPE_PAGE);
++            // Some template filters and directive processors expect this to be called in order to function.
++            $pageResult->initLayout();
++
++            $params = $this->getRequest()->getParams();
++            $renderer = $this->rendererPool->getRenderer($params['role']);
++            $result = ['data' => $renderer->render($params)];
+ 
+-        $params = $this->getRequest()->getParams();
+-        $renderer = $this->rendererPool->getRenderer($params['role']);
+-        $result = ['data' => $renderer->render($params)];
++            return $this->resultFactory->create(ResultFactory::TYPE_JSON)->setData($result);
++        }
+ 
+-        return $this->resultFactory->create(ResultFactory::TYPE_JSON)->setData($result);
++        $this->_forward('noroute');
+     }
+ }
+diff -Nuar a/vendor/magento/module-page-builder/Model/Filter/Template.php b/vendor/magento/module-page-builder/Model/Filter/Template.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/module-page-builder/Model/Filter/Template.php
+@@ -0,0 +1,334 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\PageBuilder\Model\Filter;
++
++/**
++ * Specific template filters for Page Builder content
++ */
++class Template
++{
++    /**
++     * @var \Magento\Framework\View\ConfigInterface
++     */
++    private $viewConfig;
++
++    /**
++     * @var \Psr\Log\LoggerInterface
++     */
++    private $logger;
++
++    /**
++     * @var \DOMDocument
++     */
++    private $domDocument;
++
++    /**
++     * @var \Magento\Framework\Math\Random
++     */
++    private $mathRandom;
++
++    /**
++     * @var \Magento\Framework\Serialize\Serializer\Json
++     */
++    private $json;
++
++    /**
++     * @param \Psr\Log\LoggerInterface $logger
++     * @param \Magento\Framework\View\ConfigInterface $viewConfig
++     * @param \Magento\Framework\Math\Random $mathRandom
++     * @param \Magento\Framework\Serialize\Serializer\Json $json
++     */
++    public function __construct(
++        \Psr\Log\LoggerInterface $logger,
++        \Magento\Framework\View\ConfigInterface $viewConfig,
++        \Magento\Framework\Math\Random $mathRandom,
++        \Magento\Framework\Serialize\Serializer\Json $json
++    ) {
++        $this->logger = $logger;
++        $this->viewConfig = $viewConfig;
++        $this->mathRandom = $mathRandom;
++        $this->json = $json;
++    }
++
++    /**
++     * After filter of template data apply transformations
++     *
++     * @param string $result
++     *
++     * @return string
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    public function filter(string $result) : string
++    {
++        $this->domDocument = false;
++
++        // Validate if the filtered result requires background image processing
++        if (preg_match(\Magento\PageBuilder\Plugin\Filter\TemplatePlugin::BACKGROUND_IMAGE_PATTERN, $result)) {
++            $document = $this->getDomDocument($result);
++            $this->generateBackgroundImageStyles($document);
++        }
++
++        // Process any HTML content types, they need to be decoded on the front-end
++        if (preg_match(\Magento\PageBuilder\Plugin\Filter\TemplatePlugin::HTML_CONTENT_TYPE_PATTERN, $result)) {
++            $document = $this->getDomDocument($result);
++            $uniqueNodeNameToDecodedOuterHtmlMap = $this->generateDecodedHtmlPlaceholderMappingInDocument($document);
++        }
++
++        // If a document was retrieved we've modified the output so need to retrieve it from within the document
++        if (isset($document)) {
++            // Match the contents of the body from our generated document
++            preg_match(
++                '/<body>(.+)<\/body><\/html>$/si',
++                $document->saveHTML(),
++                $matches
++            );
++
++            if (!empty($matches)) {
++                $docHtml = $matches[1];
++
++                // restore any encoded directives
++                $docHtml = preg_replace_callback(
++                    '/=\"(%7B%7B[^"]*%7D%7D)\"/m',
++                    function ($matches) {
++                        return urldecode($matches[0]);
++                    },
++                    $docHtml
++                );
++
++                if (isset($uniqueNodeNameToDecodedOuterHtmlMap)) {
++                    foreach ($uniqueNodeNameToDecodedOuterHtmlMap as $uniqueNodeName => $decodedOuterHtml) {
++                        $docHtml = str_replace(
++                            '<' . $uniqueNodeName . '>' . '</' . $uniqueNodeName . '>',
++                            $decodedOuterHtml,
++                            $docHtml
++                        );
++                    }
++                }
++
++                $result = $docHtml;
++            }
++        }
++
++        return $result;
++    }
++
++    /**
++     * Create a DOM document from a given string
++     *
++     * @param string $html
++     *
++     * @return \DOMDocument
++     */
++    private function getDomDocument(string $html) : \DOMDocument
++    {
++        if (!$this->domDocument) {
++            $this->domDocument = $this->createDomDocument($html);
++        }
++
++        return $this->domDocument;
++    }
++
++    /**
++     * Create a DOMDocument from a string
++     *
++     * @param string $html
++     *
++     * @return \DOMDocument
++     */
++    private function createDomDocument(string $html) : \DOMDocument
++    {
++        $domDocument = new \DOMDocument('1.0', 'UTF-8');
++        set_error_handler(
++            function ($errorNumber, $errorString) {
++                throw new \DOMException($errorString, $errorNumber);
++            }
++        );
++        $string = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
++        try {
++            libxml_use_internal_errors(true);
++            $domDocument->loadHTML(
++                '<html><body>' . $string . '</body></html>'
++            );
++            libxml_clear_errors();
++        } catch (\Exception $e) {
++            restore_error_handler();
++            $this->logger->critical($e);
++        }
++        restore_error_handler();
++
++        return $domDocument;
++    }
++
++    /**
++     * Convert encoded HTML content types to placeholders and generate decoded outer html map for future replacement
++     *
++     * @param \DOMDocument $document
++     * @return array
++     * @throws \Magento\Framework\Exception\LocalizedException
++     */
++    private function generateDecodedHtmlPlaceholderMappingInDocument(\DOMDocument $document): array
++    {
++        $xpath = new \DOMXPath($document);
++
++        // construct xpath query to fetch top-level ancestor html content type nodes
++        /** @var $htmlContentTypeNodes \DOMNode[] */
++        $htmlContentTypeNodes = $xpath->query(
++            '//*[@data-content-type="html" and not(@data-decoded="true")]' .
++            '[not(ancestor::*[@data-content-type="html"])]'
++        );
++
++        $uniqueNodeNameToDecodedOuterHtmlMap = [];
++
++        foreach ($htmlContentTypeNodes as $htmlContentTypeNode) {
++            // Set decoded attribute on all encoded html content types so we don't double decode;
++            $htmlContentTypeNode->setAttribute('data-decoded', 'true');
++
++            // if nothing exists inside the node, continue
++            if (!strlen(trim($htmlContentTypeNode->nodeValue))) {
++                continue;
++            }
++
++            // clone html code content type to save reference to its attributes/outerHTML, which we are not going to
++            // decode
++            $clonedHtmlContentTypeNode = clone $htmlContentTypeNode;
++
++            // clear inner contents of cloned node for replacement later with $decodedInnerHtml using sprintf;
++            // we want to retain html content type node and avoid doing any manipulation on it
++            $clonedHtmlContentTypeNode->nodeValue = '%s';
++
++            // remove potentially harmful attributes on html content type node itself
++            while ($htmlContentTypeNode->attributes->length) {
++                $htmlContentTypeNode->removeAttribute($htmlContentTypeNode->attributes->item(0)->name);
++            }
++
++            // decode outerHTML safely
++            $preDecodedOuterHtml = $document->saveHTML($htmlContentTypeNode);
++
++            // clear empty <div> wrapper around outerHTML to replace with $clonedHtmlContentTypeNode
++            // phpcs:ignore Magento2.Functions.DiscouragedFunction
++            $decodedInnerHtml = preg_replace('#^<[^>]*>|</[^>]*>$#', '', html_entity_decode($preDecodedOuterHtml));
++
++            // Use $clonedHtmlContentTypeNode's placeholder to inject decoded inner html
++            $decodedOuterHtml = sprintf($document->saveHTML($clonedHtmlContentTypeNode), $decodedInnerHtml);
++
++            // generate unique node name element to replace with decoded html contents at end of processing;
++            // goal is to create a document as few times as possible to prevent inadvertent parsing of contents as html
++            // by the dom library
++            $uniqueNodeName = $this->mathRandom->getRandomString(32, $this->mathRandom::CHARS_LOWERS);
++
++            $uniqueNode = new \DOMElement($uniqueNodeName);
++            $htmlContentTypeNode->parentNode->replaceChild($uniqueNode, $htmlContentTypeNode);
++
++            $uniqueNodeNameToDecodedOuterHtmlMap[$uniqueNodeName] = $decodedOuterHtml;
++        }
++
++        return $uniqueNodeNameToDecodedOuterHtmlMap;
++    }
++
++    /**
++     * Generate the CSS for any background images on the page
++     *
++     * @param \DOMDocument $document
++     */
++    private function generateBackgroundImageStyles(\DOMDocument $document) : void
++    {
++        $xpath = new \DOMXPath($document);
++        $nodes = $xpath->query('//*[@data-background-images]');
++        foreach ($nodes as $node) {
++            /* @var \DOMElement $node */
++            $backgroundImages = $node->attributes->getNamedItem('data-background-images');
++            if ($backgroundImages->nodeValue !== '') {
++                $elementClass = uniqid('background-image-');
++                // phpcs:ignore Magento2.Functions.DiscouragedFunction
++                $images = $this->json->unserialize(stripslashes($backgroundImages->nodeValue));
++                if (count($images) > 0) {
++                    $style = $xpath->document->createElement(
++                        'style',
++                        $this->generateCssFromImages($elementClass, $images)
++                    );
++                    $style->setAttribute('type', 'text/css');
++                    $node->parentNode->appendChild($style);
++
++                    // Append our new class to the DOM element
++                    $classes = '';
++                    if ($node->attributes->getNamedItem('class')) {
++                        $classes = $node->attributes->getNamedItem('class')->nodeValue . ' ';
++                    }
++                    $node->setAttribute('class', $classes . $elementClass);
++                }
++            }
++        }
++    }
++
++    /**
++     * Generate CSS based on the images array from our attribute
++     *
++     * @param string $elementClass
++     * @param array $images
++     *
++     * @return string
++     */
++    private function generateCssFromImages(string $elementClass, array $images) : string
++    {
++        $css = [];
++        if (isset($images['desktop_image'])) {
++            $css['.' . $elementClass] = [
++                'background-image' => 'url(' . $images['desktop_image'] . ')',
++            ];
++        }
++        if (isset($images['mobile_image']) && $this->getMobileMediaQuery()) {
++            $css[$this->getMobileMediaQuery()]['.' . $elementClass] = [
++                'background-image' => 'url(' . $images['mobile_image'] . ')',
++            ];
++        }
++        return $this->cssFromArray($css);
++    }
++
++    /**
++     * Generate a CSS string from an array
++     *
++     * @param array $css
++     *
++     * @return string
++     */
++    private function cssFromArray(array $css) : string
++    {
++        $output = '';
++        foreach ($css as $selector => $body) {
++            if (is_array($body)) {
++                $output .= $selector . ' {';
++                $output .= $this->cssFromArray($body);
++                $output .= '}';
++            } else {
++                $output .= $selector . ': ' . $body . ';';
++            }
++        }
++        return $output;
++    }
++
++    /**
++     * Generate the mobile media query from view configuration
++     *
++     * @return null|string
++     */
++    private function getMobileMediaQuery() : ?string
++    {
++        $breakpoints = $this->viewConfig->getViewConfig()->getVarValue(
++            'Magento_PageBuilder',
++            'breakpoints/mobile/conditions'
++        );
++        if ($breakpoints && count($breakpoints) > 0) {
++            $mobileBreakpoint = '@media only screen ';
++            foreach ($breakpoints as $key => $value) {
++                $mobileBreakpoint .= 'and (' . $key . ': ' . $value . ') ';
++            }
++            return rtrim($mobileBreakpoint);
++        }
++        return null;
++    }
++}
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Config.php b/vendor/magento/module-page-builder/Model/Stage/Config.php
+--- a/vendor/magento/module-page-builder/Model/Stage/Config.php
++++ b/vendor/magento/module-page-builder/Model/Stage/Config.php
+@@ -135,7 +135,7 @@ class Config
+             'content_types' => $this->getContentTypes(),
+             'stage_config' => $this->data,
+             'media_url' => $this->urlBuilder->getBaseUrl(['_type' => UrlInterface::URL_TYPE_MEDIA]),
+-            'preview_url' => $this->frontendUrlBuilder->getUrl('pagebuilder/contenttype/preview'),
++            'preview_url' => $this->urlBuilder->getUrl('pagebuilder/stage/preview'),
+             'column_grid_default' => $this->scopeConfig->getValue(self::XML_PATH_COLUMN_GRID_DEFAULT),
+             'column_grid_max' => $this->scopeConfig->getValue(self::XML_PATH_COLUMN_GRID_MAX),
+             'can_use_inline_editing_on_stage' => $this->isWysiwygProvisionedForEditingOnStage(),
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Preview.php b/vendor/magento/module-page-builder/Model/Stage/Preview.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/module-page-builder/Model/Stage/Preview.php
+@@ -0,0 +1,134 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\PageBuilder\Model\Stage;
++
++/**
++ * Handle placing Magento into Page Builder Preview mode and emulating the store front
++ */
++class Preview
++{
++    /**
++     * @var \Magento\Store\Model\App\Emulation
++     */
++    private $emulation;
++
++    /**
++     * @var \Magento\Framework\App\State
++     */
++    private $appState;
++
++    /**
++     * @var \Magento\Framework\View\DesignInterface
++     */
++    private $design;
++
++    /**
++     * @var \Magento\Framework\View\Design\Theme\ThemeProviderInterface
++     */
++    private $themeProvider;
++
++    /**
++     * @var \Magento\Store\Model\StoreManagerInterface
++     */
++    private $storeManager;
++
++    /**
++     * @var \Magento\Framework\App\Config\ScopeConfigInterface
++     */
++    private $scopeConfig;
++
++    /**
++     * Preview constructor.
++     * @param \Magento\Store\Model\App\Emulation $emulation
++     * @param \Magento\Framework\App\State $appState
++     * @param \Magento\Framework\View\DesignInterface $design
++     * @param \Magento\Framework\View\Design\Theme\ThemeProviderInterface $themeProvider
++     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
++     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
++     */
++    public function __construct(
++        \Magento\Store\Model\App\Emulation $emulation,
++        \Magento\Framework\App\State $appState,
++        \Magento\Framework\View\DesignInterface $design,
++        \Magento\Framework\View\Design\Theme\ThemeProviderInterface $themeProvider,
++        \Magento\Store\Model\StoreManagerInterface $storeManager,
++        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
++    ) {
++        $this->emulation = $emulation;
++        $this->appState = $appState;
++        $this->design = $design;
++        $this->themeProvider = $themeProvider;
++        $this->storeManager = $storeManager;
++        $this->scopeConfig = $scopeConfig;
++    }
++
++    /**
++     * @var bool
++     */
++    private $isPreview;
++
++    /**
++     * Retrieve the area in which the preview needs to be ran in
++     *
++     * @return string
++     */
++    public function getPreviewArea() : string
++    {
++        return \Magento\Framework\App\Area::AREA_FRONTEND;
++    }
++
++    /**
++     * Start Page Builder preview mode and emulate store front
++     *
++     * @param callable $callback
++     * @param int $storeId
++     * @return mixed
++     * @throws \Exception
++     */
++    public function startPreviewMode($callback, $storeId = null)
++    {
++        $this->isPreview = true;
++
++        if (!$storeId) {
++            $storeId = $this->storeManager->getDefaultStoreView()->getId();
++        }
++        $this->emulation->startEnvironmentEmulation($storeId);
++
++        return $this->appState->emulateAreaCode(
++            $this->getPreviewArea(),
++            function () use ($callback) {
++                $themeId = $this->scopeConfig->getValue(
++                    'design/theme/theme_id',
++                    \Magento\Store\Model\ScopeInterface::SCOPE_STORE
++                );
++                $theme = $this->themeProvider->getThemeById($themeId);
++                $this->design->setDesignTheme($theme, $this->getPreviewArea());
++
++                try {
++                    $result = $callback();
++                } catch (\Exception $e) {
++                    $this->isPreview = false;
++                    throw $e;
++                }
++
++                $this->emulation->stopEnvironmentEmulation();
++                return $result;
++            }
++        );
++    }
++
++    /**
++     * Determine if the system is in preview mode
++     *
++     * @return bool
++     */
++    public function isPreviewMode() : bool
++    {
++        return $this->isPreview;
++    }
++}
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
+--- a/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
++++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/Block.php
+@@ -9,6 +9,7 @@ declare(strict_types=1);
+ namespace Magento\PageBuilder\Model\Stage\Renderer;
+ 
+ use Magento\Framework\Controller\ResultFactory;
++use Magento\PageBuilder\Model\Filter\Template;
+ 
+ /**
+  * Renders a block for the stage
+@@ -31,20 +32,27 @@ class Block implements \Magento\PageBuilder\Model\Stage\RendererInterface
+     private $resultFactory;
+ 
+     /**
+-     * Constructor
+-     *
++     * @var Template
++     */
++    private $templateFilter;
++
++    /**
+      * @param \Magento\PageBuilder\Model\Config $config
+      * @param \Magento\Framework\View\Element\BlockFactory $blockFactory
+      * @param ResultFactory $resultFactory
++     * @param Template|null $templateFilter
+      */
+     public function __construct(
+         \Magento\PageBuilder\Model\Config $config,
+         \Magento\Framework\View\Element\BlockFactory $blockFactory,
+-        ResultFactory $resultFactory
++        ResultFactory $resultFactory,
++        Template $templateFilter = null
+     ) {
+         $this->config = $config;
+         $this->blockFactory = $blockFactory;
+         $this->resultFactory = $resultFactory;
++        $this->templateFilter = $templateFilter ?? \Magento\Framework\App\ObjectManager::getInstance()
++                ->get(\Magento\PageBuilder\Model\Filter\Template::class);
+     }
+ 
+     /**
+@@ -77,7 +85,7 @@ class Block implements \Magento\PageBuilder\Model\Stage\RendererInterface
+             $pageResult = $this->resultFactory->create(ResultFactory::TYPE_PAGE);
+             $pageResult->getLayout()->addBlock($backendBlockInstance);
+ 
+-            $result['content'] = $backendBlockInstance->toHtml();
++            $result['content'] = $this->templateFilter->filter($backendBlockInstance->toHtml());
+         }
+ 
+         return $result;
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
+--- a/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
++++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/CmsStaticBlock.php
+@@ -9,6 +9,8 @@ declare(strict_types=1);
+ namespace Magento\PageBuilder\Model\Stage\Renderer;
+ 
+ use Psr\Log\LoggerInterface;
++use Magento\PageBuilder\Model\Stage\HtmlFilter;
++use Magento\PageBuilder\Model\Filter\Template;
+ 
+ /**
+  * Renders a CMS Block for the stage
+@@ -33,28 +35,35 @@ class CmsStaticBlock implements \Magento\PageBuilder\Model\Stage\RendererInterfa
+     private $loggerInterface;
+ 
+     /**
+-     * @var \Magento\PageBuilder\Model\Stage\HtmlFilter
++     * @var HtmlFilter
+      */
+     private $htmlFilter;
+ 
+     /**
+-     * CmsStaticBlock constructor.
+-     *
++     * @var Template
++     */
++    private $templateFilter;
++
++    /**
+      * @param \Magento\Cms\Model\ResourceModel\Block\CollectionFactory $blockCollectionFactory
+      * @param WidgetDirective $widgetDirectiveRenderer
+      * @param LoggerInterface $loggerInterface
+      * @param \Magento\PageBuilder\Model\Stage\HtmlFilter $htmlFilter
++     * @param \Magento\PageBuilder\Model\Filter\Template|null $templateFilter
+      */
+     public function __construct(
+         \Magento\Cms\Model\ResourceModel\Block\CollectionFactory $blockCollectionFactory,
+         WidgetDirective $widgetDirectiveRenderer,
+         LoggerInterface $loggerInterface,
+-        \Magento\PageBuilder\Model\Stage\HtmlFilter $htmlFilter
++        HtmlFilter $htmlFilter,
++        Template $templateFilter = null
+     ) {
+         $this->blockCollectionFactory = $blockCollectionFactory;
+         $this->widgetDirectiveRenderer = $widgetDirectiveRenderer;
+         $this->loggerInterface = $loggerInterface;
+         $this->htmlFilter = $htmlFilter;
++        $this->templateFilter = $templateFilter ?? \Magento\Framework\App\ObjectManager::getInstance()
++                ->get(\Magento\PageBuilder\Model\Filter\Template::class);
+     }
+ 
+     /**
+@@ -96,7 +105,9 @@ class CmsStaticBlock implements \Magento\PageBuilder\Model\Stage\RendererInterfa
+ 
+         if ($block->isActive()) {
+             $directiveResult = $this->widgetDirectiveRenderer->render($params);
+-            $result['content'] = $this->htmlFilter->filterHtml($directiveResult['content']);
++            $result['content'] = $this->htmlFilter->filterHtml(
++                $this->templateFilter->filter($directiveResult['content'])
++            );
+         } else {
+             $result['error'] = __('Block disabled');
+         }
+diff -Nuar a/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php b/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
+--- a/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
++++ b/vendor/magento/module-page-builder/Model/Stage/Renderer/WidgetDirective.php
+@@ -9,6 +9,7 @@ declare(strict_types=1);
+ namespace Magento\PageBuilder\Model\Stage\Renderer;
+ 
+ use Magento\Store\Model\Store;
++use Magento\PageBuilder\Model\Filter\Template;
+ 
+ /**
+  * Renders a widget directive for the stage
+@@ -28,17 +29,24 @@ class WidgetDirective implements \Magento\PageBuilder\Model\Stage\RendererInterf
+     private $directiveFilter;
+ 
+     /**
+-     * Constructor
+-     *
++     * @var Template
++     */
++    private $templateFilter;
++
++    /**
+      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+      * @param \Magento\Widget\Model\Template\Filter $directiveFilter
++     * @param Template $templateFilter
+      */
+     public function __construct(
+         \Magento\Store\Model\StoreManagerInterface $storeManager,
+-        \Magento\Widget\Model\Template\Filter $directiveFilter
++        \Magento\Widget\Model\Template\Filter $directiveFilter,
++        Template $templateFilter = null
+     ) {
+         $this->storeManager = $storeManager;
+         $this->directiveFilter = $directiveFilter;
++        $this->templateFilter = $templateFilter ?? \Magento\Framework\App\ObjectManager::getInstance()
++                ->get(\Magento\PageBuilder\Model\Filter\Template::class);
+     }
+ 
+     /**
+@@ -61,7 +69,7 @@ class WidgetDirective implements \Magento\PageBuilder\Model\Stage\RendererInterf
+         try {
+             $result['content'] = $this->directiveFilter
+                 ->setStoreId(Store::DEFAULT_STORE_ID)
+-                ->filter($params['directive']);
++                ->filter($this->templateFilter->filter($params['directive']));
+         } catch (\Exception $e) {
+             $result['error'] = __($e->getMessage());
+         }
+diff -Nuar a/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php b/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/module-page-builder/Plugin/Catalog/Block/Product/ProductsListPlugin.php
+@@ -0,0 +1,48 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\PageBuilder\Plugin\Catalog\Block\Product;
++
++use Magento\CatalogInventory\Helper\Stock;
++use Magento\CatalogWidget\Block\Product\ProductsList;
++use Magento\Catalog\Model\ResourceModel\Product\Collection;
++
++/**
++ * Catalog Products List widget block plugin
++ */
++class ProductsListPlugin
++{
++    /**
++     * @var Stock
++     */
++    private $stock;
++
++    /**
++     * @param Stock $stock
++     */
++    public function __construct(
++        Stock $stock
++    ) {
++        $this->stock = $stock;
++    }
++
++    /**
++     * Allow to sort product collection
++     *
++     * @param ProductsList $subject
++     * @param Collection $result
++     * @return Collection
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    public function afterCreateCollection(
++        ProductsList $subject,
++        Collection $result
++    ) {
++        $this->stock->addIsInStockFilterToCollection($result);
++        return $result;
++    }
++}
+diff -Nuar a/vendor/magento/module-page-builder/Plugin/DesignLoader.php b/vendor/magento/module-page-builder/Plugin/DesignLoader.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/module-page-builder/Plugin/DesignLoader.php
+@@ -0,0 +1,98 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\PageBuilder\Plugin;
++
++use Magento\Catalog\Model\Product;
++use Magento\Framework\Message\MessageInterface;
++
++/**
++ * Load necessary design files for GraphQL
++ */
++class DesignLoader
++{
++    /**
++     * @var \Magento\Framework\View\DesignLoader
++     */
++    private $designLoader;
++
++    /**
++     * @var \Magento\Framework\Message\ManagerInterface
++     */
++    private $messageManager;
++
++    /**
++     * @var \Magento\Framework\App\State
++     */
++    private $appState;
++
++    /**
++     * @var \Magento\PageBuilder\Model\Stage\Preview
++     */
++    private $preview;
++
++    /**
++     * @param \Magento\Framework\View\DesignLoader $designLoader
++     * @param \Magento\Framework\Message\ManagerInterface $messageManager
++     * @param \Magento\Framework\App\State $appState
++     * @param \Magento\PageBuilder\Model\Stage\Preview $preview
++     */
++    public function __construct(
++        \Magento\Framework\View\DesignLoader $designLoader,
++        \Magento\Framework\Message\ManagerInterface $messageManager,
++        \Magento\Framework\App\State $appState,
++        \Magento\PageBuilder\Model\Stage\Preview $preview
++    ) {
++        $this->designLoader = $designLoader;
++        $this->messageManager = $messageManager;
++        $this->appState = $appState;
++        $this->preview = $preview;
++    }
++
++    /**
++     * Before create load the design files
++     *
++     * @param \Magento\Catalog\Block\Product\ImageFactory $subject
++     * @param Product $product
++     * @param string $imageId
++     * @param array|null $attributes
++     * @throws \Exception
++     *
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    public function beforeCreate(
++        \Magento\Catalog\Block\Product\ImageFactory $subject,
++        Product $product,
++        string $imageId,
++        array $attributes = null
++    ) {
++        if ($this->preview->isPreviewMode()) {
++            $this->appState->emulateAreaCode(
++                $this->preview->getPreviewArea(),
++                [$this, 'loadDesignConfig']
++            );
++        }
++    }
++
++    /**
++     * Load the design config
++     */
++    public function loadDesignConfig()
++    {
++        try {
++            $this->designLoader->load();
++        } catch (\Magento\Framework\Exception\LocalizedException $e) {
++            if ($e->getPrevious() instanceof \Magento\Framework\Config\Dom\ValidationException) {
++                /** @var MessageInterface $message */
++                $message = $this->messageManager
++                    ->createMessage(MessageInterface::TYPE_ERROR)
++                    ->setText($e->getMessage());
++                $this->messageManager->addUniqueMessages([$message]);
++            }
++        }
++    }
++}
+diff -Nuar a/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php b/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
+--- a/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
++++ b/vendor/magento/module-page-builder/Plugin/Filter/TemplatePlugin.php
+@@ -7,50 +7,27 @@ declare(strict_types=1);
+ 
+ namespace Magento\PageBuilder\Plugin\Filter;
+ 
+-use Magento\Store\Model\Store;
+-
+ /**
+  * Plugin to the template filter to process any background images added by Page Builder
+  */
+ class TemplatePlugin
+ {
+-    const BACKGROUND_IMAGE_PATTERN = '/data-background-images/si';
++    const BACKGROUND_IMAGE_PATTERN = '/data-background-images=(?:\'|"){.+}(?:\'|")/si';
+ 
+     const HTML_CONTENT_TYPE_PATTERN = '/data-content-type="html"/si';
+ 
+     /**
+-     * @var \Magento\Framework\View\ConfigInterface
+-     */
+-    private $viewConfig;
+-
+-    /**
+-     * @var \Psr\Log\LoggerInterface
+-     */
+-    private $logger;
+-
+-    /**
+-     * @var \DOMDocument
+-     */
+-    private $domDocument;
+-
+-    /**
+-     * @var \Magento\Framework\Math\Random
++     * @var \Magento\PageBuilder\Model\Filter\Template
+      */
+-    private $mathRandom;
++    private $templateFilter;
+ 
+     /**
+-     * @param \Psr\Log\LoggerInterface $logger
+-     * @param \Magento\Framework\View\ConfigInterface $viewConfig
+-     * @param \Magento\Framework\Math\Random $mathRandom
++     * @param \Magento\PageBuilder\Model\Filter\Template $templateFilter
+      */
+     public function __construct(
+-        \Psr\Log\LoggerInterface $logger,
+-        \Magento\Framework\View\ConfigInterface $viewConfig,
+-        \Magento\Framework\Math\Random $mathRandom
++        \Magento\PageBuilder\Model\Filter\Template $templateFilter
+     ) {
+-        $this->logger = $logger;
+-        $this->viewConfig = $viewConfig;
+-        $this->mathRandom = $mathRandom;
++        $this->templateFilter = $templateFilter;
+     }
+ 
+     /**
+@@ -64,284 +41,6 @@ class TemplatePlugin
+      */
+     public function afterFilter(\Magento\Framework\Filter\Template $subject, string $result) : string
+     {
+-        $this->domDocument = false;
+-
+-        // Validate if the filtered result requires background image processing
+-        if (preg_match(self::BACKGROUND_IMAGE_PATTERN, $result)) {
+-            $document = $this->getDomDocument($result);
+-            $this->generateBackgroundImageStyles($document);
+-        }
+-
+-        // Process any HTML content types, they need to be decoded on the front-end
+-        if (preg_match(self::HTML_CONTENT_TYPE_PATTERN, $result)) {
+-            $document = $this->getDomDocument($result);
+-            $uniqueNodeNameToDecodedOuterHtmlMap = $this->generateDecodedHtmlPlaceholderMappingInDocument($document);
+-        }
+-
+-        // If a document was retrieved we've modified the output so need to retrieve it from within the document
+-        if (isset($document)) {
+-            // Match the contents of the body from our generated document
+-            preg_match(
+-                '/<body>(.+)<\/body><\/html>$/si',
+-                $document->saveHTML(),
+-                $matches
+-            );
+-
+-            if (!empty($matches)) {
+-                $docHtml = $matches[1];
+-
+-                if (isset($uniqueNodeNameToDecodedOuterHtmlMap)) {
+-                    foreach ($uniqueNodeNameToDecodedOuterHtmlMap as $uniqueNodeName => $decodedOuterHtml) {
+-                        $docHtml = str_replace(
+-                            '<' . $uniqueNodeName . '>' . '</' . $uniqueNodeName . '>',
+-                            $decodedOuterHtml,
+-                            $docHtml
+-                        );
+-                    }
+-                }
+-
+-                $result = $docHtml;
+-            }
+-        }
+-
+-        return $result;
+-    }
+-
+-    /**
+-     * Determine if custom variable directive's return value needs to be escaped and do so if true
+-     *
+-     * @param \Magento\Framework\Filter\Template $subject
+-     * @param \Closure $proceed
+-     * @param string[] $construction
+-     * @return string
+-     */
+-    public function aroundCustomvarDirective(
+-        \Magento\Framework\Filter\Template $subject,
+-        \Closure $proceed,
+-        $construction
+-    ) {
+-        // Determine the need to escape the return value of observed method.
+-        // Admin context requires store ID of 0; in that context return value should be escaped
+-        $shouldEscape = $subject->getStoreId() !== null && (int) $subject->getStoreId() === Store::DEFAULT_STORE_ID;
+-
+-        if (!$shouldEscape) {
+-            return $proceed($construction);
+-        }
+-
+-        $result = $proceed($construction);
+-
+-        return htmlspecialchars($result);
+-    }
+-
+-    /**
+-     * Create a DOM document from a given string
+-     *
+-     * @param string $html
+-     *
+-     * @return \DOMDocument
+-     */
+-    private function getDomDocument(string $html) : \DOMDocument
+-    {
+-        if (!$this->domDocument) {
+-            $this->domDocument = $this->createDomDocument($html);
+-        }
+-
+-        return $this->domDocument;
+-    }
+-
+-    /**
+-     * Create a DOMDocument from a string
+-     *
+-     * @param string $html
+-     *
+-     * @return \DOMDocument
+-     */
+-    private function createDomDocument(string $html) : \DOMDocument
+-    {
+-        $domDocument = new \DOMDocument('1.0', 'UTF-8');
+-        set_error_handler(
+-            function ($errorNumber, $errorString) {
+-                throw new \Exception($errorString, $errorNumber);
+-            }
+-        );
+-        $string = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
+-        try {
+-            libxml_use_internal_errors(true);
+-            $domDocument->loadHTML(
+-                '<html><body>' . $string . '</body></html>'
+-            );
+-            libxml_clear_errors();
+-        } catch (\Exception $e) {
+-            restore_error_handler();
+-            $this->logger->critical($e);
+-        }
+-        restore_error_handler();
+-
+-        return $domDocument;
+-    }
+-
+-    /**
+-     * Convert encoded HTML content types to placeholders and generate decoded outer html map for future replacement
+-     *
+-     * @param \DOMDocument $document
+-     * @return array - map of unique node name to decoded html
+-     */
+-    private function generateDecodedHtmlPlaceholderMappingInDocument(\DOMDocument $document): array
+-    {
+-        $xpath = new \DOMXPath($document);
+-
+-        // construct xpath query to fetch top-level ancestor html content type nodes
+-        /** @var $htmlContentTypeNodes \DOMNode[] */
+-        $htmlContentTypeNodes = $xpath->query(
+-            '//*[@data-content-type="html" and not(@data-decoded="true")]' .
+-            '[not(ancestor::*[@data-content-type="html"])]'
+-        );
+-
+-        $uniqueNodeNameToDecodedOuterHtmlMap = [];
+-
+-        foreach ($htmlContentTypeNodes as $htmlContentTypeNode) {
+-            // Set decoded attribute on all encoded html content types so we don't double decode;
+-            $htmlContentTypeNode->setAttribute('data-decoded', 'true');
+-
+-            // if nothing exists inside the node, continue
+-            if (!strlen(trim($htmlContentTypeNode->nodeValue))) {
+-                continue;
+-            }
+-
+-            // clone html code content type to save reference to its attributes/outerHTML, which we are not going to
+-            // decode
+-            $clonedHtmlContentTypeNode = clone $htmlContentTypeNode;
+-
+-            // clear inner contents of cloned node for replacement later with $decodedInnerHtml using sprintf;
+-            // we want to retain html content type node and avoid doing any manipulation on it
+-            $clonedHtmlContentTypeNode->nodeValue = '%s';
+-
+-            // remove potentially harmful attributes on html content type node itself
+-            while ($htmlContentTypeNode->attributes->length) {
+-                $htmlContentTypeNode->removeAttribute($htmlContentTypeNode->attributes->item(0)->name);
+-            }
+-
+-            // decode outerHTML safely
+-            $preDecodedOuterHtml = $document->saveHTML($htmlContentTypeNode);
+-
+-            // clear empty <div> wrapper around outerHTML to replace with $clonedHtmlContentTypeNode
+-            $decodedInnerHtml = preg_replace('#^<[^>]*>|</[^>]*>$#', '', html_entity_decode($preDecodedOuterHtml));
+-
+-            // Use $clonedHtmlContentTypeNode's placeholder to inject decoded inner html
+-            $decodedOuterHtml = sprintf($document->saveHTML($clonedHtmlContentTypeNode), $decodedInnerHtml);
+-
+-            // generate unique node name element to replace with decoded html contents at end of processing;
+-            // goal is to create a document as few times as possible to prevent inadvertent parsing of contents as html
+-            // by the dom library
+-            $uniqueNodeName = $this->mathRandom->getRandomString(32, $this->mathRandom::CHARS_LOWERS);
+-
+-            $uniqueNode = new \DOMElement($uniqueNodeName);
+-            $htmlContentTypeNode->parentNode->replaceChild($uniqueNode, $htmlContentTypeNode);
+-
+-            $uniqueNodeNameToDecodedOuterHtmlMap[$uniqueNodeName] = $decodedOuterHtml;
+-        }
+-
+-        return $uniqueNodeNameToDecodedOuterHtmlMap;
+-    }
+-
+-    /**
+-     * Generate the CSS for any background images on the page
+-     *
+-     * @param \DOMDocument $document
+-     */
+-    private function generateBackgroundImageStyles(\DOMDocument $document) : void
+-    {
+-        $xpath = new \DOMXPath($document);
+-        $nodes = $xpath->query('//*[@data-background-images]');
+-        foreach ($nodes as $node) {
+-            /* @var \DOMElement $node */
+-            $backgroundImages = $node->attributes->getNamedItem('data-background-images');
+-            if ($backgroundImages->nodeValue !== '') {
+-                $elementClass = uniqid('background-image-');
+-                $images = json_decode(stripslashes($backgroundImages->nodeValue), true);
+-                if (count($images) > 0) {
+-                    $style = $xpath->document->createElement(
+-                        'style',
+-                        $this->generateCssFromImages($elementClass, $images)
+-                    );
+-                    $style->setAttribute('type', 'text/css');
+-                    $node->parentNode->appendChild($style);
+-
+-                    // Append our new class to the DOM element
+-                    $classes = '';
+-                    if ($node->attributes->getNamedItem('class')) {
+-                        $classes = $node->attributes->getNamedItem('class')->nodeValue . ' ';
+-                    }
+-                    $node->setAttribute('class', $classes . $elementClass);
+-                }
+-            }
+-        }
+-    }
+-
+-    /**
+-     * Generate CSS based on the images array from our attribute
+-     *
+-     * @param string $elementClass
+-     * @param array $images
+-     *
+-     * @return string
+-     */
+-    private function generateCssFromImages(string $elementClass, array $images) : string
+-    {
+-        $css = [];
+-        if (isset($images['desktop_image'])) {
+-            $css['.' . $elementClass] = [
+-                'background-image' => 'url(' . $images['desktop_image'] . ')',
+-            ];
+-        }
+-        if (isset($images['mobile_image']) && $this->getMobileMediaQuery()) {
+-            $css[$this->getMobileMediaQuery()]['.' . $elementClass] = [
+-                'background-image' => 'url(' . $images['mobile_image'] . ')',
+-            ];
+-        }
+-        return $this->cssFromArray($css);
+-    }
+-
+-    /**
+-     * Generate a CSS string from an array
+-     *
+-     * @param array $css
+-     *
+-     * @return string
+-     */
+-    private function cssFromArray(array $css) : string
+-    {
+-        $output = '';
+-        foreach ($css as $selector => $body) {
+-            if (is_array($body)) {
+-                $output .= $selector . ' {';
+-                $output .= $this->cssFromArray($body);
+-                $output .= '}';
+-            } else {
+-                $output .= $selector . ': ' . $body . ';';
+-            }
+-        }
+-        return $output;
+-    }
+-
+-    /**
+-     * Generate the mobile media query from view configuration
+-     *
+-     * @return null|string
+-     */
+-    private function getMobileMediaQuery() : ?string
+-    {
+-        $breakpoints = $this->viewConfig->getViewConfig()->getVarValue(
+-            'Magento_PageBuilder',
+-            'breakpoints/mobile/conditions'
+-        );
+-        if ($breakpoints && count($breakpoints) > 0) {
+-            $mobileBreakpoint = '@media only screen ';
+-            foreach ($breakpoints as $key => $value) {
+-                $mobileBreakpoint .= 'and (' . $key . ': ' . $value . ') ';
+-            }
+-            return rtrim($mobileBreakpoint);
+-        }
+-        return null;
++        return $this->templateFilter->filter($result);
+     }
+ }
+diff -Nuar a/vendor/magento/module-page-builder/etc/adminhtml/di.xml b/vendor/magento/module-page-builder/etc/adminhtml/di.xml
+--- a/vendor/magento/module-page-builder/etc/adminhtml/di.xml
++++ b/vendor/magento/module-page-builder/etc/adminhtml/di.xml
+@@ -6,6 +6,9 @@
+  */
+ -->
+ <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
++    <type name="Magento\Catalog\Block\Product\ImageFactory">
++        <plugin name="designLoader" type="Magento\PageBuilder\Plugin\DesignLoader" />
++    </type>
+     <virtualType name="Magento\PageBuilder\Block\Adminhtml\ContentType\Edit\ModalCloseButton" type="Magento\PageBuilder\Block\Adminhtml\ContentType\Edit\CloseButton">
+         <arguments>
+             <argument name="targetName" xsi:type="string">ns = pagebuilder_modal_form, index = modal</argument>
+diff -Nuar a/vendor/magento/module-page-builder/etc/di.xml b/vendor/magento/module-page-builder/etc/di.xml
+--- a/vendor/magento/module-page-builder/etc/di.xml
++++ b/vendor/magento/module-page-builder/etc/di.xml
+@@ -131,6 +131,7 @@
+         <arguments>
+             <argument name="productCollectionFactory" xsi:type="object">pageBuilderProductCollectionFactory</argument>
+         </arguments>
++        <plugin name="pagebuilder_product_list" type="Magento\PageBuilder\Plugin\Catalog\Block\Product\ProductsListPlugin" />
+     </type>
+     <type name="Magento\Catalog\Helper\Output">
+         <arguments>
+diff -Nuar a/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml b/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/module-page-builder/view/adminhtml/layout/pagebuilder_stage_preview.xml
+@@ -0,0 +1,14 @@
++<?xml version="1.0"?>
++<!--
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++-->
++<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="admin-1column" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
++    <body>
++        <referenceContainer name="content">
++            <block class="Magento\Framework\View\Element\FormKey" name="formkey"/>
++        </referenceContainer>
++    </body>
++</page>
