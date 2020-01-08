@@ -288,5 +288,5 @@
       "2.3.2": "PB-320__fix_pagebuilder_module__2.3.2.patch",
       ">=2.3.2-p1 <2.3.3": "PB-322__fix_pagebuilder_module__2.3.2-p1.patch",
       "2.3.3": "PB-323__fix_pagebuilder_module__2.3.3.patch"
-    },
+    }
 }
