@@ -8,9 +8,9 @@
         "php": "^7.0",
         "ext-json": "*",
         "composer/composer": "@stable",
-        "symfony/config": "^2.8||^3.3||^4.3",
-        "symfony/console": "^2.6||^4.0",
-        "symfony/dependency-injection": "^2.8||^3.3||^4.3",
+        "symfony/config": "^4.4",
+        "symfony/console": "^2.8||^4.0",
+        "symfony/dependency-injection": "^2.8||^4.3",
         "symfony/process": "^2.1||^4.1"
     },
     "conflict": {
