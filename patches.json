@@ -60,6 +60,15 @@
       "2.2.2 - 2.2.3": "MAGECLOUD-1607__overhaul_cron_implementation__2.2.2.patch",
       "2.2.4": "MAGECLOUD-1607__overhaul_cron_implementation__2.2.4.patch"
     },
+    "Fix cron deadlocks and improve cron locking": {
+      "2.2.5 - 2.2.8": "MAGECLOUD-4530__fix_cron_deadlocks_and_improve_job_locking__2.2.5.patch",
+      "2.2.9": "MAGECLOUD-4530__fix_cron_deadlocks_and_improve_job_locking__2.2.9.patch",
+      ">=2.2.10 <2.3.0": "MAGECLOUD-4530__fix_cron_deadlocks_and_improve_job_locking__2.2.10.patch",
+      "2.3.0": "MAGECLOUD-4530__fix_cron_deadlocks_and_improve_job_locking__2.3.0.patch",
+      "2.3.1": "MAGECLOUD-4530__fix_cron_deadlocks_and_improve_job_locking__2.3.1.patch",
+      "2.3.2": "MAGECLOUD-4530__fix_cron_deadlocks_and_improve_job_locking__2.3.2.patch",
+      "2.3.3 - 2.3.4": "MAGECLOUD-4530__fix_cron_deadlocks_and_improve_job_locking__2.3.3.patch"
+    },
     "Add Zookeeper and flock locks": {
       "2.2.5 - 2.2.8": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.2.5.patch",
       "2.3.0 - 2.3.1": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.3.0.patch"
