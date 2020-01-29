@@ -20,7 +20,7 @@ use Symfony\Component\Process\Process;
  */
 class ProcessFactory
 {
-    private const ARRAY_PARAM_MIN_VERSION = '3.3.0';
+    const ARRAY_PARAM_MIN_VERSION = '3.3.0';
 
     /**
      * @var DirectoryList
