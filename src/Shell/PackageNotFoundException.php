@@ -10,7 +10,7 @@ namespace Magento\CloudPatches\Shell;
 use Magento\CloudPatches\App\GenericException;
 
 /**
- * Exception if a composer package could not be found for some reason (eg, symfony/process)
+ * Exception if a Composer package could not be found for some reason (e.g., symfony/process).
  */
 class PackageNotFoundException extends GenericException
 {
