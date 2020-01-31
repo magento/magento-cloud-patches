@@ -8,13 +8,11 @@
         "php": "^7.0",
         "ext-json": "*",
         "composer/composer": "@stable",
+        "composer/semver": "^1.5",
         "symfony/config": "^3.3||^4.3",
         "symfony/console": "^2.6||^4.0",
         "symfony/dependency-injection": "^3.3||^4.3",
         "symfony/process": "^2.1||^4.1"
-    },
-    "conflict": {
-        "symfony/process": "^4.2"
     },
     "require-dev": {
         "phpmd/phpmd": "@stable",
