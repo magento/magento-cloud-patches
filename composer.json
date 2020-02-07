@@ -2,17 +2,20 @@
     "name": "magento/magento-cloud-patches",
     "description": "Provides critical fixes for Magento 2 Enterprise Edition",
     "type": "magento2-component",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "license": "OSL-3.0",
     "require": {
         "php": "^7.0",
         "ext-json": "*",
         "composer/composer": "@stable",
         "composer/semver": "^1.5",
-        "symfony/config": "^3.3||^4.3",
-        "symfony/console": "^2.6||^4.0",
+        "symfony/config": "^3.3||^4.4",
+        "symfony/console": "^2.8||^4.0",
         "symfony/dependency-injection": "^3.3||^4.3",
         "symfony/process": "^2.1||^4.1"
+    },
+    "conflict": {
+        "symfony/process": "^4.2"
     },
     "require-dev": {
         "phpmd/phpmd": "@stable",
