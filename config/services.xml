@@ -13,5 +13,6 @@
         <service id="Magento\CloudPatches\Command\Patch\ManagerException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\ApplierException" autowire="false"/>
         <service id="Magento\CloudPatches\Filesystem\FileNotFoundException" autowire="false"/>
+        <service id="Magento\CloudPatches\Shell\PackageNotFoundException" autowire="false"/>
     </services>
 </container>
