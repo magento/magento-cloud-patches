@@ -8,6 +8,7 @@
         "php": "^7.0",
         "ext-json": "*",
         "composer/composer": "@stable",
+        "composer/semver": "^1.5",
         "symfony/config": "^3.3||^4.4",
         "symfony/console": "^2.8||^4.0",
         "symfony/dependency-injection": "^3.3||^4.3",

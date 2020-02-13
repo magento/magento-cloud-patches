@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Shell;
 
+use Composer\Composer;
+use Composer\Repository\RepositoryInterface;
+use Composer\Semver\Comparator;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Symfony\Component\Process\Process;
 
@@ -17,17 +20,25 @@ use Symfony\Component\Process\Process;
  */
 class ProcessFactory
 {
+    const ARRAY_PARAM_MIN_VERSION = '3.3.0';
+
     /**
      * @var DirectoryList
      */
     private $directoryList;
 
     /**
+     * @var RepositoryInterface
+     */
+    private $repository;
+
+    /**
      * @param DirectoryList $directoryList
      */
-    public function __construct(DirectoryList $directoryList)
+    public function __construct(DirectoryList $directoryList, Composer $composer)
     {
         $this->directoryList = $directoryList;
+        $this->repository = $composer->getLocker()->getLockedRepository();
     }
 
     /**
@@ -37,8 +48,22 @@ class ProcessFactory
     public function create(array $cmd): Process
     {
         return new Process(
-            implode(' ', $cmd),
+            $this->processSupportsArrayParam() ? $cmd : implode(' ', $cmd),
             $this->directoryList->getMagentoRoot()
         );
+    }
+
+    /**
+     * Test if symfony/process is current enough to support an array for its first parameter.
+     */
+    private function processSupportsArrayParam(): bool
+    {
+        $package = $this->repository->findPackage('symfony/process', '*');
+
+        if ($package === null) {
+            throw new PackageNotFoundException('Could not find symfony/process package.');
+        }
+
+        return Comparator::greaterThanOrEqualTo($package->getVersion(), self::ARRAY_PARAM_MIN_VERSION);
     }
 }
