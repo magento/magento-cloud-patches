@@ -1,0 +1,427 @@
+diff --Nuar a/vendor/magento/module-page-cache/Model/Layout/LayoutPlugin.php b/vendor/magento/module-page-cache/Model/Layout/LayoutPlugin.php
+--- a/vendor/magento/module-page-cache/Model/Layout/LayoutPlugin.php
++++ b/vendor/magento/module-page-cache/Model/Layout/LayoutPlugin.php
+@@ -7,6 +7,7 @@ declare(strict_types=1);
+
+ namespace Magento\PageCache\Model\Layout;
+
++use Magento\Framework\App\MaintenanceMode;
+ use Magento\Framework\App\ResponseInterface;
+ use Magento\Framework\DataObject\IdentityInterface;
+ use Magento\Framework\View\Layout;
+@@ -27,16 +28,24 @@ class LayoutPlugin
+      */
+     private $response;
+
++    /**
++     * @var MaintenanceMode
++     */
++    private $maintenanceMode;
++
+     /**
+      * @param ResponseInterface $response
+      * @param Config $config
++     * @param MaintenanceMode $maintenanceMode
+      */
+     public function __construct(
+         ResponseInterface $response,
+-        Config $config
++        Config $config,
++        MaintenanceMode $maintenanceMode
+     ) {
+         $this->response = $response;
+         $this->config = $config;
++        $this->maintenanceMode = $maintenanceMode;
+     }
+
+     /**
+@@ -49,7 +58,7 @@ class LayoutPlugin
+      */
+     public function afterGenerateElements(Layout $subject)
+     {
+-        if ($subject->isCacheable() && $this->config->isEnabled()) {
++        if ($subject->isCacheable() && !$this->maintenanceMode->isOn() && $this->config->isEnabled()) {
+             $this->response->setPublicHeaders($this->config->getTtl());
+         }
+     }
+diff --Nuar a/vendor/magento/module-page-cache/Observer/SwitchPageCacheOnMaintenance.php b/vendor/magento/module-page-cache/Observer/SwitchPageCacheOnMaintenance.php
+deleted file mode 100644
+--- a/vendor/magento/module-page-cache/Observer/SwitchPageCacheOnMaintenance.php
++++ /dev/null
+@@ -1,108 +0,0 @@
+-<?php
+-/**
+- *
+- * Copyright © Magento, Inc. All rights reserved.
+- * See COPYING.txt for license details.
+- */
+-
+-declare(strict_types=1);
+-
+-namespace Magento\PageCache\Observer;
+-
+-use Magento\Framework\Event\ObserverInterface;
+-use Magento\Framework\Event\Observer;
+-use Magento\Framework\App\Cache\Manager;
+-use Magento\PageCache\Model\Cache\Type as PageCacheType;
+-use Magento\PageCache\Observer\SwitchPageCacheOnMaintenance\PageCacheState;
+-
+-/**
+- * Switch Page Cache on maintenance.
+- */
+-class SwitchPageCacheOnMaintenance implements ObserverInterface
+-{
+-    /**
+-     * @var Manager
+-     */
+-    private $cacheManager;
+-
+-    /**
+-     * @var PageCacheState
+-     */
+-    private $pageCacheStateStorage;
+-
+-    /**
+-     * @param Manager $cacheManager
+-     * @param PageCacheState $pageCacheStateStorage
+-     */
+-    public function __construct(Manager $cacheManager, PageCacheState $pageCacheStateStorage)
+-    {
+-        $this->cacheManager = $cacheManager;
+-        $this->pageCacheStateStorage = $pageCacheStateStorage;
+-    }
+-
+-    /**
+-     * Switches Full Page Cache.
+-     *
+-     * Depending on enabling or disabling Maintenance Mode it turns off or restores Full Page Cache state.
+-     *
+-     * @param Observer $observer
+-     * @return void
+-     */
+-    public function execute(Observer $observer): void
+-    {
+-        if ($observer->getData('isOn')) {
+-            $this->pageCacheStateStorage->save($this->isFullPageCacheEnabled());
+-            $this->turnOffFullPageCache();
+-        } else {
+-            $this->restoreFullPageCacheState();
+-        }
+-    }
+-
+-    /**
+-     * Turns off Full Page Cache.
+-     *
+-     * @return void
+-     */
+-    private function turnOffFullPageCache(): void
+-    {
+-        if (!$this->isFullPageCacheEnabled()) {
+-            return;
+-        }
+-
+-        $this->cacheManager->clean([PageCacheType::TYPE_IDENTIFIER]);
+-        $this->cacheManager->setEnabled([PageCacheType::TYPE_IDENTIFIER], false);
+-    }
+-
+-    /**
+-     * Full Page Cache state.
+-     *
+-     * @return bool
+-     */
+-    private function isFullPageCacheEnabled(): bool
+-    {
+-        $cacheStatus = $this->cacheManager->getStatus();
+-
+-        if (!array_key_exists(PageCacheType::TYPE_IDENTIFIER, $cacheStatus)) {
+-            return false;
+-        }
+-
+-        return (bool)$cacheStatus[PageCacheType::TYPE_IDENTIFIER];
+-    }
+-
+-    /**
+-     * Restores Full Page Cache state.
+-     *
+-     * Returns FPC to previous state that was before maintenance mode turning on.
+-     *
+-     * @return void
+-     */
+-    private function restoreFullPageCacheState(): void
+-    {
+-        $storedPageCacheState = $this->pageCacheStateStorage->isEnabled();
+-        $this->pageCacheStateStorage->flush();
+-
+-        if ($storedPageCacheState) {
+-            $this->cacheManager->setEnabled([PageCacheType::TYPE_IDENTIFIER], true);
+-        }
+-    }
+-}
+diff --Nuar a/vendor/magento/module-page-cache/Observer/SwitchPageCacheOnMaintenance/PageCacheState.php b/vendor/magento/module-page-cache/Observer/SwitchPageCacheOnMaintenance/PageCacheState.php
+--- a/vendor/magento/module-page-cache/Observer/SwitchPageCacheOnMaintenance/PageCacheState.php
++++ b/vendor/magento/module-page-cache/Observer/SwitchPageCacheOnMaintenance/PageCacheState.php
+@@ -14,6 +14,8 @@ use Magento\Framework\App\Filesystem\DirectoryList;
+
+ /**
+  * Page Cache state.
++ *
++ * @deprecated Originally used by now removed observer SwitchPageCacheOnMaintenance
+  */
+ class PageCacheState
+ {
+diff --Nuar a/vendor/magento/module-page-cache/Test/Unit/Model/Layout/LayoutPluginTest.php b/vendor/magento/module-page-cache/Test/Unit/Model/Layout/LayoutPluginTest.php
+--- a/vendor/magento/module-page-cache/Test/Unit/Model/Layout/LayoutPluginTest.php
++++ b/vendor/magento/module-page-cache/Test/Unit/Model/Layout/LayoutPluginTest.php
+@@ -8,6 +8,7 @@ declare(strict_types=1);
+ namespace Magento\PageCache\Test\Unit\Model\Layout;
+
+ use Magento\Framework\App\Config\ScopeConfigInterface;
++use Magento\Framework\App\MaintenanceMode;
+ use Magento\Framework\App\Response\Http;
+ use Magento\Framework\App\ResponseInterface;
+ use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
+@@ -43,6 +44,11 @@ class LayoutPluginTest extends TestCase
+      */
+     private $configMock;
+
++    /**
++     * @var MaintenanceMode|PHPUnit_Framework_MockObject_MockObject
++     */
++    private $maintenanceModeMock;
++
+     /**
+      * @inheritdoc
+      */
+@@ -51,12 +57,14 @@ class LayoutPluginTest extends TestCase
+         $this->layoutMock = $this->createPartialMock(Layout::class, ['isCacheable', 'getAllBlocks']);
+         $this->responseMock = $this->createMock(Http::class);
+         $this->configMock = $this->createMock(Config::class);
++        $this->maintenanceModeMock = $this->createMock(MaintenanceMode::class);
+
+         $this->model = (new ObjectManagerHelper($this))->getObject(
+             LayoutPlugin::class,
+             [
+                 'response' => $this->responseMock,
+                 'config' => $this->configMock,
++                'maintenanceMode' => $this->maintenanceModeMock
+             ]
+         );
+     }
+@@ -64,17 +72,19 @@ class LayoutPluginTest extends TestCase
+     /**
+      * @param $cacheState
+      * @param $layoutIsCacheable
++     * @param $maintenanceModeIsEnabled
+      * @return void
+      * @dataProvider afterGenerateXmlDataProvider
+      */
+-    public function testAfterGenerateElements($cacheState, $layoutIsCacheable): void
++    public function testAfterGenerateElements($cacheState, $layoutIsCacheable, $maintenanceModeIsEnabled): void
+     {
+         $maxAge = 180;
+
+         $this->layoutMock->expects($this->once())->method('isCacheable')->will($this->returnValue($layoutIsCacheable));
+         $this->configMock->expects($this->any())->method('isEnabled')->will($this->returnValue($cacheState));
++        $this->maintenanceModeMock->expects($this->any())->method('isOn')->will($this->returnValue($maintenanceModeIsEnabled));
+
+-        if ($layoutIsCacheable && $cacheState) {
++        if ($layoutIsCacheable && $cacheState && !$maintenanceModeIsEnabled) {
+             $this->configMock->expects($this->once())->method('getTtl')->will($this->returnValue($maxAge));
+             $this->responseMock->expects($this->once())->method('setPublicHeaders')->with($maxAge);
+         } else {
+@@ -90,10 +100,11 @@ class LayoutPluginTest extends TestCase
+     public function afterGenerateXmlDataProvider(): array
+     {
+         return [
+-            'Full_cache state is true, Layout is cache-able' => [true, true],
+-            'Full_cache state is true, Layout is not cache-able' => [true, false],
+-            'Full_cache state is false, Layout is not cache-able' => [false, false],
+-            'Full_cache state is false, Layout is cache-able' => [false, true],
++            'Full_cache state is true, Layout is cache-able' => [true, true, false],
++            'Full_cache state is true, Layout is not cache-able' => [true, false, false],
++            'Full_cache state is false, Layout is not cache-able' => [false, false, false],
++            'Full_cache state is false, Layout is cache-able' => [false, true, false],
++            'Full_cache state is true, Layout is cache-able, Maintenance mode is enabled' => [true, true, true],
+         ];
+     }
+
+diff --Nuar a/vendor/magento/module-page-cache/Test/Unit/Observer/SwitchPageCacheOnMaintenanceTest.php b/vendor/magento/module-page-cache/Test/Unit/Observer/SwitchPageCacheOnMaintenanceTest.php
+deleted file mode 100644
+--- a/vendor/magento/module-page-cache/Test/Unit/Observer/SwitchPageCacheOnMaintenanceTest.php
++++ /dev/null
+@@ -1,164 +0,0 @@
+-<?php
+-/**
+- *
+- * Copyright © Magento, Inc. All rights reserved.
+- * See COPYING.txt for license details.
+- */
+-
+-declare(strict_types=1);
+-
+-namespace Magento\PageCache\Test\Unit\Observer;
+-
+-use PHPUnit\Framework\TestCase;
+-use Magento\PageCache\Observer\SwitchPageCacheOnMaintenance;
+-use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+-use Magento\Framework\App\Cache\Manager;
+-use Magento\Framework\Event\Observer;
+-use Magento\PageCache\Model\Cache\Type as PageCacheType;
+-use Magento\PageCache\Observer\SwitchPageCacheOnMaintenance\PageCacheState;
+-
+-/**
+- * SwitchPageCacheOnMaintenance observer test.
+- */
+-class SwitchPageCacheOnMaintenanceTest extends TestCase
+-{
+-    /**
+-     * @var SwitchPageCacheOnMaintenance
+-     */
+-    private $model;
+-
+-    /**
+-     * @var Manager|\PHPUnit\Framework\MockObject\MockObject
+-     */
+-    private $cacheManager;
+-
+-    /**
+-     * @var PageCacheState|\PHPUnit\Framework\MockObject\MockObject
+-     */
+-    private $pageCacheStateStorage;
+-
+-    /**
+-     * @var Observer|\PHPUnit\Framework\MockObject\MockObject
+-     */
+-    private $observer;
+-
+-    /**
+-     * @inheritdoc
+-     */
+-    protected function setUp(): void
+-    {
+-        $objectManager = new ObjectManager($this);
+-        $this->cacheManager = $this->createMock(Manager::class);
+-        $this->pageCacheStateStorage = $this->createMock(PageCacheState::class);
+-        $this->observer = $this->createMock(Observer::class);
+-
+-        $this->model = $objectManager->getObject(SwitchPageCacheOnMaintenance::class, [
+-            'cacheManager' => $this->cacheManager,
+-            'pageCacheStateStorage' => $this->pageCacheStateStorage,
+-        ]);
+-    }
+-
+-    /**
+-     * Tests execute when setting maintenance mode to on.
+-     *
+-     * @param array $cacheStatus
+-     * @param bool $cacheState
+-     * @param int $flushCacheCalls
+-     * @return void
+-     * @dataProvider enablingPageCacheStateProvider
+-     */
+-    public function testExecuteWhileMaintenanceEnabling(
+-        array $cacheStatus,
+-        bool $cacheState,
+-        int $flushCacheCalls
+-    ): void {
+-        $this->observer->method('getData')
+-            ->with('isOn')
+-            ->willReturn(true);
+-        $this->cacheManager->method('getStatus')
+-            ->willReturn($cacheStatus);
+-
+-        // Page Cache state will be stored.
+-        $this->pageCacheStateStorage->expects($this->once())
+-            ->method('save')
+-            ->with($cacheState);
+-
+-        // Page Cache will be cleaned and disabled
+-        $this->cacheManager->expects($this->exactly($flushCacheCalls))
+-            ->method('clean')
+-            ->with([PageCacheType::TYPE_IDENTIFIER]);
+-        $this->cacheManager->expects($this->exactly($flushCacheCalls))
+-            ->method('setEnabled')
+-            ->with([PageCacheType::TYPE_IDENTIFIER], false);
+-
+-        $this->model->execute($this->observer);
+-    }
+-
+-    /**
+-     * Tests execute when setting Maintenance Mode to off.
+-     *
+-     * @param bool $storedCacheState
+-     * @param int $enableCacheCalls
+-     * @return void
+-     * @dataProvider disablingPageCacheStateProvider
+-     */
+-    public function testExecuteWhileMaintenanceDisabling(bool $storedCacheState, int $enableCacheCalls): void
+-    {
+-        $this->observer->method('getData')
+-            ->with('isOn')
+-            ->willReturn(false);
+-
+-        $this->pageCacheStateStorage->method('isEnabled')
+-            ->willReturn($storedCacheState);
+-
+-        // Nullify Page Cache state.
+-        $this->pageCacheStateStorage->expects($this->once())
+-            ->method('flush');
+-
+-        // Page Cache will be enabled.
+-        $this->cacheManager->expects($this->exactly($enableCacheCalls))
+-            ->method('setEnabled')
+-            ->with([PageCacheType::TYPE_IDENTIFIER]);
+-
+-        $this->model->execute($this->observer);
+-    }
+-
+-    /**
+-     * Page Cache state data provider.
+-     *
+-     * @return array
+-     */
+-    public function enablingPageCacheStateProvider(): array
+-    {
+-        return [
+-            'page_cache_is_enable' => [
+-                'cache_status' => [PageCacheType::TYPE_IDENTIFIER => 1],
+-                'cache_state' => true,
+-                'flush_cache_calls' => 1,
+-            ],
+-            'page_cache_is_missing_in_system' => [
+-                'cache_status' => [],
+-                'cache_state' => false,
+-                'flush_cache_calls' => 0,
+-            ],
+-            'page_cache_is_disable' => [
+-                'cache_status' => [PageCacheType::TYPE_IDENTIFIER => 0],
+-                'cache_state' => false,
+-                'flush_cache_calls' => 0,
+-            ],
+-        ];
+-    }
+-
+-    /**
+-     * Page Cache state data provider.
+-     *
+-     * @return array
+-     */
+-    public function disablingPageCacheStateProvider(): array
+-    {
+-        return [
+-            ['stored_cache_state' => true, 'enable_cache_calls' => 1],
+-            ['stored_cache_state' => false, 'enable_cache_calls' => 0],
+-        ];
+-    }
+-}
+diff --Nuar a/vendor/magento/module-page-cache/etc/events.xml b/vendor/magento/module-page-cache/etc/events.xml
+--- a/vendor/magento/module-page-cache/etc/events.xml
++++ b/vendor/magento/module-page-cache/etc/events.xml
+@@ -57,7 +57,4 @@
+     <event name="customer_logout">
+         <observer name="FlushFormKey" instance="Magento\PageCache\Observer\FlushFormKey"/>
+     </event>
+-    <event name="maintenance_mode_changed">
+-        <observer name="page_cache_switcher_for_maintenance" instance="Magento\PageCache\Observer\SwitchPageCacheOnMaintenance"/>
+-    </event>
+ </config>
