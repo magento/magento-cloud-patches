@@ -243,7 +243,8 @@
       "2.3.4": "MC-31387__fix_paypal_issue_with_region__2.3.4.patch"
     },
     "FPC is getting disabled during deployments": {
-      ">=2.3.2 <2.4.0": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.2.patch"
+      ">=2.3.2 <2.3.5": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.2.patch",
+      ">=2.3.5 <2.4.0": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.5.patch"
     }
   },
   "monolog/monolog": {
