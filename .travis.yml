@@ -46,14 +46,14 @@ jobs:
       script: if [ $TRAVIS_SECURE_ENV_VARS == "true" ] && [ $TEST_SUITE == "functional" ]; then ./tests/travis/functional.sh; fi;
       php: '7.1'
       env:
-        - TEST_SUITE=integration
+        - TEST_SUITE=test
     - script: if [ $TRAVIS_SECURE_ENV_VARS == "true" ] && [ $TEST_SUITE == "functional" ]; then ./tests/travis/functional.sh; fi;
       php: '7.2'
       env:
-        - TEST_SUITE=integration
+        - TEST_SUITE=test
     - script: if [ $TRAVIS_SECURE_ENV_VARS == "true" ] && [ $TEST_SUITE == "functional" ]; then ./tests/travis/functional.sh; fi;
       php: '7.3'
       env:
-        - TEST_SUITE=integration
+        - TEST_SUITE=test
 
 install: composer update
