@@ -234,7 +234,7 @@ diff -Nuar a/vendor/magento/module-amqp/composer.json b/vendor/magento/module-am
          "php": "~7.1.3||~7.2.0"
      },
 +    "suggest": {
-+        "magento/module-asynchronous-operations": "*",
++        "magento/module-asynchronous-operations": "*"
 +    },
      "type": "magento2-module",
      "license": [
