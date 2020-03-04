@@ -15,6 +15,8 @@
         "symfony/process": "^2.1||^4.1"
     },
     "require-dev": {
+        "codeception/codeception": "^2.5.3",
+        "consolidation/robo": "^1.2",
         "phpmd/phpmd": "@stable",
         "phpunit/phpunit": "^6.2",
         "squizlabs/php_codesniffer": "^3.0"
@@ -24,7 +26,8 @@
     ],
     "autoload": {
         "psr-4": {
-            "Magento\\CloudPatches\\": "src/"
+            "Magento\\CloudPatches\\": "src/",
+            "Magento\\CloudPatches\\Test\\Functional\\": "tests/functional/"
         }
     },
     "scripts": {

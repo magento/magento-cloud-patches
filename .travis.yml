@@ -43,7 +43,11 @@ jobs:
       env:
         - TEST_SUITE=static-unit
 
-install: composer update
+install:
+  - composer config http-basic.repo.magento.com ${REPO_USERNAME_CE} ${REPO_PASSWORD_CE}
+  - composer config github-oauth.github.com ${GITHUB_TOKEN}
+  - if [ -n "${MCD_VERSION}" ]; then composer config repositories.mcd git git@github.com:magento/magento-cloud-docker.git && composer require "magento/magento-cloud-docker:${MCD_VERSION}" --no-update; fi;
+  - composer update -n --no-suggest
 
 script:
   - if [ $TRAVIS_SECURE_ENV_VARS == "true" ] && [ $TEST_SUITE == "functional" ]; then ./tests/travis/functional.sh; fi;

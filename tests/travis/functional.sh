@@ -8,15 +8,12 @@ trap '>&2 echo Error: Command \`$BASH_COMMAND\` on line $LINENO failed with exit
 
 case $TRAVIS_PHP_VERSION in
     7.1)
-        #./vendor/bin/codecept run -g php71 --steps
-        echo "$TRAVIS_PHP_VERSION"
+        ./vendor/bin/codecept run -g php71 --steps
         ;;
     7.2)
-        #./vendor/bin/codecept run -g php72 --steps
-        echo "$TRAVIS_PHP_VERSION"
+        ./vendor/bin/codecept run -g php72 --steps
         ;;
     7.3)
-        #./vendor/bin/codecept run -g php73 --steps
-        echo "$TRAVIS_PHP_VERSION"
+        ./vendor/bin/codecept run -g php73 --steps
         ;;
 esac
