@@ -21,9 +21,10 @@ class AcceptanceCest
     }
 
     /**
+     * @param \CliTester $I
      * @param string $magentoVersion
      */
-    protected function prepareTemplate(string $magentoVersion): void
+    protected function prepareTemplate(\CliTester $I, string $magentoVersion): void
     {
         $I->cloneTemplateToWorkDir($magentoVersion);
         $I->createAuthJson();
@@ -47,11 +48,11 @@ class AcceptanceCest
      */
     public function testPatches(\CliTester $I, \Codeception\Example $data): void
     {
-        $this->prepareTemplate($data['magentoVersion']);
+        $this->prepareTemplate($I, $data['magentoVersion']);
         $this->removeESIfExists($I);
         $I->runEceDockerCommand('build:compose --mode=production');
-        $I->startEnvironment();
         $I->runDockerComposeCommand('run build cloud-build');
+        $I->startEnvironment();
         $I->runDockerComposeCommand('run deploy cloud-deploy');
         $I->runDockerComposeCommand('run deploy cloud-post-deploy');
         $I->amOnPage('/');
