@@ -80,7 +80,7 @@ class AcceptanceCest
     /**
      * @return array
      */
-    public function patchesDataProvider(): array
+    protected function patchesDataProvider(): array
     {
         return [
             ['magentoVersion' => '2.3.3'],
@@ -94,7 +94,6 @@ class AcceptanceCest
     public function _after(\CliTester $I): void
     {
         $I->stopEnvironment();
-        $I->removeDockerCompose();
         $I->removeWorkDir();
     }
 }
