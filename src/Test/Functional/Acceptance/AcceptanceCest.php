@@ -49,7 +49,6 @@ class AcceptanceCest
     public function testPatches(\CliTester $I, \Codeception\Example $data): void
     {
         $this->prepareTemplate($I, $data['magentoVersion']);
-        $this->removeESIfExists($I);
         $I->runEceDockerCommand('build:compose --mode=production');
         $I->runDockerComposeCommand('run build cloud-build');
         $I->startEnvironment();
@@ -58,23 +57,6 @@ class AcceptanceCest
         $I->amOnPage('/');
         $I->see('Home page');
         $I->see('CMS homepage content goes here.');
-    }
-
-    /**
-     * @param \CliTester $I
-     */
-    protected function removeESIfExists(\CliTester $I): void
-    {
-        $services = $I->readServicesYaml();
-
-        if (isset($services['elasticsearch'])) {
-            unset($services['elasticsearch']);
-            $I->writeServicesYaml($services);
-
-            $app = $I->readAppMagentoYaml();
-            unset($app['relationships']['elasticsearch']);
-            $I->writeAppMagentoYaml($app);
-        }
     }
 
     /**
