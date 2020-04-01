@@ -19,9 +19,9 @@ class Acceptance71Cest extends AcceptanceCest
     {
         return [
             ['magentoVersion' => '2.1.16'],
-            ['magentoVersion' => '2.1.18'],
-            ['magentoVersion' => '2.2.0'],
-            ['magentoVersion' => '2.2.11'],
+//            ['magentoVersion' => '2.1.18'],
+//            ['magentoVersion' => '2.2.0'],
+//            ['magentoVersion' => '2.2.11'],
         ];
     }
 }

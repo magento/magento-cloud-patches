@@ -45,6 +45,7 @@ class AcceptanceCest
 
         if ($this->edition === 'CE') {
             $I->removeDependencyFromComposer('magento/magento-cloud-metapackage');
+            $I->addDependencyToComposer('magento/ece-tools', '^2002.1.0');
             $I->addDependencyToComposer('magento/product-community-edition', $magentoVersion);
         }
 
