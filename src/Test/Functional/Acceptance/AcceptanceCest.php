@@ -13,6 +13,11 @@ namespace Magento\CloudPatches\Test\Functional\Acceptance;
 class AcceptanceCest
 {
     /**
+     * @var string
+     */
+    protected $edition = 'EE';
+
+    /**
      * @param \CliTester $I
      */
     public function _before(\CliTester $I): void
@@ -37,6 +42,12 @@ class AcceptanceCest
             'magento/magento-cloud-docker',
             $I->getDependencyVersion('magento/magento-cloud-docker')
         );
+
+        if ($this->edition === 'CE') {
+            $I->removeDependencyFromComposer('magento/magento-cloud-metapackage');
+            $I->addDependencyToComposer('magento/product-community-edition', $magentoVersion);
+        }
+
         $I->composerUpdate();
     }
 
