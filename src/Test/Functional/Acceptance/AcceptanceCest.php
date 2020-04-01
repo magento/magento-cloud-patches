@@ -27,11 +27,12 @@ class AcceptanceCest
 
     /**
      * @param \CliTester $I
+     * @param string $templateVersion
      * @param string $magentoVersion
      */
-    protected function prepareTemplate(\CliTester $I, string $magentoVersion): void
+    protected function prepareTemplate(\CliTester $I, string $templateVersion, string $magentoVersion): void
     {
-        $I->cloneTemplateToWorkDir($magentoVersion);
+        $I->cloneTemplateToWorkDir($templateVersion);
         $I->createAuthJson();
         $I->createArtifactsDir();
         $I->createArtifactCurrentTestedCode('patches', '1.0.99');
@@ -60,7 +61,7 @@ class AcceptanceCest
      */
     public function testPatches(\CliTester $I, \Codeception\Example $data): void
     {
-        $this->prepareTemplate($I, $data['magentoVersion']);
+        $this->prepareTemplate($I, $data['templateVersion'], $data['magentoVersion']);
         $I->runEceDockerCommand('build:compose --mode=production');
         $I->runDockerComposeCommand('run build cloud-build');
         $I->startEnvironment();
@@ -77,8 +78,9 @@ class AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['magentoVersion' => '2.3.3'],
-            ['magentoVersion' => 'master'],
+            ['templateVersion' => '2.3.3', 'magentoVersion' => '>= 2.3.3 <2.3.4'],
+            ['templateVersion' => '2.3.4', 'magentoVersion' => '>= 2.3.4 <2.3.5'],
+            ['templateVersion' => 'master', 'magentoVersion' => '@stable'],
         ];
     }
 
