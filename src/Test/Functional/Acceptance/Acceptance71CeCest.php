@@ -12,5 +12,8 @@ namespace Magento\CloudPatches\Test\Functional\Acceptance;
  */
 class Acceptance71CeCest extends Acceptance71Cest
 {
+    /**
+     * @var string
+     */
     protected $edition = 'CE';
 }
