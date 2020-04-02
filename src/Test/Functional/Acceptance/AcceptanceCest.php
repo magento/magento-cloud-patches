@@ -44,13 +44,24 @@ class AcceptanceCest
         );
 
         if ($this->edition === 'CE') {
-            $version = $I->getDependencyVersion('magento/magento-cloud-metapackage');
+            $version = $this->getVersionRangeForMagento($I);
             $I->removeDependencyFromComposer('magento/magento-cloud-metapackage');
             $I->addDependencyToComposer('magento/ece-tools', '^2002.1.0');
             $I->addDependencyToComposer('magento/product-community-edition', $version);
         }
 
         $I->composerUpdate();
+    }
+
+    /**
+     * @param \CliTester $I
+     * @return string
+     */
+    protected function getVersionRangeForMagento(\CliTester $I): string
+    {
+        $composer = json_decode(file_get_contents($I->getWorkDirPath() . '/composer.json'), true);
+
+        return $composer['require']['magento/magento-cloud-metapackage'] ?? '';
     }
 
     /**
