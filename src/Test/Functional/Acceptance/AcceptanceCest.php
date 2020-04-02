@@ -28,9 +28,8 @@ class AcceptanceCest
     /**
      * @param \CliTester $I
      * @param string $templateVersion
-     * @param string $magentoVersion
      */
-    protected function prepareTemplate(\CliTester $I, string $templateVersion, string $magentoVersion): void
+    protected function prepareTemplate(\CliTester $I, string $templateVersion): void
     {
         $I->cloneTemplateToWorkDir($templateVersion);
         $I->createAuthJson();
@@ -45,9 +44,10 @@ class AcceptanceCest
         );
 
         if ($this->edition === 'CE') {
+            $version = $I->getDependencyVersion('magento/magento-cloud-metapackage');
             $I->removeDependencyFromComposer('magento/magento-cloud-metapackage');
             $I->addDependencyToComposer('magento/ece-tools', '^2002.1.0');
-            $I->addDependencyToComposer('magento/product-community-edition', $magentoVersion);
+            $I->addDependencyToComposer('magento/product-community-edition', $version);
         }
 
         $I->composerUpdate();
@@ -61,12 +61,12 @@ class AcceptanceCest
      */
     public function testPatches(\CliTester $I, \Codeception\Example $data): void
     {
-        $this->prepareTemplate($I, $data['templateVersion'], $data['magentoVersion']);
-        $I->runEceDockerCommand('build:compose --mode=production');
-        $I->runDockerComposeCommand('run build cloud-build');
-        $I->startEnvironment();
-        $I->runDockerComposeCommand('run deploy cloud-deploy');
-        $I->runDockerComposeCommand('run deploy cloud-post-deploy');
+        $this->prepareTemplate($I, $data['templateVersion']);
+        $I->assertTrue($I->runEceDockerCommand('build:compose --mode=production'));
+        $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
+        $I->assertTrue($I->startEnvironment());
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-post-deploy'));
         $I->amOnPage('/');
         $I->see('Home page');
         $I->see('CMS homepage content goes here.');
@@ -78,9 +78,9 @@ class AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.3.3', 'magentoVersion' => '>= 2.3.3 <2.3.4'],
-            ['templateVersion' => '2.3.4', 'magentoVersion' => '>= 2.3.4 <2.3.5'],
-            ['templateVersion' => 'master', 'magentoVersion' => '@stable'],
+            ['templateVersion' => '2.3.3'],
+            ['templateVersion' => '2.3.4'],
+            ['templateVersion' => 'master'],
         ];
     }
 

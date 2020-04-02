@@ -18,9 +18,9 @@ class Acceptance72Cest extends AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.3.0', 'magentoVersion' => '>= 2.3.0 <2.3.1'],
-            ['templateVersion' => '2.3.1', 'magentoVersion' => '>= 2.3.1 <2.3.2'],
-            ['templateVersion' => '2.3.2', 'magentoVersion' => '>= 2.3.2 <2.3.3'],
+            ['templateVersion' => '2.3.0'],
+            ['templateVersion' => '2.3.1'],
+            ['templateVersion' => '2.3.2'],
         ];
     }
 }
