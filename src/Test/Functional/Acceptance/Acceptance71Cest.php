@@ -18,10 +18,21 @@ class Acceptance71Cest extends AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['magentoVersion' => '2.1.16'],
-            ['magentoVersion' => '2.1.18'],
-            ['magentoVersion' => '2.2.0'],
-            ['magentoVersion' => '2.2.11'],
+            ['templateVersion' => '2.1.16'],
+            ['templateVersion' => '2.1.17'],
+            ['templateVersion' => '2.1.18'],
+            ['templateVersion' => '2.2.0'],
+            ['templateVersion' => '2.2.1'],
+            ['templateVersion' => '2.2.2'],
+            ['templateVersion' => '2.2.3'],
+            ['templateVersion' => '2.2.4'],
+            ['templateVersion' => '2.2.5'],
+            ['templateVersion' => '2.2.6'],
+            ['templateVersion' => '2.2.7'],
+            ['templateVersion' => '2.2.8'],
+            ['templateVersion' => '2.2.9'],
+            ['templateVersion' => '2.2.10'],
+            ['templateVersion' => '2.2.11'],
         ];
     }
 }
