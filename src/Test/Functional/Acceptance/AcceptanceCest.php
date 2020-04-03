@@ -13,6 +13,11 @@ namespace Magento\CloudPatches\Test\Functional\Acceptance;
 class AcceptanceCest
 {
     /**
+     * @var string
+     */
+    protected $edition = 'EE';
+
+    /**
      * @param \CliTester $I
      */
     public function _before(\CliTester $I): void
@@ -22,11 +27,11 @@ class AcceptanceCest
 
     /**
      * @param \CliTester $I
-     * @param string $magentoVersion
+     * @param string $templateVersion
      */
-    protected function prepareTemplate(\CliTester $I, string $magentoVersion): void
+    protected function prepareTemplate(\CliTester $I, string $templateVersion): void
     {
-        $I->cloneTemplateToWorkDir($magentoVersion);
+        $I->cloneTemplateToWorkDir($templateVersion);
         $I->createAuthJson();
         $I->createArtifactsDir();
         $I->createArtifactCurrentTestedCode('patches', '1.0.99');
@@ -37,7 +42,26 @@ class AcceptanceCest
             'magento/magento-cloud-docker',
             $I->getDependencyVersion('magento/magento-cloud-docker')
         );
+
+        if ($this->edition === 'CE') {
+            $version = $this->getVersionRangeForMagento($I);
+            $I->removeDependencyFromComposer('magento/magento-cloud-metapackage');
+            $I->addDependencyToComposer('magento/ece-tools', '^2002.1.0');
+            $I->addDependencyToComposer('magento/product-community-edition', $version);
+        }
+
         $I->composerUpdate();
+    }
+
+    /**
+     * @param \CliTester $I
+     * @return string
+     */
+    protected function getVersionRangeForMagento(\CliTester $I): string
+    {
+        $composer = json_decode(file_get_contents($I->getWorkDirPath() . '/composer.json'), true);
+
+        return $composer['require']['magento/magento-cloud-metapackage'] ?? '';
     }
 
     /**
@@ -48,33 +72,15 @@ class AcceptanceCest
      */
     public function testPatches(\CliTester $I, \Codeception\Example $data): void
     {
-        $this->prepareTemplate($I, $data['magentoVersion']);
-        $this->removeESIfExists($I);
-        $I->runEceDockerCommand('build:compose --mode=production');
-        $I->runDockerComposeCommand('run build cloud-build');
-        $I->startEnvironment();
-        $I->runDockerComposeCommand('run deploy cloud-deploy');
-        $I->runDockerComposeCommand('run deploy cloud-post-deploy');
+        $this->prepareTemplate($I, $data['templateVersion']);
+        $I->assertTrue($I->runEceDockerCommand('build:compose --mode=production'));
+        $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
+        $I->assertTrue($I->startEnvironment());
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-post-deploy'));
         $I->amOnPage('/');
         $I->see('Home page');
         $I->see('CMS homepage content goes here.');
-    }
-
-    /**
-     * @param \CliTester $I
-     */
-    protected function removeESIfExists(\CliTester $I): void
-    {
-        $services = $I->readServicesYaml();
-
-        if (isset($services['elasticsearch'])) {
-            unset($services['elasticsearch']);
-            $I->writeServicesYaml($services);
-
-            $app = $I->readAppMagentoYaml();
-            unset($app['relationships']['elasticsearch']);
-            $I->writeAppMagentoYaml($app);
-        }
     }
 
     /**
@@ -83,8 +89,9 @@ class AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['magentoVersion' => '2.3.3'],
-            ['magentoVersion' => 'master'],
+            ['templateVersion' => '2.3.3'],
+            ['templateVersion' => '2.3.4'],
+            ['templateVersion' => 'master'],
         ];
     }
 
