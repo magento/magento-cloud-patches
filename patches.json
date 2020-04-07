@@ -78,9 +78,6 @@
       "2.2.0 - 2.2.3": "SET-36__fix_oom_during_customer_import__2.2.0.patch",
       "2.2.4": "SET-36__fix_oom_during_customer_import__2.2.4.patch"
     },
-    "Add PayPal and Braintree TPV codes on checkout": {
-      "~2.1.8": "MAGETWO-53941__fix_enterprise_payment_codes__2.1.8.patch"
-    },
     "Fix Mview on staging environments": {
       "2.1.4": "MAGETWO-84444__fix_mview_on_staging__2.1.4.patch",
       "2.1.5 - 2.1.9": "MAGETWO-84444__fix_mview_on_staging__2.1.5.patch",
@@ -224,9 +221,6 @@
       "2.2.0 - 2.2.8": "PRODSECBUG-2432__admin_path_disclosure_bug__2.2.0.patch",
       "2.3.0 - 2.3.1": "PRODSECBUG-2432__admin_path_disclosure_bug__2.3.0.patch"
     },
-    "Transaction MD5 hash field is removed by Authorize.net": {
-      "2.2.0 - 2.2.7": "MAGETWO-98129__transaction_field_is_removed_by_authorize_net__2.2.0.patch"
-    },
     "Customer attributes issue": {
       "2.2.6": "MAGETWO-95591__customer_attributes_issue__2.2.6.patch"
     },
@@ -239,11 +233,26 @@
     "Fix for multi-site configuration issue": {
       "2.2.4": "MAGETWO-92926__fix_for_multi-site_configuration_issue__2.2.4.patch"
     },
-    "Fix PayPal issue with region": {
-      "2.3.4": "MC-31387__fix_paypal_issue_with_region__2.3.4.patch"
-    },
     "FPC is getting disabled during deployments": {
       ">=2.3.2 <2.4.0": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.2.patch"
+    }
+  },
+  "magento/module-paypal": {
+    "Add PayPal TPV codes on checkout": {
+      "~100.1.6": "MAGETWO-53941__fix_enterprise_paypal_codes__100.1.6.patch"
+    },
+    "Fix PayPal issue with region": {
+      "100.3.4": "MC-31387__fix_paypal_issue_with_region__100.3.4.patch"
+    }
+  },
+  "magento/module-authorizenet": {
+    "Transaction MD5 hash field is removed by Authorize.net": {
+      "100.2.0 - 100.2.3": "MAGETWO-98129__transaction_field_is_removed_by_authorize_net__100.2.0.patch"
+    }
+  },
+  "magento/module-braintree": {
+    "Add Braintree TPV codes on checkout": {
+      "~100.1.6": "MAGETWO-53941__fix_enterprise_braintree_code__100.1.6.patch"
     }
   },
   "monolog/monolog": {
