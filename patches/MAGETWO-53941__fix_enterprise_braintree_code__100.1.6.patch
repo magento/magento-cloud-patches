@@ -1,5 +1,3 @@
-<+>UTF-8
-===================================================================
 diff -Nuar a/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php b/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php
 --- a/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php
 +++ b/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php
@@ -21,8 +19,6 @@ diff -Nuar a/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.
          ];
      }
  }
-<+>UTF-8
-===================================================================
 diff -Nuar a/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php b/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php
 --- a/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php
 +++ b/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php
@@ -46,5 +42,3 @@ diff -Nuar a/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDa
          ];
      }
  }
-<+>UTF-8
-===================================================================
