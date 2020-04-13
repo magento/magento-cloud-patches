@@ -1,3 +1,60 @@
+diff -Naur a/vendor/magento/framework-message-queue/CallbackInvoker.php b/vendor/magento/framework-message-queue/CallbackInvoker.php
+--- a/vendor/magento/framework-message-queue/CallbackInvoker.php
++++ b/vendor/magento/framework-message-queue/CallbackInvoker.php
+@@ -6,11 +6,28 @@
+ 
+ namespace Magento\Framework\MessageQueue;
+ 
++use Magento\Framework\App\DeploymentConfig;
++
+ /**
+  * Class CallbackInvoker to invoke callbacks for consumer classes
+  */
+ class CallbackInvoker
+ {
++    /**
++     * @var DeploymentConfig
++     */
++    private $deploymentConfig;
++
++    /**
++     * CallbackInvoker constructor.
++     * @param DeploymentConfig $deploymentConfig
++     */
++    public function __construct(
++        DeploymentConfig $deploymentConfig
++    ) {
++        $this->deploymentConfig = $deploymentConfig;
++    }
++
+     /**
+      * Run short running process
+      *
+@@ -24,8 +41,23 @@ class CallbackInvoker
+         for ($i = $maxNumberOfMessages; $i > 0; $i--) {
+             do {
+                 $message = $queue->dequeue();
+-            } while ($message === null && (sleep(1) === 0));
++            } while ($message === null && $this->isWaitingNextMessage() && (sleep(1) === 0));
++
++            if ($message === null) {
++                break;
++            }
++
+             $callback($message);
+         }
+     }
++
++    /**
++     * Checks if consumers should wait for message from the queue
++     *
++     * @return bool
++     */
++    private function isWaitingNextMessage(): bool
++    {
++        return $this->deploymentConfig->get('queue/consumers_wait_for_messages', 1) === 1;
++    }
+ }
 diff -Naur a/vendor/magento/module-message-queue/Setup/ConfigOptionsList.php b/vendor/magento/module-message-queue/Setup/ConfigOptionsList.php
 new file mode 100644
 --- /dev/null
