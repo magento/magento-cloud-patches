@@ -1,5 +1,4 @@
-diff --git a/dev/tests/integration/testsuite/Magento/Developer/Model/Logger/Handler/DebugTest.php b/dev/tests/integration/testsuite/Magento/Developer/Model/Logger/Handler/DebugTest.php
-index f7a47017f8b1..26fe33b6706f 100644
+diff -Nuar a/dev/tests/integration/testsuite/Magento/Developer/Model/Logger/Handler/DebugTest.php b/dev/tests/integration/testsuite/Magento/Developer/Model/Logger/Handler/DebugTest.php
 --- a/dev/tests/integration/testsuite/Magento/Developer/Model/Logger/Handler/DebugTest.php
 +++ b/dev/tests/integration/testsuite/Magento/Developer/Model/Logger/Handler/DebugTest.php
 @@ -139,7 +139,7 @@ public function testDebugInDeveloperMode()
@@ -11,8 +10,7 @@ index f7a47017f8b1..26fe33b6706f 100644
          $this->removeDebugLog();
          $this->logger->debug($message);
          $this->assertFileExists($this->getDebuggerLogPath());
-diff --git a/lib/internal/Magento/Framework/App/DeploymentConfig.php b/lib/internal/Magento/Framework/App/DeploymentConfig.php
-index 56816c65cebd..3671d2e56d30 100644
+diff -Nuar a/lib/internal/Magento/Framework/App/DeploymentConfig.php b/lib/internal/Magento/Framework/App/DeploymentConfig.php
 --- a/lib/internal/Magento/Framework/App/DeploymentConfig.php
 +++ b/lib/internal/Magento/Framework/App/DeploymentConfig.php
 @@ -86,7 +86,6 @@ public function get($key = null, $defaultValue = null)
@@ -45,8 +43,7 @@ index 56816c65cebd..3671d2e56d30 100644
                  $cache = array_merge($cache, $this->flattenParams($param, $newPath));
              }
          }
-diff --git a/lib/internal/Magento/Framework/Locale/Resolver.php b/lib/internal/Magento/Framework/Locale/Resolver.php
-index d058bfd41ab1..55ef2a4e9a30 100644
+diff -Nuar a/lib/internal/Magento/Framework/Locale/Resolver.php b/lib/internal/Magento/Framework/Locale/Resolver.php
 --- a/lib/internal/Magento/Framework/Locale/Resolver.php
 +++ b/lib/internal/Magento/Framework/Locale/Resolver.php
 @@ -15,7 +15,7 @@
@@ -67,8 +64,7 @@ index d058bfd41ab1..55ef2a4e9a30 100644
          $this->setLocale($locale);
      }
 
-diff --git a/lib/internal/Magento/Framework/Module/ModuleList.php b/lib/internal/Magento/Framework/Module/ModuleList.php
-index 6ee061cffb3d..d1715379b0b1 100644
+diff -Nuar a/lib/internal/Magento/Framework/Module/ModuleList.php b/lib/internal/Magento/Framework/Module/ModuleList.php
 --- a/lib/internal/Magento/Framework/Module/ModuleList.php
 +++ b/lib/internal/Magento/Framework/Module/ModuleList.php
 @@ -59,7 +59,7 @@ public function __construct(DeploymentConfig $config, ModuleList\Loader $loader)
@@ -116,8 +112,7 @@ index 6ee061cffb3d..d1715379b0b1 100644
          if (null === $this->configData && null !== $this->config->get(ConfigOptionsListConstants::KEY_MODULES)) {
              $this->configData = $this->config->get(ConfigOptionsListConstants::KEY_MODULES);
          }
-diff --git a/lib/internal/Magento/Framework/Module/Test/Unit/ModuleListTest.php b/lib/internal/Magento/Framework/Module/Test/Unit/ModuleListTest.php
-index 9b4f23872513..363f90501dd0 100644
+diff -Nuar a/lib/internal/Magento/Framework/Module/Test/Unit/ModuleListTest.php b/lib/internal/Magento/Framework/Module/Test/Unit/ModuleListTest.php
 --- a/lib/internal/Magento/Framework/Module/Test/Unit/ModuleListTest.php
 +++ b/lib/internal/Magento/Framework/Module/Test/Unit/ModuleListTest.php
 @@ -47,7 +47,6 @@ protected function setUp()
