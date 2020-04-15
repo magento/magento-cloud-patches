@@ -1,6 +1,6 @@
-diff -Nuar a/lib/internal/Magento/Framework/App/DeploymentConfig.php b/lib/internal/Magento/Framework/App/DeploymentConfig.php
---- a/lib/internal/Magento/Framework/App/DeploymentConfig.php
-+++ b/lib/internal/Magento/Framework/App/DeploymentConfig.php
+diff -Nuar a/vendor/magento/framework/App/DeploymentConfig.php b/vendor/magento/framework/App/DeploymentConfig.php
+--- a/vendor/magento/framework/App/DeploymentConfig.php
++++ b/vendor/magento/framework/App/DeploymentConfig.php
 @@ -86,7 +86,6 @@ public function get($key = null, $defaultValue = null)
       */
      public function isAvailable()
@@ -31,9 +31,9 @@ diff -Nuar a/lib/internal/Magento/Framework/App/DeploymentConfig.php b/lib/inter
                  $cache = array_merge($cache, $this->flattenParams($param, $newPath));
              }
          }
-diff -Nuar a/lib/internal/Magento/Framework/Locale/Resolver.php b/lib/internal/Magento/Framework/Locale/Resolver.php
---- a/lib/internal/Magento/Framework/Locale/Resolver.php
-+++ b/lib/internal/Magento/Framework/Locale/Resolver.php
+diff -Nuar a/vendor/magento/framework/Locale/Resolver.php b/vendor/magento/framework/Locale/Resolver.php
+--- a/vendor/magento/framework/Locale/Resolver.php
++++ b/vendor/magento/framework/Locale/Resolver.php
 @@ -15,7 +15,7 @@
  class Resolver implements ResolverInterface
  {
@@ -51,9 +51,9 @@ diff -Nuar a/lib/internal/Magento/Framework/Locale/Resolver.php b/lib/internal/M
 +        $this->deploymentConfig = $deploymentConfig ?: ObjectManager::getInstance()->get(DeploymentConfig::class);
          $this->setLocale($locale);
      }
-diff -Nuar a/lib/internal/Magento/Framework/Module/ModuleList.php b/lib/internal/Magento/Framework/Module/ModuleList.php
---- a/lib/internal/Magento/Framework/Module/ModuleList.php
-+++ b/lib/internal/Magento/Framework/Module/ModuleList.php
+diff -Nuar a/vendor/magento/framework/Module/ModuleList.php b/vendor/magento/framework/Module/ModuleList.php
+--- a/vendor/magento/framework/Module/ModuleList.php
++++ b/vendor/magento/framework/Module/ModuleList.php
 @@ -59,7 +59,7 @@ public function __construct(DeploymentConfig $config, ModuleList\Loader $loader)
      }
 
