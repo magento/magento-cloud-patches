@@ -51,6 +51,7 @@ diff -Nuar a/vendor/magento/framework/Locale/Resolver.php b/vendor/magento/frame
 +        $this->deploymentConfig = $deploymentConfig ?: ObjectManager::getInstance()->get(DeploymentConfig::class);
          $this->setLocale($locale);
      }
+
 diff -Nuar a/vendor/magento/framework/Module/ModuleList.php b/vendor/magento/framework/Module/ModuleList.php
 --- a/vendor/magento/framework/Module/ModuleList.php
 +++ b/vendor/magento/framework/Module/ModuleList.php
