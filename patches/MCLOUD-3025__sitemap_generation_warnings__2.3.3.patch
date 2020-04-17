@@ -1,0 +1,48 @@
+diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/module-sitemap/Model/Observer.php
+--- a/vendor/magento/module-sitemap/Model/Observer.php
++++ b/vendor/magento/module-sitemap/Model/Observer.php
+@@ -61,6 +61,11 @@ class Observer
+      */
+     private $emailNotification;
+ 
++    /**
++     * @var int
++     */
++    private $retryInterval = 10;
++
+     /**
+      * Observer constructor.
+      * @param ScopeConfigInterface $scopeConfig
+@@ -87,6 +92,7 @@ class Observer
+     public function scheduledGenerateSitemaps()
+     {
+         $errors = [];
++        $sitemapsWithError = [];
+         $recipient = $this->scopeConfig->getValue(
+             Observer::XML_PATH_ERROR_RECIPIENT,
+             ScopeInterface::SCOPE_STORE
+@@ -107,11 +113,22 @@ class Observer
+             try {
+                 $sitemap->generateXml();
+             } catch (\Exception $e) {
++                $sitemapsWithError[] = $sitemap;
+                 $errors[] = $e->getMessage();
+             }
+         }
+-        if ($errors && $recipient) {
+-            $this->emailNotification->sendErrors($errors);
++        if ($errors && $recipient && !empty($sitemapsWithError)) {
++            sleep($this->retryInterval);
++            $nonRecoverableErrors = [];
++            //re-try to write sitemap again
++            foreach ($sitemapsWithError as $sitemap) {
++                try {
++                    $sitemap->generateXml();
++                } catch (\Exception $e) {
++                    $nonRecoverableErrors[] = $e->getMessage();
++                }
++            }
++            $this->emailNotification->sendErrors($nonRecoverableErrors);
+         }
+     }
+ }

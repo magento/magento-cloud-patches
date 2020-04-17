@@ -238,6 +238,9 @@
     },
     "Fix PayPal issue with region": {
       "100.3.4": "MC-31387__fix_paypal_issue_with_region__100.3.4.patch"
+    },
+    "Sitemap Generation Warnings": {
+      "2.3.3": "MCLOUD-3025__sitemap_generation_warnings__2.3.3.patch"
     }
   },
   "magento/module-authorizenet": {
