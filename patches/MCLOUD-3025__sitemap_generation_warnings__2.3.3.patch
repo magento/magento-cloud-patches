@@ -1,19 +1,50 @@
 diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/module-sitemap/Model/Observer.php
 --- a/vendor/magento/module-sitemap/Model/Observer.php
 +++ b/vendor/magento/module-sitemap/Model/Observer.php
-@@ -61,6 +61,11 @@ class Observer
+@@ -9,6 +9,7 @@ use Magento\Sitemap\Model\EmailNotification as SitemapEmail;
+ use Magento\Framework\App\Config\ScopeConfigInterface;
+ use Magento\Sitemap\Model\ResourceModel\Sitemap\CollectionFactory;
+ use Magento\Store\Model\ScopeInterface;
++use Psr\Log\LoggerInterface;
+
+ /**
+  * Sitemap module observer
+@@ -61,20 +62,33 @@ class Observer
       */
      private $emailNotification;
- 
+
 +    /**
 +     * @var int
 +     */
 +    private $retryInterval = 10;
 +
++    /**
++     * @var LoggerInterface
++     */
++    private $logger;
++
      /**
       * Observer constructor.
       * @param ScopeConfigInterface $scopeConfig
-@@ -87,6 +92,7 @@ class Observer
+      * @param CollectionFactory $collectionFactory
+      * @param EmailNotification $emailNotification
++     * @param LoggerInterface $logger
+      */
+     public function __construct(
+         ScopeConfigInterface $scopeConfig,
+         CollectionFactory $collectionFactory,
+-        SitemapEmail $emailNotification
++        SitemapEmail $emailNotification,
++        LoggerInterface $logger
+     ) {
+         $this->scopeConfig = $scopeConfig;
+         $this->collectionFactory = $collectionFactory;
+         $this->emailNotification = $emailNotification;
++        $this->logger = $logger;
+     }
+
+     /**
+@@ -87,6 +101,7 @@ class Observer
      public function scheduledGenerateSitemaps()
      {
          $errors = [];
@@ -21,7 +52,7 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
          $recipient = $this->scopeConfig->getValue(
              Observer::XML_PATH_ERROR_RECIPIENT,
              ScopeInterface::SCOPE_STORE
-@@ -107,11 +113,22 @@ class Observer
+@@ -107,11 +122,25 @@ class Observer
              try {
                  $sitemap->generateXml();
              } catch (\Exception $e) {
@@ -29,10 +60,11 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
                  $errors[] = $e->getMessage();
              }
          }
--        if ($errors && $recipient) {
++
+         if ($errors && $recipient) {
 -            $this->emailNotification->sendErrors($errors);
-+        if ($errors && $recipient && !empty($sitemapsWithError)) {
 +            sleep($this->retryInterval);
++            $this->logger->debug('Sitemap generation retry occurred');
 +            $nonRecoverableErrors = [];
 +            //re-try to write sitemap again
 +            foreach ($sitemapsWithError as $sitemap) {
@@ -44,5 +76,6 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
 +            }
 +            $this->emailNotification->sendErrors($nonRecoverableErrors);
          }
++
      }
  }
