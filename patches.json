@@ -232,7 +232,7 @@
       ">=2.3.5 <2.4.0": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.5.patch"
     },
     "Sitemap Generation Warnings": {
-      "2.3.3": "MCLOUD-3025__sitemap_generation_warnings__2.3.3.patch"
+      ">=2.3.3 <2.3.5": "MCLOUD-3025__sitemap_generation_warnings__2.3.3.patch"
     }
   },
   "magento/module-paypal": {
