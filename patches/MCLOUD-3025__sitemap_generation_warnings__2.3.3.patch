@@ -76,6 +76,5 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
 +            }
 +            $this->emailNotification->sendErrors($nonRecoverableErrors);
          }
-+
      }
  }
