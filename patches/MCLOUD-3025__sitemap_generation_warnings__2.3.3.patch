@@ -1,15 +1,18 @@
 diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/module-sitemap/Model/Observer.php
 --- a/vendor/magento/module-sitemap/Model/Observer.php
 +++ b/vendor/magento/module-sitemap/Model/Observer.php
-@@ -9,6 +9,7 @@ use Magento\Sitemap\Model\EmailNotification as SitemapEmail;
+@@ -7,8 +7,10 @@ namespace Magento\Sitemap\Model;
+
+ use Magento\Sitemap\Model\EmailNotification as SitemapEmail;
  use Magento\Framework\App\Config\ScopeConfigInterface;
++use Magento\Framework\App\ObjectManager;
  use Magento\Sitemap\Model\ResourceModel\Sitemap\CollectionFactory;
  use Magento\Store\Model\ScopeInterface;
 +use Psr\Log\LoggerInterface;
 
  /**
   * Sitemap module observer
-@@ -61,20 +62,33 @@ class Observer
+@@ -61,20 +63,33 @@ class Observer
       */
      private $emailNotification;
 
@@ -28,23 +31,23 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
       * @param ScopeConfigInterface $scopeConfig
       * @param CollectionFactory $collectionFactory
       * @param EmailNotification $emailNotification
-+     * @param LoggerInterface $logger
++     * @param LoggerInterface|null $logger
       */
      public function __construct(
          ScopeConfigInterface $scopeConfig,
          CollectionFactory $collectionFactory,
 -        SitemapEmail $emailNotification
 +        SitemapEmail $emailNotification,
-+        LoggerInterface $logger
++        LoggerInterface $logger = null
      ) {
          $this->scopeConfig = $scopeConfig;
          $this->collectionFactory = $collectionFactory;
          $this->emailNotification = $emailNotification;
-+        $this->logger = $logger;
++        $this->logger = $logger ?: ObjectManager::getInstance()->get(LoggerInterface::class);
      }
 
      /**
-@@ -87,6 +101,7 @@ class Observer
+@@ -87,6 +102,7 @@ class Observer
      public function scheduledGenerateSitemaps()
      {
          $errors = [];
@@ -52,7 +55,7 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
          $recipient = $this->scopeConfig->getValue(
              Observer::XML_PATH_ERROR_RECIPIENT,
              ScopeInterface::SCOPE_STORE
-@@ -107,11 +122,25 @@ class Observer
+@@ -107,11 +123,25 @@ class Observer
              try {
                  $sitemap->generateXml();
              } catch (\Exception $e) {
@@ -76,5 +79,6 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
 +            }
 +            $this->emailNotification->sendErrors($nonRecoverableErrors);
          }
++
      }
  }
