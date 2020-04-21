@@ -233,6 +233,9 @@
     },
     "Sitemap Generation Warnings": {
       ">=2.3.3 <2.3.5": "MCLOUD-3025__sitemap_generation_warnings__2.3.3.patch"
+    },
+    "Hold deployment config after reading from file": {
+      ">=2.3.3 <2.3.6": "MCLOUD-5650__hold_deployment_config_after_reading_from_file.patch"
     }
   },
   "magento/module-paypal": {
