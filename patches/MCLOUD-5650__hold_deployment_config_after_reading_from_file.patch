@@ -1,0 +1,102 @@
+diff -Nuar a/vendor/magento/framework/App/DeploymentConfig.php b/vendor/magento/framework/App/DeploymentConfig.php
+--- a/vendor/magento/framework/App/DeploymentConfig.php
++++ b/vendor/magento/framework/App/DeploymentConfig.php
+@@ -86,7 +86,6 @@ public function get($key = null, $defaultValue = null)
+      */
+     public function isAvailable()
+     {
+-        $this->data = null;
+         $this->load();
+         return isset($this->flatData[ConfigOptionsListConstants::CONFIG_PATH_INSTALL_DATE]);
+     }
+@@ -141,7 +140,7 @@ public function isDbAvailable()
+      */
+     private function load()
+     {
+-        if (null === $this->data) {
++        if (empty($this->data)) {
+             $this->data = $this->reader->load();
+             if ($this->overrideData) {
+                 $this->data = array_replace($this->data, $this->overrideData);
+@@ -173,10 +172,12 @@ private function flattenParams(array $params, $path = null)
+                 $newPath = $key;
+             }
+             if (isset($cache[$newPath])) {
++                //phpcs:ignore Magento2.Exceptions.DirectThrow
+                 throw new \Exception("Key collision {$newPath} is already defined.");
+             }
+             $cache[$newPath] = $param;
+             if (is_array($param)) {
++                //phpcs:ignore Magento2.Performance.ForeachArrayMerge
+                 $cache = array_merge($cache, $this->flattenParams($param, $newPath));
+             }
+         }
+diff -Nuar a/vendor/magento/framework/Locale/Resolver.php b/vendor/magento/framework/Locale/Resolver.php
+--- a/vendor/magento/framework/Locale/Resolver.php
++++ b/vendor/magento/framework/Locale/Resolver.php
+@@ -15,7 +15,7 @@
+ class Resolver implements ResolverInterface
+ {
+     /**
+-     * Default locale
++     * Resolver default locale
+      */
+     const DEFAULT_LOCALE = 'en_US';
+
+@@ -79,7 +79,7 @@ public function __construct(
+         $this->scopeConfig = $scopeConfig;
+         $this->defaultLocalePath = $defaultLocalePath;
+         $this->scopeType = $scopeType;
+-        $this->deploymentConfig = $deploymentConfig ?: ObjectManager::getInstance()->create(DeploymentConfig::class);
++        $this->deploymentConfig = $deploymentConfig ?: ObjectManager::getInstance()->get(DeploymentConfig::class);
+         $this->setLocale($locale);
+     }
+
+diff -Nuar a/vendor/magento/framework/Module/ModuleList.php b/vendor/magento/framework/Module/ModuleList.php
+--- a/vendor/magento/framework/Module/ModuleList.php
++++ b/vendor/magento/framework/Module/ModuleList.php
+@@ -59,7 +59,7 @@ public function __construct(DeploymentConfig $config, ModuleList\Loader $loader)
+     }
+
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      *
+      * Note that this triggers loading definitions of all existing modules in the system.
+      * Use this method only when you actually need modules' declared meta-information.
+@@ -84,7 +84,8 @@ public function getAll()
+     }
+
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
++     *
+      * @see has()
+      */
+     public function getOne($name)
+@@ -94,7 +95,7 @@ public function getOne($name)
+     }
+
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function getNames()
+     {
+@@ -107,7 +108,7 @@ public function getNames()
+     }
+
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function has($name)
+     {
+@@ -139,7 +140,6 @@ public function isModuleInfoAvailable()
+      */
+     private function loadConfigData()
+     {
+-        $this->config->resetData();
+         if (null === $this->configData && null !== $this->config->get(ConfigOptionsListConstants::KEY_MODULES)) {
+             $this->configData = $this->config->get(ConfigOptionsListConstants::KEY_MODULES);
+         }
