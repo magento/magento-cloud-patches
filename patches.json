@@ -230,6 +230,9 @@
     "FPC is getting disabled during deployments": {
       ">=2.3.2 <2.3.5": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.2.patch",
       ">=2.3.5 <2.4.0": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.5.patch"
+    },
+    "Hold deployment config after reading from file": {
+      ">=2.3.3 <2.3.6": "MCLOUD-5650__hold_deployment_config_after_reading_from_file.patch"
     }
   },
   "magento/module-paypal": {
