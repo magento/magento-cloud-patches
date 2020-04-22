@@ -55,7 +55,7 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
          $recipient = $this->scopeConfig->getValue(
              Observer::XML_PATH_ERROR_RECIPIENT,
              ScopeInterface::SCOPE_STORE
-@@ -107,11 +123,25 @@ class Observer
+@@ -107,11 +123,31 @@ class Observer
              try {
                  $sitemap->generateXml();
              } catch (\Exception $e) {
@@ -67,7 +67,10 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
          if ($errors && $recipient) {
 -            $this->emailNotification->sendErrors($errors);
 +            sleep($this->retryInterval);
-+            $this->logger->debug('Sitemap generation retry occurred');
++            $message = 'Sitemap generation errors occurred: ';
++            $message .= join(';', $errors);
++            $this->logger->debug($message);
++            $this->logger->debug('Sitemap generation retry attempt');
 +            $nonRecoverableErrors = [];
 +            //re-try to write sitemap again
 +            foreach ($sitemapsWithError as $sitemap) {
@@ -78,6 +81,9 @@ diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/m
 +                }
 +            }
 +            $this->emailNotification->sendErrors($nonRecoverableErrors);
++            $message = 'Sitemap generation non-recoverable errors occurred: ';
++            $message .= join(';', $nonRecoverableErrors);
++            $this->logger->debug($message);
          }
 +
      }
