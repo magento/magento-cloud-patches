@@ -313,7 +313,7 @@
   },
   "amzn/amazon-pay-and-login-magento-2-module": {
     "Set Payment info bug": {
-      "3.4.1": "BUNDLE-2554_set_payment_info_bug_fix_3.4.1"
+      "3.4.1": "BUNDLE-2554__set_payment_info_bug_fix__3.4.1"
     }
   },
   "magento/magento2-ee-base": {
