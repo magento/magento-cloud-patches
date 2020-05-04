@@ -4,3 +4,5 @@
 /composer.phar
 /composer.lock
 /auth.json
+/codeception.yml
+/_workdir

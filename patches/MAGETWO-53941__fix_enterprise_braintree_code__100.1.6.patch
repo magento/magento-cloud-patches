@@ -1,0 +1,44 @@
+diff -Nuar a/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php b/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php
+--- a/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php
++++ b/vendor/magento/module-braintree/Gateway/Request/ChannelDataBuilder.php
+@@ -26,7 +26,7 @@
+     /**
+      * @var string
+      */
+-    private static $channelValue = 'Magento2_Cart_%s_BT';
++    private static $channelValue = 'Magento_Enterprise_Cloud_BT';
+
+     /**
+      * Constructor
+@@ -44,7 +44,7 @@
+     public function build(array $buildSubject)
+     {
+         return [
+-            self::$channel => sprintf(self::$channelValue, $this->productMetadata->getEdition())
++            self::$channel => self::$channelValue
+         ];
+     }
+ }
+diff -Nuar a/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php b/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php
+--- a/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php
++++ b/vendor/magento/module-braintree/Test/Unit/Gateway/Request/ChannelDataBuilderTest.php
+@@ -40,7 +40,7 @@
+     public function testBuild($edition, array $expected)
+     {
+         $buildSubject = [];
+-        $this->productMetadataMock->expects(static::once())
++        $this->productMetadataMock->expects(static::never())
+             ->method('getEdition')
+             ->willReturn($edition);
+
+@@ -54,8 +54,8 @@
+     public function buildDataProvider()
+     {
+         return [
+-            ['FirstEdition', ['channel' => 'Magento2_Cart_FirstEdition_BT']],
+-            ['SecondEdition', ['channel' => 'Magento2_Cart_SecondEdition_BT']],
++            ['FirstEdition', ['channel' => 'Magento_Enterprise_Cloud_BT']],
++            ['SecondEdition', ['channel' => 'Magento_Enterprise_Cloud_BT']],
+         ];
+     }
+ }
