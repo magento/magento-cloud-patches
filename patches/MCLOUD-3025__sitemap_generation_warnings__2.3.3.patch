@@ -1,0 +1,92 @@
+diff -Nuar a/vendor/magento/module-sitemap/Model/Observer.php b/vendor/magento/module-sitemap/Model/Observer.php
+--- a/vendor/magento/module-sitemap/Model/Observer.php
++++ b/vendor/magento/module-sitemap/Model/Observer.php
+@@ -7,8 +7,10 @@ namespace Magento\Sitemap\Model;
+
+ use Magento\Sitemap\Model\EmailNotification as SitemapEmail;
+ use Magento\Framework\App\Config\ScopeConfigInterface;
++use Magento\Framework\App\ObjectManager;
+ use Magento\Sitemap\Model\ResourceModel\Sitemap\CollectionFactory;
+ use Magento\Store\Model\ScopeInterface;
++use Psr\Log\LoggerInterface;
+
+ /**
+  * Sitemap module observer
+@@ -61,20 +63,33 @@ class Observer
+      */
+     private $emailNotification;
+
++    /**
++     * @var int
++     */
++    private $retryInterval = 10;
++
++    /**
++     * @var LoggerInterface
++     */
++    private $logger;
++
+     /**
+      * Observer constructor.
+      * @param ScopeConfigInterface $scopeConfig
+      * @param CollectionFactory $collectionFactory
+      * @param EmailNotification $emailNotification
++     * @param LoggerInterface|null $logger
+      */
+     public function __construct(
+         ScopeConfigInterface $scopeConfig,
+         CollectionFactory $collectionFactory,
+-        SitemapEmail $emailNotification
++        SitemapEmail $emailNotification,
++        LoggerInterface $logger = null
+     ) {
+         $this->scopeConfig = $scopeConfig;
+         $this->collectionFactory = $collectionFactory;
+         $this->emailNotification = $emailNotification;
++        $this->logger = $logger ?: ObjectManager::getInstance()->get(LoggerInterface::class);
+     }
+
+     /**
+@@ -87,6 +102,7 @@ class Observer
+     public function scheduledGenerateSitemaps()
+     {
+         $errors = [];
++        $sitemapsWithError = [];
+         $recipient = $this->scopeConfig->getValue(
+             Observer::XML_PATH_ERROR_RECIPIENT,
+             ScopeInterface::SCOPE_STORE
+@@ -107,11 +123,33 @@ class Observer
+             try {
+                 $sitemap->generateXml();
+             } catch (\Exception $e) {
++                $sitemapsWithError[] = $sitemap;
+                 $errors[] = $e->getMessage();
+             }
+         }
++
+         if ($errors && $recipient) {
+-            $this->emailNotification->sendErrors($errors);
++            sleep($this->retryInterval);
++            $message = 'Sitemap generation errors occurred: ';
++            $message .= join(';', $errors);
++            $this->logger->debug($message);
++            $this->logger->debug('Sitemap generation retry attempt');
++            $nonRecoverableErrors = [];
++            //re-try to write sitemap again
++            foreach ($sitemapsWithError as $sitemap) {
++                try {
++                    $sitemap->generateXml();
++                } catch (\Exception $e) {
++                    $nonRecoverableErrors[] = $e->getMessage();
++                }
++            }
++            if (!empty($nonRecoverableErrors)) {
++                $this->emailNotification->sendErrors($nonRecoverableErrors);
++                $message = 'Sitemap generation non-recoverable errors occurred: ';
++                $message .= join(';', $nonRecoverableErrors);
++                $this->logger->debug($message);
++            }
+         }
++
+     }
+ }

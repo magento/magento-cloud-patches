@@ -1,142 +1,3 @@
-diff -Nuar a/vendor/magento/framework/Lock/Backend/Database.php b/vendor/magento/framework/Lock/Backend/Database.php
---- a/vendor/magento/framework/Lock/Backend/Database.php
-+++ b/vendor/magento/framework/Lock/Backend/Database.php
-@@ -3,8 +3,8 @@
-  * Copyright © Magento, Inc. All rights reserved.
-  * See COPYING.txt for license details.
-  */
--
- declare(strict_types=1);
-+
- namespace Magento\Framework\Lock\Backend;
- 
- use Magento\Framework\App\DeploymentConfig;
-@@ -14,20 +14,44 @@ use Magento\Framework\Exception\AlreadyExistsException;
- use Magento\Framework\Exception\InputException;
- use Magento\Framework\Phrase;
- 
-+/**
-+ * Implementation of the lock manager on the basis of MySQL.
-+ */
- class Database implements \Magento\Framework\Lock\LockManagerInterface
- {
--    /** @var ResourceConnection */
-+    /**
-+     * Max time for lock is 1 week
-+     *
-+     * MariaDB does not support negative timeout value to get infinite timeout,
-+     * so we set 1 week for lock timeout
-+     */
-+    const MAX_LOCK_TIME = 604800;
-+
-+    /**
-+     * @var ResourceConnection
-+     */
-     private $resource;
- 
--    /** @var DeploymentConfig */
-+    /**
-+     * @var DeploymentConfig
-+     */
-     private $deploymentConfig;
- 
--    /** @var string Lock prefix */
-+    /**
-+     * @var string Lock prefix
-+     */
-     private $prefix;
- 
--    /** @var string|false Holds current lock name if set, otherwise false */
-+    /**
-+     * @var string|false Holds current lock name if set, otherwise false
-+     */
-     private $currentLock = false;
- 
-+    /**
-+     * @param ResourceConnection $resource
-+     * @param DeploymentConfig $deploymentConfig
-+     * @param string|null $prefix
-+     */
-     public function __construct(
-         ResourceConnection $resource,
-         DeploymentConfig $deploymentConfig,
-@@ -46,9 +70,13 @@ class Database implements \Magento\Framework\Lock\LockManagerInterface
-      * @return bool
-      * @throws InputException
-      * @throws AlreadyExistsException
-+     * @throws \Zend_Db_Statement_Exception
-      */
-     public function lock(string $name, int $timeout = -1): bool
-     {
-+        if (!$this->deploymentConfig->isDbAvailable()) {
-+            return true;
-+        };
-         $name = $this->addPrefix($name);
- 
-         /**
-@@ -59,7 +87,7 @@ class Database implements \Magento\Framework\Lock\LockManagerInterface
-         if ($this->currentLock) {
-             throw new AlreadyExistsException(
-                 new Phrase(
--                    'Current connection is already holding lock for $1, only single lock allowed',
-+                    'Current connection is already holding lock for %1, only single lock allowed',
-                     [$this->currentLock]
-                 )
-             );
-@@ -67,7 +95,7 @@ class Database implements \Magento\Framework\Lock\LockManagerInterface
- 
-         $result = (bool)$this->resource->getConnection()->query(
-             "SELECT GET_LOCK(?, ?);",
--            [(string)$name, (int)$timeout]
-+            [$name, $timeout < 0 ? self::MAX_LOCK_TIME : $timeout]
-         )->fetchColumn();
- 
-         if ($result === true) {
-@@ -83,9 +111,14 @@ class Database implements \Magento\Framework\Lock\LockManagerInterface
-      * @param string $name lock name
-      * @return bool
-      * @throws InputException
-+     * @throws \Zend_Db_Statement_Exception
-      */
-     public function unlock(string $name): bool
-     {
-+        if (!$this->deploymentConfig->isDbAvailable()) {
-+            return true;
-+        };
-+
-         $name = $this->addPrefix($name);
- 
-         $result = (bool)$this->resource->getConnection()->query(
-@@ -106,14 +139,19 @@ class Database implements \Magento\Framework\Lock\LockManagerInterface
-      * @param string $name lock name
-      * @return bool
-      * @throws InputException
-+     * @throws \Zend_Db_Statement_Exception
-      */
-     public function isLocked(string $name): bool
-     {
-+        if (!$this->deploymentConfig->isDbAvailable()) {
-+            return false;
-+        };
-+
-         $name = $this->addPrefix($name);
- 
-         return (bool)$this->resource->getConnection()->query(
-             "SELECT IS_USED_LOCK(?);",
--            [(string)$name]
-+            [$name]
-         )->fetchColumn();
-     }
- 
-@@ -123,7 +161,7 @@ class Database implements \Magento\Framework\Lock\LockManagerInterface
-      * Limited to 64 characters in MySQL.
-      *
-      * @param string $name
--     * @return string $name
-+     * @return string
-      * @throws InputException
-      */
-     private function addPrefix(string $name): string
 diff -Nuar a/vendor/magento/module-message-queue/Console/StartConsumerCommand.php b/vendor/magento/module-message-queue/Console/StartConsumerCommand.php
 --- a/vendor/magento/module-message-queue/Console/StartConsumerCommand.php
 +++ b/vendor/magento/module-message-queue/Console/StartConsumerCommand.php
@@ -282,17 +143,9 @@ diff -Nuar a/vendor/magento/module-message-queue/Console/StartConsumerCommand.ph
 diff -Nuar a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php b/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php
 --- a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php
 +++ b/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php
-@@ -5,22 +5,21 @@
-  */
- namespace Magento\MessageQueue\Model\Cron;
- 
-+use Magento\Framework\App\ObjectManager;
-+use Magento\Framework\MessageQueue\ConnectionTypeResolver;
-+use Magento\Framework\MessageQueue\Consumer\Config\ConsumerConfigItemInterface;
- use Magento\Framework\ShellInterface;
- use Magento\Framework\MessageQueue\Consumer\ConfigInterface as ConsumerConfigInterface;
+@@ -13,18 +13,13 @@ use Magento\Framework\MessageQueue\Consumer\ConfigInterface as ConsumerConfigInt
  use Magento\Framework\App\DeploymentConfig;
-+use Psr\Log\LoggerInterface;
+ use Psr\Log\LoggerInterface;
  use Symfony\Component\Process\PhpExecutableFinder;
 -use Magento\MessageQueue\Model\Cron\ConsumersRunner\PidConsumerManager;
 +use Magento\Framework\Lock\LockManagerInterface;
@@ -310,74 +163,66 @@ diff -Nuar a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php 
      /**
       * Shell command line wrapper for executing command in background
       *
-@@ -50,11 +49,21 @@ class ConsumersRunner
+@@ -53,13 +48,6 @@ class ConsumersRunner
+      */
      private $phpExecutableFinder;
  
-     /**
+-    /**
 -     * The class for checking status of process by PID
-+     * @var ConnectionTypeResolver
-+     */
-+    private $mqConnectionTypeResolver;
-+
-+    /**
-+     * @var LoggerInterface
-+     */
-+    private $logger;
-+
+-     *
+-     * @var PidConsumerManager
+-     */
+-    private $pidConsumerManager;
+-
+     /**
+      * @var ConnectionTypeResolver
+      */
+@@ -70,13 +58,20 @@ class ConsumersRunner
+      */
+     private $logger;
+ 
 +    /**
 +     * Lock Manager
-      *
--     * @var PidConsumerManager
++     *
 +     * @var LockManagerInterface
-      */
--    private $pidConsumerManager;
++     */
 +    private $lockManager;
- 
++
      /**
       * @param PhpExecutableFinder $phpExecutableFinder The executable finder specifically designed
-@@ -62,20 +71,28 @@ class ConsumersRunner
+      *        for the PHP executable
       * @param ConsumerConfigInterface $consumerConfig The consumer config provider
       * @param DeploymentConfig $deploymentConfig The application deployment configuration
       * @param ShellInterface $shellBackground The shell command line wrapper for executing command in background
 -     * @param PidConsumerManager $pidConsumerManager The class for checking status of process by PID
 +     * @param LockManagerInterface $lockManager The lock manager
-+     * @param ConnectionTypeResolver $mqConnectionTypeResolver Consumer connection resolver
-+     * @param LoggerInterface $logger Logger
+      * @param ConnectionTypeResolver $mqConnectionTypeResolver Consumer connection resolver
+      * @param LoggerInterface $logger Logger
       */
-     public function __construct(
-         PhpExecutableFinder $phpExecutableFinder,
+@@ -85,7 +80,7 @@ class ConsumersRunner
          ConsumerConfigInterface $consumerConfig,
          DeploymentConfig $deploymentConfig,
          ShellInterface $shellBackground,
--        PidConsumerManager $pidConsumerManager
+-        PidConsumerManager $pidConsumerManager,
 +        LockManagerInterface $lockManager,
-+        ConnectionTypeResolver $mqConnectionTypeResolver = null,
-+        LoggerInterface $logger = null
+         ConnectionTypeResolver $mqConnectionTypeResolver = null,
+         LoggerInterface $logger = null
      ) {
-         $this->phpExecutableFinder = $phpExecutableFinder;
+@@ -93,7 +88,7 @@ class ConsumersRunner
          $this->consumerConfig = $consumerConfig;
          $this->deploymentConfig = $deploymentConfig;
          $this->shellBackground = $shellBackground;
 -        $this->pidConsumerManager = $pidConsumerManager;
 +        $this->lockManager = $lockManager;
-+        $this->mqConnectionTypeResolver = $mqConnectionTypeResolver
-+            ?: ObjectManager::getInstance()->get(ConnectionTypeResolver::class);
-+        $this->logger = $logger
-+            ?: ObjectManager::getInstance()->get(LoggerInterface::class);
-     }
- 
-     /**
-@@ -94,15 +111,13 @@ class ConsumersRunner
-         $php = $this->phpExecutableFinder->find() ?: 'php';
- 
-         foreach ($this->consumerConfig->getConsumers() as $consumer) {
--            $consumerName = $consumer->getName();
--
--            if (!$this->canBeRun($consumerName, $allowedConsumers)) {
-+            if (!$this->canBeRun($consumer, $allowedConsumers)) {
+         $this->mqConnectionTypeResolver = $mqConnectionTypeResolver
+             ?: ObjectManager::getInstance()->get(ConnectionTypeResolver::class);
+         $this->logger = $logger
+@@ -120,11 +115,9 @@ class ConsumersRunner
                  continue;
              }
  
+-            $consumerName = $consumer->getName();
+-
              $arguments = [
 -                $consumerName,
 -                '--pid-file-path=' . $this->getPidFilePath($consumerName),
@@ -386,45 +231,25 @@ diff -Nuar a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php 
              ];
  
              if ($maxMessages) {
-@@ -119,26 +134,38 @@ class ConsumersRunner
-     /**
-      * Checks that the consumer can be run
-      *
--     * @param string $consumerName The consumer name
-+     * @param ConsumerConfigItemInterface $consumerConfig The consumer config
-      * @param array $allowedConsumers The list of allowed consumers
-      *        If $allowedConsumers is empty it means that all consumers are allowed
-      * @return bool Returns true if the consumer can be run
-+     * @throws \Magento\Framework\Exception\FileSystemException
-      */
--    private function canBeRun($consumerName, array $allowedConsumers = [])
-+    private function canBeRun(ConsumerConfigItemInterface $consumerConfig, array $allowedConsumers = []): bool
-     {
--        $allowed = empty($allowedConsumers) ?: in_array($consumerName, $allowedConsumers);
-+        $consumerName = $consumerConfig->getName();
-+        if (!empty($allowedConsumers) && !in_array($consumerName, $allowedConsumers)) {
-+            return false;
-+        }
+@@ -154,7 +147,7 @@ class ConsumersRunner
+             return false;
+         }
  
--        return $allowed && !$this->pidConsumerManager->isRun($this->getPidFilePath($consumerName));
--    }
+-        if ($this->pidConsumerManager->isRun($this->getPidFilePath($consumerName))) {
 +        if ($this->lockManager->isLocked(md5($consumerName))) { //phpcs:ignore
-+            return false;
-+        }
+             return false;
+         }
  
--    /**
--     * Returns default path to file with PID by consumers name
--     *
--     * @param string $consumerName The consumers name
--     * @return string The path to file with PID
--     */
--    private function getPidFilePath($consumerName)
--    {
--        return $consumerName . static::PID_FILE_EXT;
-+        $connectionName = $consumerConfig->getConnection();
-+        try {
-+            $this->mqConnectionTypeResolver->getConnectionType($connectionName);
-+        } catch (\LogicException $e) {
+@@ -162,28 +155,17 @@ class ConsumersRunner
+         try {
+             $this->mqConnectionTypeResolver->getConnectionType($connectionName);
+         } catch (\LogicException $e) {
+-            $this->logger->info(sprintf(
+-                'Consumer "%s" skipped as required connection "%s" is not configured. %s',
+-                $consumerName,
+-                $connectionName,
+-                $e->getMessage()
+-            ));
 +            $this->logger->info(
 +                sprintf(
 +                    'Consumer "%s" skipped as required connection "%s" is not configured. %s',
@@ -433,11 +258,24 @@ diff -Nuar a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner.php 
 +                    $e->getMessage()
 +                )
 +            );
-+            return false;
-+        }
-+
-+        return true;
+             return false;
+         }
+ 
+         return true;
      }
+-
+-    /**
+-     * Returns default path to file with PID by consumers name
+-     *
+-     * @param string $consumerName The consumers name
+-     * @return string The path to file with PID
+-     */
+-    private function getPidFilePath($consumerName)
+-    {
+-        $sanitizedHostname = preg_replace('/[^a-z0-9]/i', '', gethostname());
+-
+-        return $consumerName . '-' . $sanitizedHostname . static::PID_FILE_EXT;
+-    }
  }
 diff -Nuar a/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner/PidConsumerManager.php b/vendor/magento/module-message-queue/Model/Cron/ConsumersRunner/PidConsumerManager.php
 deleted file mode 100644
