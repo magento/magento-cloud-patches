@@ -1,0 +1,24 @@
+diff -Naur a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+@@ -20,7 +20,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class Cache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_CACHE_REDIS = '\\Magento\\Framework\\Cache\\Backend\Redis';
+
+     const INPUT_KEY_CACHE_BACKEND = 'cache-backend';
+     const INPUT_KEY_CACHE_BACKEND_REDIS_SERVER = 'cache-backend-redis-server';
+diff -Naur a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+@@ -20,7 +20,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class PageCache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_PAGE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_PAGE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_PAGE_CACHE_REDIS = '\\Magento\\Framework\\Cache\\Backend\Redis';
+ 
+     const INPUT_KEY_PAGE_CACHE_BACKEND = 'page-cache';
+     const INPUT_KEY_PAGE_CACHE_BACKEND_REDIS_SERVER = 'page-cache-redis-server';

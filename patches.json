@@ -241,6 +241,11 @@
     "Sitemap Generation Warnings": {
       ">=2.3.0 <2.3.2": "MCLOUD-3025__sitemap_generation_warnings__2.3.0.patch",
       ">=2.3.2 <2.3.5": "MCLOUD-3025__sitemap_generation_warnings__2.3.3.patch"
+    },
+    "Failure tolerance Redis cache backend": {
+      ">=2.3.0 <2.3.5": "MCLOUD-5771__failure_tolerance_redis_cache_backend__2.3.0.patch",
+      ">=2.3.5 <2.3.6": "MCLOUD-5771__failure_tolerance_redis_cache_backend__2.3.5.patch",
+      ">=2.3.0 <2.4.0": "MCLOUD-5771__change_redis_cache_adapter__2.3.x.patch"
     }
   },
   "magento/module-paypal": {
