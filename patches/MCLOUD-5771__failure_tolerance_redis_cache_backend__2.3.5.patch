@@ -1,6 +1,6 @@
-diff -Naur a/lib/internal/Magento/Framework/Cache/Backend/Redis.php b/lib/internal/Magento/Framework/Cache/Backend/Redis.php
---- a/lib/internal/Magento/Framework/Cache/Backend/Redis.php
-+++ b/lib/internal/Magento/Framework/Cache/Backend/Redis.php
+diff -Naur a/vendor/magento/framework/Cache/Backend/Redis.php b/vendor/magento/framework/Cache/Backend/Redis.php
+--- a/vendor/magento/framework/Cache/Backend/Redis.php
++++ b/vendor/magento/framework/Cache/Backend/Redis.php
 @@ -73,11 +73,25 @@ class Redis extends \Cm_Cache_Backend_Redis
      public function save($data, $id, $tags = [], $specificLifetime = false)
      {
