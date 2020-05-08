@@ -10,8 +10,8 @@ diff -Naur a/vendor/magento/framework/Cache/Backend/Redis.php b/vendor/magento/f
          } catch (\Throwable $exception) {
 -            return false;
 +            $result = false;
-         }  
-
+         }
+ 
 -        return true;
 +        return $result;
 +    }
