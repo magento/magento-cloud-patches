@@ -241,8 +241,14 @@
     "Sitemap Generation Warnings": {
       ">=2.3.0 <2.3.2": "MCLOUD-3025__sitemap_generation_warnings__2.3.0.patch",
       ">=2.3.2 <2.3.5": "MCLOUD-3025__sitemap_generation_warnings__2.3.3.patch"
+    },
+    "Cache Locking performance issue": {
+      ">=2.3.4 <2.3.5": "MDVA-26795__fix_performance_issue_in_cache_locking_mechanism__2.3.4.patch"
+    },
+    "Large amount of Keys Block Cache": {
+      ">=2.3.1 <2.3.5": "MDVA-22950__large_amount_of_keys_block_cache__2.3.1.patch"
     }
-  },
+    },
   "magento/module-paypal": {
     "Add PayPal TPV codes on checkout": {
       "~100.1.6": "MAGETWO-53941__fix_enterprise_paypal_codes__100.1.6.patch"

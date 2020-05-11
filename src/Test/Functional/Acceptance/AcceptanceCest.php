@@ -91,6 +91,7 @@ class AcceptanceCest
         return [
             ['templateVersion' => '2.3.3'],
             ['templateVersion' => '2.3.4'],
+            ['templateVersion' => '2.3.5'],
             ['templateVersion' => 'master'],
         ];
     }
