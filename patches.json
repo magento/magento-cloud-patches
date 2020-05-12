@@ -241,6 +241,9 @@
     "Sitemap Generation Warnings": {
       ">=2.3.0 <2.3.2": "MCLOUD-3025__sitemap_generation_warnings__2.3.0.patch",
       ">=2.3.2 <2.3.5": "MCLOUD-3025__sitemap_generation_warnings__2.3.3.patch"
+    },
+    "Fix load balancer issue": {
+      ">=2.3.4 <2.3.6": "MCLOUD-5837__fix_filesystem_load_balancer_issue__2.3.4.patch"
     }
   },
   "magento/module-paypal": {
@@ -309,6 +312,11 @@
   "vertex/module-tax": {
     "Fix wrong namespace": {
       "3.2.0": "MAGECLOUD-4407__fix_namespace_vertex_tax__3.2.0.patch"
+    }
+  },
+  "amzn/amazon-pay-and-login-magento-2-module": {
+    "Set Payment info bug": {
+      "3.4.1": "BUNDLE-2554__set_payment_info_bug_fix__3.4.1.patch"
     }
   },
   "magento/magento2-ee-base": {

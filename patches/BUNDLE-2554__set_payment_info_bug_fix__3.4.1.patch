@@ -1,0 +1,126 @@
+diff --git a/vendor/amzn/amazon-pay-module/Model/OrderInformationManagement.php b/vendor/amzn/amazon-pay-module/Model/OrderInformationManagement.php
+index 540b357..c18ef91 100644
+--- a/vendor/amzn/amazon-pay-module/Model/OrderInformationManagement.php
++++ b/vendor/amzn/amazon-pay-module/Model/OrderInformationManagement.php
+@@ -144,24 +144,11 @@ public function saveOrderInformation($amazonOrderReferenceId, $allowedConstraint
+             ];
+
+             $responseParser = $this->clientFactory->create($storeId)->setOrderReferenceDetails($data);
+-            try {
+-                $response       = $this->amazonSetOrderDetailsResponseFactory->create(
+-                    [
+-                    'response' => $responseParser
+-                    ]
+-                );
++            $response = $this->amazonSetOrderDetailsResponseFactory->create([
++                'response' => $responseParser
++            ]);
+
+-                $this->validateConstraints($response, $allowedConstraints);
+-            } catch (AmazonServiceUnavailableException $e) {
+-                if($e->getApiErrorCode() == 'OrderReferenceNotModifiable') {
+-                    $this->logger->warning(
+-                        "Could not modify Amazon order details for $amazonOrderReferenceId: "
+-                        . $e->getApiErrorMessage()
+-                    );
+-                } else {
+-                    throw $e;
+-                }
+-            }
++            $this->validateConstraints($response, $allowedConstraints);
+         } catch (LocalizedException $e) {
+             throw $e;
+         } catch (Exception $e) {
+diff --git a/vendor/amzn/amazon-pay-module/Plugin/ConfirmOrderReference.php b/vendor/amzn/amazon-pay-module/Plugin/ConfirmOrderReference.php
+index 6bad468..14b1264 100644
+--- a/vendor/amzn/amazon-pay-module/Plugin/ConfirmOrderReference.php
++++ b/vendor/amzn/amazon-pay-module/Plugin/ConfirmOrderReference.php
+@@ -25,6 +25,7 @@
+ use Amazon\Payment\Model\OrderInformationManagement;
+ use Magento\Quote\Api\Data\PaymentInterface;
+ use Magento\Quote\Api\Data\AddressInterface;
++use Magento\Framework\Webapi\Rest\Request;
+ use Magento\Framework\Exception\LocalizedException;
+ use Amazon\Payment\Gateway\Config\Config as GatewayConfig;
+ use Magento\Quote\Api\CartRepositoryInterface;
+@@ -41,6 +42,11 @@ class ConfirmOrderReference
+      */
+     private $checkoutSession;
+
++    /**
++     * @var Request
++     */
++    private $request;
++
+     /**
+      * @var OrderInformationManagement
+      */
+@@ -54,19 +60,31 @@ class ConfirmOrderReference
+     /**
+      * ConfirmOrderReference constructor.
+      * @param Session $checkoutSession
++     * @param Request $request
+      * @param OrderInformationManagement $orderInformationManagement
+      * @param CartRepositoryInterface $quoteRepository
+      */
+     public function __construct(
+         Session $checkoutSession,
++        Request $request,
+         OrderInformationManagement $orderInformationManagement,
+         CartRepositoryInterface $quoteRepository
+     ) {
+         $this->checkoutSession = $checkoutSession;
++        $this->request = $request;
+         $this->orderInformationManagement = $orderInformationManagement;
+         $this->quoteRepository = $quoteRepository;
+     }
+
++    /**
++     * @return boolean
++     */
++    protected function canConfirmOrderReference()
++    {
++        $data = $this->request->getRequestData();
++        return !empty($data['confirmOrder']);
++    }
++
+     /**
+      * @param PaymentMethodManagementInterface $subject
+      * @param $result
+@@ -94,10 +112,12 @@ public function afterSet(
+                     $this->orderInformationManagement->saveOrderInformation($amazonOrderReferenceId);
+                 }
+
+-                $this->orderInformationManagement->confirmOrderReference(
+-                    $amazonOrderReferenceId,
+-                    $quote->getStoreId()
+-                );
++                if ($this->canConfirmOrderReference()) {
++                    $this->orderInformationManagement->confirmOrderReference(
++                        $amazonOrderReferenceId,
++                        $quote->getStoreId()
++                    );
++                }
+             }
+         }
+
+diff --git a/vendor/amzn/amazon-pay-module/view/frontend/web/js/action/place-order.js b/vendor/amzn/amazon-pay-module/view/frontend/web/js/action/place-order.js
+index 63caadf..a254c3d 100644
+--- a/vendor/amzn/amazon-pay-module/view/frontend/web/js/action/place-order.js
++++ b/vendor/amzn/amazon-pay-module/view/frontend/web/js/action/place-order.js
+@@ -40,6 +40,7 @@ define(
+                     quoteId: quote.getQuoteId()
+                 });
+                 payload = {
++                    confirmOrder: true,
+                     cartId: quote.getQuoteId(),
+                     email: quote.guestEmail,
+                     paymentMethod: paymentData,
+@@ -48,6 +49,7 @@ define(
+             } else {
+                 serviceUrl = urlBuilder.createUrl('/carts/mine/set-payment-information', {});
+                 payload = {
++                    confirmOrder: true,
+                     cartId: quote.getQuoteId(),
+                     paymentMethod: paymentData,
+                     billingAddress: quote.billingAddress()
