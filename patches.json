@@ -317,6 +317,9 @@
   "amzn/amazon-pay-and-login-magento-2-module": {
     "Set Payment info bug": {
       "3.4.1": "BUNDLE-2554__set_payment_info_bug_fix__3.4.1.patch"
+    },
+    "Payment method set to specific Country but Payment method is not visible": {
+      "3.4.1": "BUNDLE-2546__payment_specific_country_payment_not_visibile__3.4.1.patch"
     }
   },
   "magento/magento2-ee-base": {
