@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
+/**
+ * Abstract class with implemented before/after Cest steps.
+ */
 class AbstractCest
 {
     /**
