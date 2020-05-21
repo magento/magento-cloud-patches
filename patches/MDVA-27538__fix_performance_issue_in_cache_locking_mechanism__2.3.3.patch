@@ -1,7 +1,138 @@
-diff -Nuar a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-eav/Model/Config.php
+diff --git a/vendor/magento/module-catalog/Model/Product.php b/vendor/magento/module-catalog/Model/Product.php
+--- a/vendor/magento/module-catalog/Model/Product.php
++++ b/vendor/magento/module-catalog/Model/Product.php
+@@ -74,9 +74,9 @@ class Product extends \Magento\Catalog\Model\AbstractModel implements
+     const STORE_ID = 'store_id';
+
+     /**
+-     * @var string
++     * @var string|bool
+      */
+-    protected $_cacheTag = self::CACHE_TAG;
++    protected $_cacheTag = false;
+
+     /**
+      * @var string
+@@ -912,7 +912,6 @@ class Product extends \Magento\Catalog\Model\AbstractModel implements
+      */
+     public function beforeSave()
+     {
+-        $this->cleanCache();
+         $this->setTypeHasOptions(false);
+         $this->setTypeHasRequiredOptions(false);
+         $this->setHasOptions(false);
+diff --git a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/magento/module-config/App/Config/Type/System.php
+--- a/vendor/magento/module-config/App/Config/Type/System.php
++++ b/vendor/magento/module-config/App/Config/Type/System.php
+@@ -20,6 +20,8 @@ use Magento\Framework\Serialize\SerializerInterface;
+ use Magento\Store\Model\Config\Processor\Fallback;
+ use Magento\Framework\Encryption\Encryptor;
+ use Magento\Store\Model\ScopeInterface as StoreScope;
++use Magento\Framework\App\Cache\StateInterface;
++use Magento\Framework\App\Cache\Type\Config;
+
+ /**
+  * System configuration type
+@@ -98,6 +100,12 @@ class System implements ConfigTypeInterface
+     private $lockQuery;
+
+     /**
++     * @var StateInterface
++     */
++    private $cacheState;
++
++    /**
++     * System constructor.
+      * @param ConfigSourceInterface $source
+      * @param PostProcessorInterface $postProcessor
+      * @param Fallback $fallback
+@@ -110,6 +118,7 @@ class System implements ConfigTypeInterface
+      * @param Encryptor|null $encryptor
+      * @param LockManagerInterface|null $locker
+      * @param LockGuardedCacheLoader|null $lockQuery
++     * @param StateInterface|null $cacheState
+      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+@@ -125,7 +134,8 @@ class System implements ConfigTypeInterface
+         Reader $reader = null,
+         Encryptor $encryptor = null,
+         LockManagerInterface $locker = null,
+-        LockGuardedCacheLoader $lockQuery = null
++        LockGuardedCacheLoader $lockQuery = null,
++        StateInterface $cacheState = null
+     ) {
+         $this->postProcessor = $postProcessor;
+         $this->cache = $cache;
+@@ -136,6 +146,8 @@ class System implements ConfigTypeInterface
+             ?: ObjectManager::getInstance()->get(Encryptor::class);
+         $this->lockQuery = $lockQuery
+             ?: ObjectManager::getInstance()->get(LockGuardedCacheLoader::class);
++        $this->cacheState = $cacheState
++            ?: ObjectManager::getInstance()->get(StateInterface::class);
+     }
+
+     /**
+@@ -220,6 +232,10 @@ class System implements ConfigTypeInterface
+      */
+     private function loadAllData()
+     {
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
++        }
++
+         $loadAction = function () {
+             $cachedData = $this->cache->load($this->configType);
+             $data = false;
+@@ -245,6 +261,10 @@ class System implements ConfigTypeInterface
+      */
+     private function loadDefaultScopeData($scopeType)
+     {
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
++        }
++
+         $loadAction = function () use ($scopeType) {
+             $cachedData = $this->cache->load($this->configType . '_' . $scopeType);
+             $scopeData = false;
+@@ -271,6 +291,10 @@ class System implements ConfigTypeInterface
+      */
+     private function loadScopeData($scopeType, $scopeId)
+     {
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
++        }
++
+         $loadAction = function () use ($scopeType, $scopeId) {
+             $cachedData = $this->cache->load($this->configType . '_' . $scopeType . '_' . $scopeId);
+             $scopeData = false;
+@@ -393,6 +417,10 @@ class System implements ConfigTypeInterface
+             $this->cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, [self::CACHE_TAG]);
+         };
+
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $cleanAction();
++        }
++
+         $this->lockQuery->lockedCleanData(
+             self::$lockName,
+             $cleanAction
+diff --git a/vendor/magento/module-config/etc/di.xml b/vendor/magento/module-config/etc/di.xml
+--- a/vendor/magento/module-config/etc/di.xml
++++ b/vendor/magento/module-config/etc/di.xml
+@@ -97,8 +97,6 @@
+     <virtualType name="systemConfigQueryLocker" type="Magento\Framework\Cache\LockGuardedCacheLoader">
+         <arguments>
+             <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
+-            <argument name="lockTimeout" xsi:type="number">42000</argument>
+-            <argument name="delayTimeout" xsi:type="number">100</argument>
+         </arguments>
+     </virtualType>
+
+diff --git a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-eav/Model/Config.php
 --- a/vendor/magento/module-eav/Model/Config.php
 +++ b/vendor/magento/module-eav/Model/Config.php
-@@ -157,12 +157,12 @@ class Config
+@@ -125,11 +125,11 @@ class Config
 
      /**
       * @param \Magento\Framework\App\CacheInterface $cache
@@ -12,13 +143,11 @@ diff -Nuar a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-
       * @param \Magento\Framework\App\Cache\StateInterface $cacheState
       * @param \Magento\Framework\Validator\UniversalFactory $universalFactory
 -     * @param SerializerInterface $serializer
--     * @param ScopeConfigInterface $scopeConfig
 +     * @param SerializerInterface|null $serializer
-+     * @param ScopeConfigInterface|null $scopeConfig
-      * @param array $attributesForPreload
       * @codeCoverageIgnore
       */
-@@ -374,7 +374,9 @@ class Config
+     public function __construct(
+@@ -336,7 +336,9 @@ class Config
          }
          \Magento\Framework\Profiler::start('EAV: ' . __METHOD__, ['group' => 'EAV', 'method' => __METHOD__]);
 
@@ -29,7 +158,7 @@ diff -Nuar a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-
              $this->_entityTypeData = $this->serializer->unserialize($cache);
              foreach ($this->_entityTypeData as $typeCode => $data) {
                  $typeId = $data['entity_type_id'];
-diff -Nuar a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php
+diff --git a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php
 --- a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php
 +++ b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php
 @@ -6,6 +6,9 @@
@@ -60,7 +189,7 @@ diff -Nuar a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.
       *
       * @param \Magento\Framework\Model\AbstractModel $object
       * @return $this
-diff -Nuar a/vendor/magento/module-eav/etc/di.xml b/vendor/magento/module-eav/etc/di.xml
+diff --git a/vendor/magento/module-eav/etc/di.xml b/vendor/magento/module-eav/etc/di.xml
 --- a/vendor/magento/module-eav/etc/di.xml
 +++ b/vendor/magento/module-eav/etc/di.xml
 @@ -209,4 +209,14 @@
@@ -78,7 +207,7 @@ diff -Nuar a/vendor/magento/module-eav/etc/di.xml b/vendor/magento/module-eav/et
 +        </arguments>
 +    </type>
  </config>
-diff -Nuar a/vendor/magento/module-theme/etc/di.xml b/vendor/magento/module-theme/etc/di.xml
+diff --git a/vendor/magento/module-theme/etc/di.xml b/vendor/magento/module-theme/etc/di.xml
 --- a/vendor/magento/module-theme/etc/di.xml
 +++ b/vendor/magento/module-theme/etc/di.xml
 @@ -285,4 +285,24 @@
@@ -106,13 +235,22 @@ diff -Nuar a/vendor/magento/module-theme/etc/di.xml b/vendor/magento/module-them
 +        </arguments>
 +    </type>
  </config>
-diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
+diff --git a/app/etc/di.xml b/app/etc/di.xml
 --- a/app/etc/di.xml
 +++ b/app/etc/di.xml
-@@ -1800,4 +1800,14 @@
+@@ -1779,8 +1779,6 @@
+     <type name="Magento\Framework\Cache\LockGuardedCacheLoader">
+         <arguments>
+             <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
+-            <argument name="lockTimeout" xsi:type="number">10000</argument>
+-            <argument name="delayTimeout" xsi:type="number">20</argument>
+         </arguments>
      </type>
-     <preference for="Magento\Framework\GraphQl\Query\ErrorHandlerInterface" type="Magento\Framework\GraphQl\Query\ErrorHandler"/>
-     <preference for="Magento\Framework\Filter\VariableResolverInterface" type="Magento\Framework\Filter\VariableResolver\StrategyResolver"/>
+     <preference for="Magento\Framework\HTTP\AsyncClientInterface" type="Magento\Framework\HTTP\AsyncClient\GuzzleAsyncClient" />
+@@ -1794,4 +1792,14 @@
+                 type="Magento\Framework\Mail\MimeMessage" />
+     <preference for="Magento\Framework\Mail\MimePartInterface"
+                 type="Magento\Framework\Mail\MimePart" />
 +    <virtualType name="configured_block_cache" type="Magento\Framework\App\Cache">
 +        <arguments>
 +            <argument name="cacheIdentifier" xsi:type="string">block_html</argument>
@@ -124,7 +262,7 @@ diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
 +        </arguments>
 +    </type>
  </config>
-diff -Nuar a/vendor/magento/framework/App/Cache.php b/vendor/magento/framework/App/Cache.php
+diff --git a/vendor/magento/framework/App/Cache.php b/vendor/magento/framework/App/Cache.php
 --- a/vendor/magento/framework/App/Cache.php
 +++ b/vendor/magento/framework/App/Cache.php
 @@ -4,12 +4,11 @@
@@ -160,10 +298,10 @@ diff -Nuar a/vendor/magento/framework/App/Cache.php b/vendor/magento/framework/A
      }
 
      /**
-diff -Nuar a/vendor/magento/framework/App/Cache/Frontend/Pool.php b/vendor/magento/framework/App/Cache/Frontend/Pool.php
+diff --git a/vendor/magento/framework/App/Cache/Frontend/Pool.php b/vendor/magento/framework/App/Cache/Frontend/Pool.php
 --- a/vendor/magento/framework/App/Cache/Frontend/Pool.php
 +++ b/vendor/magento/framework/App/Cache/Frontend/Pool.php
-@@ -152,6 +152,15 @@ class Pool implements \Iterator
+@@ -147,6 +147,15 @@ class Pool implements \Iterator
          if (isset($this->_instances[$identifier])) {
              return $this->_instances[$identifier];
          }
@@ -180,7 +318,7 @@ diff -Nuar a/vendor/magento/framework/App/Cache/Frontend/Pool.php b/vendor/magen
 +        return $this->_instances[self::DEFAULT_FRONTEND_ID];
      }
  }
-diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento/framework/App/Router/ActionList.php
+diff --git a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento/framework/App/Router/ActionList.php
 --- a/vendor/magento/framework/App/Router/ActionList.php
 +++ b/vendor/magento/framework/App/Router/ActionList.php
 @@ -5,6 +5,8 @@
@@ -224,7 +362,7 @@ diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento
          }
      }
 
-diff -Nuar a/vendor/magento/framework/Cache/Backend/Redis.php b/vendor/magento/framework/Cache/Backend/Redis.php
+diff --git a/vendor/magento/framework/Cache/Backend/Redis.php b/vendor/magento/framework/Cache/Backend/Redis.php
 new file mode 100644
 --- /dev/null
 +++ b/vendor/magento/framework/Cache/Backend/Redis.php
@@ -312,7 +450,7 @@ new file mode 100644
 +        return true;
 +    }
 +}
-diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php b/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php
+diff --git a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php b/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php
 --- a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php
 +++ b/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php
 @@ -9,8 +9,10 @@ namespace Magento\Framework\Cache\Backend;
@@ -591,10 +729,10 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
       */
      public function getCapabilities()
      {
-diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
+diff --git a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
 --- a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
 +++ b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
-@@ -37,18 +37,33 @@ class LockGuardedCacheLoader
+@@ -37,18 +37,43 @@ class LockGuardedCacheLoader
      private $delayTimeout;
 
      /**
@@ -609,27 +747,37 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
 +    private $loadTimeout;
 +
 +    /**
++     * Minimal delay timeout in ms.
++     *
++     * @var int
++     */
++    private $minimalDelayTimeout;
++
++    /**
 +     * LockGuardedCacheLoader constructor.
       * @param LockManagerInterface $locker
       * @param int $lockTimeout
       * @param int $delayTimeout
 +     * @param int $loadTimeout
++     * @param int $minimalDelayTimeout
       */
      public function __construct(
          LockManagerInterface $locker,
          int $lockTimeout = 10000,
 -        int $delayTimeout = 20
 +        int $delayTimeout = 20,
-+        int $loadTimeout = 10000
++        int $loadTimeout = 10000,
++        int $minimalDelayTimeout = 5
      ) {
          $this->locker = $locker;
          $this->lockTimeout = $lockTimeout;
          $this->delayTimeout = $delayTimeout;
 +        $this->loadTimeout = $loadTimeout;
++        $this->minimalDelayTimeout = $minimalDelayTimeout;
      }
 
      /**
-@@ -67,21 +82,21 @@ class LockGuardedCacheLoader
+@@ -67,25 +92,25 @@ class LockGuardedCacheLoader
          callable $dataSaver
      ) {
          $cachedData = $dataLoader(); //optimistic read
@@ -638,7 +786,7 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
 -            usleep($this->delayTimeout * 1000);
 -            $cachedData = $dataLoader();
 -        }
-+        $deadline = microtime(true) + $this->loadTimeout;
++        $deadline = microtime(true) + $this->loadTimeout / 100;
 
          while ($cachedData === false) {
 -            try {
@@ -660,7 +808,42 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
              }
 
              if ($cachedData === false) {
-diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/magento/framework/Interception/Config/Config.php
+-                usleep($this->delayTimeout * 1000);
++                usleep($this->getLookupTimeout() * 1000);
+                 $cachedData = $dataLoader();
+             }
+         }
+@@ -103,14 +128,21 @@ class LockGuardedCacheLoader
+     public function lockedCleanData(string $lockName, callable $dataCleaner)
+     {
+         while ($this->locker->isLocked($lockName)) {
+-            usleep($this->delayTimeout * 1000);
+-        }
+-        try {
+-            if ($this->locker->lock($lockName, $this->lockTimeout / 1000)) {
+-                $dataCleaner();
+-            }
+-        } finally {
+-            $this->locker->unlock($lockName);
++            usleep($this->getLookupTimeout() * 1000);
+         }
++
++        $dataCleaner();
++    }
++
++    /**
++     * Delay will be applied as rand($minimalDelayTimeout, $delayTimeout).
++     * This helps to desynchronize multiple clients trying
++     * to acquire the lock for the same resource at the same time
++     *
++     * @return int
++     */
++    private function getLookupTimeout()
++    {
++        return rand($this->minimalDelayTimeout, $this->delayTimeout);
+     }
+ }
+diff --git a/vendor/magento/framework/Interception/Config/Config.php b/vendor/magento/framework/Interception/Config/Config.php
 --- a/vendor/magento/framework/Interception/Config/Config.php
 +++ b/vendor/magento/framework/Interception/Config/Config.php
 @@ -187,8 +187,6 @@ class Config implements \Magento\Framework\Interception\ConfigInterface
@@ -672,21 +855,108 @@ diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/ma
          $this->generateIntercepted($classDefinitions);
 
          $this->cacheManager->save($this->_cacheId, $this->_intercepted);
-diff -Nuar a/vendor/magento/framework/Lock/Backend/Cache.php b/vendor/magento/framework/Lock/Backend/Cache.php
+diff --git a/vendor/magento/framework/Lock/Backend/Cache.php b/vendor/magento/framework/Lock/Backend/Cache.php
 --- a/vendor/magento/framework/Lock/Backend/Cache.php
 +++ b/vendor/magento/framework/Lock/Backend/Cache.php
-@@ -37,6 +37,10 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
+@@ -25,11 +25,19 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
+     private $cache;
+
+     /**
++     * Sign for locks, helps to avoid removing a lock that was created by another client
++     *
++     * @var string
++     */
++    private $lockSign;
++
++    /**
+      * @param FrontendInterface $cache
+      */
+     public function __construct(FrontendInterface $cache)
+     {
+         $this->cache = $cache;
++        $this->lockSign = $this->generateLockSign();
+     }
+
+     /**
+@@ -37,7 +45,24 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
       */
      public function lock(string $name, int $timeout = -1): bool
      {
-+        if ((bool)$this->cache->test($this->getIdentifier($name))) {
-+             return false;
+-        return $this->cache->save('1', $this->getIdentifier($name), [], $timeout);
++        if (empty($this->lockSign)) {
++            $this->lockSign = $this->generateLockSign();
 +        }
 +
-         return $this->cache->save('1', $this->getIdentifier($name), [], $timeout);
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if (false !== $data) {
++            return false;
++        }
++        $this->cache->save($this->lockSign, $this->getIdentifier($name), [], $timeout * 100);
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if ($data === $this->lockSign) {
++            return true;
++        }
++
++        return false;
      }
 
-diff -Nuar a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento/framework/Lock/Backend/FileLock.php
+     /**
+@@ -45,7 +70,22 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
+      */
+     public function unlock(string $name): bool
+     {
+-        return $this->cache->remove($this->getIdentifier($name));
++        if (empty($this->lockSign)) {
++            return false;
++        }
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if (false === $data) {
++            return false;
++        }
++
++        $removeResult = false;
++        if ($data === $this->lockSign) {
++            $removeResult = (bool)$this->cache->remove($this->getIdentifier($name));
++        }
++
++        return $removeResult;
+     }
+
+     /**
+@@ -66,4 +106,27 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
+     {
+         return self::LOCK_PREFIX . $cacheIdentifier;
+     }
++
++    /**
++     * Function that generates lock sign that helps to avoid removing a lock that was created by another client.
++     *
++     * @return string
++     */
++    private function generateLockSign()
++    {
++        $sign = implode(
++            '-',
++            [
++                \getmypid(), \crc32(\gethostname())
++            ]
++        );
++
++        try {
++            $sign .= '-' . \bin2hex(\random_bytes(4));
++        } catch (\Exception $e) {
++            $sign .= '-' . \uniqid('-uniqid-');
++        }
++
++        return $sign;
++    }
+ }
+diff --git a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento/framework/Lock/Backend/FileLock.php
 --- a/vendor/magento/framework/Lock/Backend/FileLock.php
 +++ b/vendor/magento/framework/Lock/Backend/FileLock.php
 @@ -91,6 +91,7 @@ class FileLock implements LockManagerInterface
@@ -705,7 +975,7 @@ diff -Nuar a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento
                  $this->fileDriver->fileClose($fileResource);
              }
          } catch (FileSystemException $exception) {
-diff -Nuar a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php b/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
+diff --git a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php b/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
 --- a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
 +++ b/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
 @@ -260,9 +260,12 @@ class DiCompileCommand extends Command
@@ -734,7 +1004,47 @@ diff -Nuar a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php b/setu
          ];
 
          return $operations;
-diff -Nuar a/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php b/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php
+diff --git a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+@@ -20,7 +20,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class Cache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_CACHE_REDIS = '\\Magento\\Framework\\Cache\\Backend\Redis';
+
+     const INPUT_KEY_CACHE_BACKEND = 'cache-backend';
+     const INPUT_KEY_CACHE_BACKEND_REDIS_SERVER = 'cache-backend-redis-server';
+@@ -282,6 +282,6 @@ class Cache implements ConfigOptionsListInterface
+      */
+     private function generateCachePrefix(): string
+     {
+-        return substr(\md5(dirname(__DIR__, 6)), 0, 3) . '_';
++        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
+     }
+ }
+diff --git a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+@@ -20,7 +20,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class PageCache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_PAGE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_PAGE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_PAGE_CACHE_REDIS = '\\Magento\\Framework\\Cache\\Backend\Redis';
+
+     const INPUT_KEY_PAGE_CACHE_BACKEND = 'page-cache';
+     const INPUT_KEY_PAGE_CACHE_BACKEND_REDIS_SERVER = 'page-cache-redis-server';
+@@ -284,6 +284,6 @@ class PageCache implements ConfigOptionsListInterface
+      */
+     private function generateCachePrefix(): string
+     {
+-        return substr(\md5(dirname(__DIR__, 6)), 0, 3) . '_';
++        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
+     }
+ }
+diff --git a/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php b/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php
 new file mode 100644
 --- /dev/null
 +++ b/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php
@@ -797,7 +1107,7 @@ new file mode 100644
 +        return 'App action list generation';
 +    }
 +}
-diff -Nuar a/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php b/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php
+diff --git a/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php b/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php
 --- a/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php
 +++ b/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php
 @@ -5,6 +5,12 @@
