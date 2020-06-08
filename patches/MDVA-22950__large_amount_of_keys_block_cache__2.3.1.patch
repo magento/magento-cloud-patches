@@ -1,0 +1,45 @@
+diff -Nuar a/vendor/magento/module-swatches/Block/Product/Renderer/Listing/Configurable.php b/vendor/magento/module-swatches/Block/Product/Renderer/Listing/Configurable.php
+--- a/vendor/magento/module-swatches/Block/Product/Renderer/Listing/Configurable.php
++++ b/vendor/magento/module-swatches/Block/Product/Renderer/Listing/Configurable.php
+@@ -9,7 +9,6 @@ use Magento\Catalog\Block\Product\Context;
+ use Magento\Catalog\Helper\Product as CatalogProduct;
+ use Magento\Catalog\Model\Product;
+ use Magento\Catalog\Model\Layer\Resolver;
+-use Magento\Catalog\Model\Layer\Category as CategoryLayer;
+ use Magento\ConfigurableProduct\Helper\Data;
+ use Magento\ConfigurableProduct\Model\ConfigurableAttributeData;
+ use Magento\Customer\Helper\Session\CurrentCustomer;
+@@ -244,9 +243,12 @@ class Configurable extends \Magento\Swatches\Block\Product\Renderer\Configurable
+
+         $layeredAttributes = [];
+
+-        $configurableAttributes = array_map(function ($attribute) {
+-            return $attribute->getAttributeCode();
+-        }, $configurableAttributes);
++        $configurableAttributes = array_map(
++            function ($attribute) {
++                return $attribute->getAttributeCode();
++            },
++            $configurableAttributes
++        );
+
+         $commonAttributeCodes = array_intersect(
+             $configurableAttributes,
+@@ -259,17 +261,4 @@ class Configurable extends \Magento\Swatches\Block\Product\Renderer\Configurable
+
+         return $layeredAttributes;
+     }
+-
+-    /**
+-     * @inheritdoc
+-     * @since 100.3.1
+-     */
+-    public function getCacheKeyInfo()
+-    {
+-        $cacheKeyInfo = parent::getCacheKeyInfo();
+-        /** @var CategoryLayer $catalogLayer */
+-        $catalogLayer = $this->layerResolver->get();
+-        $cacheKeyInfo[] = $catalogLayer->getStateKey();
+-        return $cacheKeyInfo;
+-    }
+ }
