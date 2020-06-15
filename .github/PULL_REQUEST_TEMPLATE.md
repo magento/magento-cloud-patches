@@ -30,8 +30,18 @@
 1. ...
 2. ...
 
+### Release notes
+
+For user-facing changes, add a meaningful release note. For examples, see [Magento Cloud Patches release notes](https://devdocs.magento.com/cloud/release-notes/mcp-release-notes.html).
+
+### Associated documentation updates
+<!--
+ If your proposed update requires user documentation, submit a PR to the Magento DevDocs repository. For extensive updates requiring assistance, submit an issue to DevDocs. See https://github.com/magento/devdocs/blob/master/.github/CONTRIBUTING.md.
+ -->
+Add link to Magento DevDocs PR or Issue, if needed.
+
 ### Contribution checklist
  - [ ] Pull request has a meaningful description of its purpose
+ - [ ] Pull request introduces user-facing changes and includes meaningful updates for any required release notes and documentation changes
  - [ ] All commits are accompanied by meaningful commit messages
  - [ ] All new or changed code is covered with unit/integration tests (if applicable)
- - [ ] All automated tests passed successfully (all builds on Travis CI are green)
