@@ -2,7 +2,7 @@ diff -Nuar a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-
 --- a/vendor/magento/module-eav/Model/Config.php
 +++ b/vendor/magento/module-eav/Model/Config.php
 @@ -157,12 +157,12 @@ class Config
-
+ 
      /**
       * @param \Magento\Framework\App\CacheInterface $cache
 -     * @param \Magento\Eav\Model\Entity\TypeFactory $entityTypeFactory
@@ -18,10 +18,45 @@ diff -Nuar a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-
       * @param array $attributesForPreload
       * @codeCoverageIgnore
       */
+@@ -245,8 +245,8 @@ class Config
+     /**
+      * Associate object with identifier
+      *
+-     * @param   mixed $obj
+-     * @param   mixed $id
++     * @param mixed $obj
++     * @param mixed $id
+      * @return void
+      * @codeCoverageIgnore
+      */
+@@ -271,8 +271,8 @@ class Config
+     /**
+      * Specify reference for entity type id
+      *
+-     * @param   int $id
+-     * @param   string $code
++     * @param int $id
++     * @param string $code
+      * @return $this
+      * @codeCoverageIgnore
+      */
+@@ -296,9 +296,9 @@ class Config
+     /**
+      * Specify reference between entity attribute id and attribute code
+      *
+-     * @param   int $id
+-     * @param   string $code
+-     * @param   string $entityTypeCode
++     * @param int $id
++     * @param string $code
++     * @param string $entityTypeCode
+      * @return $this
+      */
+     protected function _addAttributeReference($id, $code, $entityTypeCode)
 @@ -374,7 +374,9 @@ class Config
          }
          \Magento\Framework\Profiler::start('EAV: ' . __METHOD__, ['group' => 'EAV', 'method' => __METHOD__]);
-
+ 
 -        if ($this->isCacheEnabled() && ($cache = $this->_cache->load(self::ENTITIES_CACHE_ID))) {
 +        if ($this->isCacheEnabled() &&
 +            ($cache = $this->_cache->load(self::ENTITIES_CACHE_ID))
@@ -29,13 +64,48 @@ diff -Nuar a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-
              $this->_entityTypeData = $this->serializer->unserialize($cache);
              foreach ($this->_entityTypeData as $typeCode => $data) {
                  $typeId = $data['entity_type_id'];
+@@ -522,9 +524,9 @@ class Config
+     /**
+      * Get attribute by code for entity type
+      *
+-     * @param   mixed $entityType
+-     * @param   mixed $code
+-     * @return  AbstractAttribute
++     * @param mixed $entityType
++     * @param mixed $code
++     * @return AbstractAttribute
+      * @throws LocalizedException
+      */
+     public function getAttribute($entityType, $code)
+@@ -737,8 +739,8 @@ class Config
+     /**
+      * Get all entity type attributes
+      *
+-     * @param  int|string|Type $entityType
+-     * @param  \Magento\Framework\DataObject|null $object
++     * @param int|string|Type $entityType
++     * @param \Magento\Framework\DataObject|null $object
+      * @return AbstractAttribute[]
+      *
+      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+@@ -822,6 +824,10 @@ class Config
+             $fullAttributeData = array_key_exists('is_required', $attributeData);
+ 
+             if ($existsFullAttribute || (!$existsFullAttribute && !$fullAttributeData)) {
++                $scopeIsRequired = $attributeData['scope_is_required'] ?? null;
++                if ($scopeIsRequired !== null) {
++                    $attribute->setData('scope_is_required', $scopeIsRequired);
++                }
+                 return $attribute;
+             }
+         }
 diff -Nuar a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php
 --- a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php
 +++ b/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.php
 @@ -6,6 +6,9 @@
-
+ 
  namespace Magento\Eav\Model\ResourceModel\Entity\Attribute;
-
+ 
 +/**
 + * Basic implementation for attribute sets
 + */
@@ -44,7 +114,7 @@ diff -Nuar a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.
      /**
 @@ -24,8 +27,6 @@ class Set extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
      protected $eavConfig;
-
+ 
      /**
 -     * Constructor
 -     *
@@ -53,7 +123,7 @@ diff -Nuar a/vendor/magento/module-eav/Model/ResourceModel/Entity/Attribute/Set.
       * @param \Magento\Eav\Model\Config $eavConfig
 @@ -54,7 +55,7 @@ class Set extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
      }
-
+ 
      /**
 -     * Perform actions after object save
 +     * Perform actions after object save.
@@ -130,13 +200,13 @@ diff -Nuar a/vendor/magento/framework/App/Cache.php b/vendor/magento/framework/A
 @@ -4,12 +4,11 @@
   * See COPYING.txt for license details.
   */
-
+ 
 -/**
 - * System cache model
 - * support id and tags prefix support,
 - */
  namespace Magento\Framework\App;
-
+ 
 +/**
 + * System cache model support id and tags prefix support.
 + */
@@ -145,7 +215,7 @@ diff -Nuar a/vendor/magento/framework/App/Cache.php b/vendor/magento/framework/A
      /**
 @@ -30,12 +29,13 @@ class Cache implements CacheInterface
      protected $_frontend;
-
+ 
      /**
 -     * @param \Magento\Framework\App\Cache\Frontend\Pool $frontendPool
 +     * @param Cache\Frontend\Pool $frontendPool
@@ -158,7 +228,7 @@ diff -Nuar a/vendor/magento/framework/App/Cache.php b/vendor/magento/framework/A
 -        $this->_frontend = $frontendPool->get($this->_frontendIdentifier);
 +        $this->_frontend = $frontendPool->get($cacheIdentifier ?? $this->_frontendIdentifier);
      }
-
+ 
      /**
 diff -Nuar a/vendor/magento/framework/App/Cache/Frontend/Pool.php b/vendor/magento/framework/App/Cache/Frontend/Pool.php
 --- a/vendor/magento/framework/App/Cache/Frontend/Pool.php
@@ -170,11 +240,11 @@ diff -Nuar a/vendor/magento/framework/App/Cache/Frontend/Pool.php b/vendor/magen
 -        throw new \InvalidArgumentException("Cache frontend '{$identifier}' is not recognized.");
 +
 +        if (!isset($this->_instances[self::DEFAULT_FRONTEND_ID])) {
-+            throw new \InvalidArgumentException(sprintf(
-+                'Cache frontend \'%s\' is not recognized. As well as %s cache is not configured',
-+                $identifier,
-+                self::DEFAULT_FRONTEND_ID
-+            ));
++            throw new \InvalidArgumentException(
++                "Cache frontend '{$identifier}' is not recognized. As well as " .
++                self::DEFAULT_FRONTEND_ID .
++                "cache is not configured"
++            );
 +        }
 +
 +        return $this->_instances[self::DEFAULT_FRONTEND_ID];
@@ -186,7 +256,7 @@ diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento
 @@ -5,6 +5,8 @@
   */
  namespace Magento\Framework\App\Router;
-
+ 
 +use Magento\Framework\App\Filesystem\DirectoryList;
 +use Magento\Framework\App\State;
  use Magento\Framework\Serialize\SerializerInterface;
@@ -223,8 +293,8 @@ diff -Nuar a/vendor/magento/framework/App/Router/ActionList.php b/vendor/magento
 +            }
          }
      }
-
-diff -Nuar a/vendor/magento/framework/Cache/Backend/Redis.php b/vendor/magento/framework/Cache/Backend/Redis.php
+ 
+diff -Nuar a/2.3.5/vendor/magento/framework/Cache/Backend/Redis.php b/vendor/magento/framework/Cache/Backend/Redis.php
 new file mode 100644
 --- /dev/null
 +++ b/vendor/magento/framework/Cache/Backend/Redis.php
@@ -268,7 +338,7 @@ new file mode 100644
 +    /**
 +     * Load value with given id from cache
 +     *
-+     * @param  string  $id Cache id
++     * @param  string  $id                     Cache id
 +     * @param  boolean $doNotTestCacheValidity If set to true, the cache validity won't be tested
 +     * @return bool|string
 +     */
@@ -330,7 +400,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
  {
 @@ -36,11 +38,15 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      protected $cacheInvalidationTime;
-
+ 
      /**
 -     * {@inheritdoc}
 +     * Suffix for hash to compare data version in cache storage.
@@ -347,7 +417,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
          'remote_backend_autoload' => true,
          'remote_backend_options' => [],
 @@ -52,6 +58,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
-
+ 
      /**
       * @param array $options
 +     * @throws \Zend_Cache_Exception
@@ -356,7 +426,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -97,76 +104,137 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * Update remote cache status info
 +     * @inheritdoc
@@ -380,7 +450,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 -        $this->cacheInvalidationTime = null;
 +        return \hash('sha256', $data);
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * Load data version by id from remote.
@@ -396,7 +466,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 +            $id . self::HASH_SUFFIX
 +        );
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * Save new data version to remote.
@@ -418,7 +488,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 +     * @param string $id
 +     * @return bool
 +     */
-+    private function removeRemoteDataVersion($id): bool
++    private function removeRemoteDataVersion($id)
 +    {
 +        return $this->remote->remove($id . self::HASH_SUFFIX);
 +    }
@@ -458,7 +528,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 +
 +        return $localData;
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -468,7 +538,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 -        return $this->local->test($id);
 +        return $this->local->test($id) ?? $this->remote->test($id);
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -488,7 +558,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 +
 +        return $this->local->save($dataToSave, $id, [], $specificLifetime);
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -501,7 +571,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 +            $this->remote->remove($id) &&
 +            $this->local->remove($id);
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -512,7 +582,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
 -        return $this->local->clean($mode, $tags);
 +        return $this->remote->clean($mode, $tags);
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -521,7 +591,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -174,7 +242,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -530,7 +600,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -182,7 +250,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -539,7 +609,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -190,7 +258,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -548,7 +618,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -198,7 +266,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -557,7 +627,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -206,7 +274,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -566,7 +636,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -214,7 +282,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -575,7 +645,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -222,7 +290,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -584,7 +654,7 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
      {
 @@ -230,7 +298,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
      }
-
+ 
      /**
 -     * {@inheritdoc}
 +     * @inheritdoc
@@ -596,7 +666,7 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
 +++ b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
 @@ -37,18 +37,33 @@ class LockGuardedCacheLoader
      private $delayTimeout;
-
+ 
      /**
 +     * Timeout for information to be collected and saved.
 +     * If timeout passed that means that data cannot be saved right now.
@@ -627,7 +697,7 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
          $this->delayTimeout = $delayTimeout;
 +        $this->loadTimeout = $loadTimeout;
      }
-
+ 
      /**
 @@ -67,21 +82,21 @@ class LockGuardedCacheLoader
          callable $dataSaver
@@ -639,7 +709,7 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
 -            $cachedData = $dataLoader();
 -        }
 +        $deadline = microtime(true) + $this->loadTimeout;
-
+ 
          while ($cachedData === false) {
 -            try {
 -                if ($this->locker->lock($lockName, $this->lockTimeout / 1000)) {
@@ -658,7 +728,7 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
 -            } finally {
 -                $this->locker->unlock($lockName);
              }
-
+ 
              if ($cachedData === false) {
 diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/magento/framework/Interception/Config/Config.php
 --- a/vendor/magento/framework/Interception/Config/Config.php
@@ -670,7 +740,7 @@ diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/ma
 -        $this->cacheManager->clean($this->_cacheId);
 -
          $this->generateIntercepted($classDefinitions);
-
+ 
          $this->cacheManager->save($this->_cacheId, $this->_intercepted);
 diff -Nuar a/vendor/magento/framework/Lock/Backend/Cache.php b/vendor/magento/framework/Lock/Backend/Cache.php
 --- a/vendor/magento/framework/Lock/Backend/Cache.php
@@ -686,25 +756,6 @@ diff -Nuar a/vendor/magento/framework/Lock/Backend/Cache.php b/vendor/magento/fr
          return $this->cache->save('1', $this->getIdentifier($name), [], $timeout);
      }
 
-diff -Nuar a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento/framework/Lock/Backend/FileLock.php
---- a/vendor/magento/framework/Lock/Backend/FileLock.php
-+++ b/vendor/magento/framework/Lock/Backend/FileLock.php
-@@ -91,6 +91,7 @@ class FileLock implements LockManagerInterface
-
-             while (!$this->tryToLock($fileResource)) {
-                 if (!$skipDeadline && $deadline <= microtime(true)) {
-+                    $this->tryToUnlock($fileResource);
-                     $this->fileDriver->fileClose($fileResource);
-                     return false;
-                 }
-@@ -124,6 +125,7 @@ class FileLock implements LockManagerInterface
-                 } else {
-                     $result = true;
-                 }
-+                $this->tryToUnlock($fileResource);
-                 $this->fileDriver->fileClose($fileResource);
-             }
-         } catch (FileSystemException $exception) {
 diff -Nuar a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php b/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
 --- a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
 +++ b/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
@@ -721,7 +772,7 @@ diff -Nuar a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php b/setu
 +            },
 +            $libraryPaths
 +        );
-
+ 
          $excludedLibraryPaths = [
              '#^(?:' . join('|', $libraryPaths) . ')/([\\w]+/)?Test#',
 @@ -395,7 +398,8 @@ class DiCompileCommand extends Command
@@ -732,9 +783,9 @@ diff -Nuar a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php b/setu
 +            ],
 +            OperationFactory::APPLICATION_ACTION_LIST_GENERATOR => [],
          ];
-
+ 
          return $operations;
-diff -Nuar a/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php b/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php
+diff -Nuar a/2.3.5/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php b/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php
 new file mode 100644
 --- /dev/null
 +++ b/setup/src/Magento/Setup/Module/Di/App/Task/Operation/AppActionListGenerator.php
@@ -780,7 +831,7 @@ new file mode 100644
 +    /**
 +     * @inheritDoc
 +     */
-+    public function doOperation(): void
++    public function doOperation()
 +    {
 +        $actionList = $this->moduleReader->getActionFiles();
 +        $this->configWriter->write(
@@ -792,7 +843,7 @@ new file mode 100644
 +    /**
 +     * @inheritDoc
 +     */
-+    public function getName(): string
++    public function getName()
 +    {
 +        return 'App action list generation';
 +    }
@@ -803,7 +854,7 @@ diff -Nuar a/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php b/s
 @@ -5,6 +5,12 @@
   */
  namespace Magento\Setup\Module\Di\App\Task;
-
+ 
 +use Magento\Setup\Module\Di\App\Task\Operation\AppActionListGenerator;
 +use Magento\Setup\Module\Di\App\Task\Operation\PluginListGenerator;
 +
@@ -813,23 +864,23 @@ diff -Nuar a/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php b/s
  class OperationFactory
  {
      /**
-@@ -48,6 +54,11 @@ class OperationFactory
+@@ -47,6 +53,11 @@ class OperationFactory
+      */
      const APPLICATION_CODE_GENERATOR = 'application_code_generator';
-
-     /**
+ 
++    /**
 +     * Application action list generator
 +     */
 +    const APPLICATION_ACTION_LIST_GENERATOR = 'application_action_list_generator';
 +
-+    /**
+     /**
       * Operations definitions
       *
-      * @var array
 @@ -61,6 +72,7 @@ class OperationFactory
          self::INTERCEPTION_CACHE => \Magento\Setup\Module\Di\App\Task\Operation\InterceptionCache::class,
          self::REPOSITORY_GENERATOR => \Magento\Setup\Module\Di\App\Task\Operation\RepositoryGenerator::class,
          self::PROXY_GENERATOR => \Magento\Setup\Module\Di\App\Task\Operation\ProxyGenerator::class,
 +        self::APPLICATION_ACTION_LIST_GENERATOR => AppActionListGenerator::class,
      ];
-
+ 
      /**
