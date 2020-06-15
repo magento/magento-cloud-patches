@@ -471,7 +471,7 @@ diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/ma
 diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
 --- a/app/etc/di.xml
 +++ b/app/etc/di.xml
-@@ -1756,4 +1756,21 @@
+@@ -1742,4 +1742,27 @@
              </argument>
          </arguments>
      </type>
@@ -490,6 +490,12 @@ diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
 +    <type name="Magento\Framework\View\Element\Context">
 +        <arguments>
 +            <argument name="cache" xsi:type="object">configured_block_cache</argument>
++        </arguments>
++    </type>
++    <preference for="Magento\Framework\App\ObjectManager\ConfigWriterInterface" type="Magento\Framework\App\ObjectManager\ConfigWriter\Filesystem" />
++    <type name="Magento\Framework\Interception\Config\CacheManager">
++        <arguments>
++            <argument name="cache" xsi:type="object">Magento\Framework\App\Cache\Type\Config</argument>
 +        </arguments>
 +    </type>
  </config>
@@ -1996,3 +2002,220 @@ diff -Nuar a/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php b/s
      ];
 
      /**
+
+diff --git a/vendor/magento/framework/Interception/Config/CacheManager.php b/vendor/magento/framework/Interception/Config/CacheManager.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/framework/Interception/Config/CacheManager.php
+@@ -0,0 +1,114 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\Framework\Interception\Config;
++
++/**
++ * Interception cache manager.
++ *
++ * Responsible for handling interaction with compiled and uncompiled interception data
++ */
++class CacheManager
++{
++    /**
++     * @var \Magento\Framework\Cache\FrontendInterface
++     */
++    private $cache;
++
++    /**
++     * @var \Magento\Framework\Serialize\SerializerInterface
++     */
++    private $serializer;
++
++    /**
++     * @var \Magento\Framework\App\ObjectManager\ConfigWriterInterface
++     */
++    private $configWriter;
++
++    /**
++     * @var \Magento\Framework\App\ObjectManager\ConfigLoader\Compiled
++     */
++    private $compiledLoader;
++
++    /**
++     * @param \Magento\Framework\Cache\FrontendInterface $cache
++     * @param \Magento\Framework\Serialize\SerializerInterface $serializer
++     * @param \Magento\Framework\App\ObjectManager\ConfigWriterInterface $configWriter
++     * @param \Magento\Framework\App\ObjectManager\ConfigLoader\Compiled $compiledLoader
++     */
++    public function __construct(
++        \Magento\Framework\Cache\FrontendInterface $cache,
++        \Magento\Framework\Serialize\SerializerInterface $serializer,
++        \Magento\Framework\App\ObjectManager\ConfigWriterInterface $configWriter,
++        \Magento\Framework\App\ObjectManager\ConfigLoader\Compiled $compiledLoader
++    ) {
++        $this->cache = $cache;
++        $this->serializer = $serializer;
++        $this->configWriter = $configWriter;
++        $this->compiledLoader = $compiledLoader;
++    }
++
++    /**
++     * Load the interception config from cache
++     *
++     * @param string $key
++     * @return array|null
++     */
++    public function load(string $key): ?array
++    {
++        if ($this->isCompiled($key)) {
++            return $this->compiledLoader->load($key);
++        }
++
++        $intercepted = $this->cache->load($key);
++        return $intercepted ? $this->serializer->unserialize($intercepted) : null;
++    }
++
++    /**
++     * Save config to cache backend
++     *
++     * @param string $key
++     * @param array $data
++     */
++    public function save(string $key, array $data)
++    {
++        $this->cache->save($this->serializer->serialize($data), $key);
++    }
++
++    /**
++     * Save config to filesystem
++     *
++     * @param string $key
++     * @param array $data
++     */
++    public function saveCompiled(string $key, array $data)
++    {
++        $this->configWriter->write($key, $data);
++    }
++
++    /**
++     * Purge interception cache
++     *
++     * @param string $key
++     */
++    public function clean(string $key)
++    {
++        $this->cache->remove($key);
++    }
++
++    /**
++     * Check for the compiled config with the generated metadata
++     *
++     * @param string $key
++     * @return bool
++     */
++    private function isCompiled(string $key): bool
++    {
++        return file_exists(\Magento\Framework\App\ObjectManager\ConfigLoader\Compiled::getFilePath($key));
++    }
++}
+
+diff --git a/vendor/magento/framework/App/ObjectManager/ConfigWriterInterface.php b/vendor/magento/framework/App/ObjectManager/ConfigWriterInterface.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/framework/App/ObjectManager/ConfigWriterInterface.php
+@@ -0,0 +1,24 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\Framework\App\ObjectManager;
++
++/**
++ * Write compiled object manager configuration to storage
++ */
++interface ConfigWriterInterface
++{
++    /**
++     * Writes config in storage
++     *
++     * @param string $key
++     * @param array $config
++     * @return void
++     */
++    public function write(string $key, array $config);
++}
+
+diff --git a/vendor/magento/framework/App/ObjectManager/ConfigWriter/Filesystem.php b/vendor/magento/framework/App/ObjectManager/ConfigWriter/Filesystem.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/framework/App/ObjectManager/ConfigWriter/Filesystem.php
+@@ -0,0 +1,61 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\Framework\App\ObjectManager\ConfigWriter;
++
++use Magento\Framework\App\Filesystem\DirectoryList;
++use Magento\Framework\App\ObjectManager\ConfigWriterInterface;
++
++/**
++ * @inheritdoc
++ */
++class Filesystem implements ConfigWriterInterface
++{
++    /**
++     * @var DirectoryList
++     */
++    private $directoryList;
++
++    /**
++     * @param DirectoryList $directoryList
++     */
++    public function __construct(
++        DirectoryList $directoryList
++    ) {
++        $this->directoryList = $directoryList;
++    }
++
++    /**
++     * Writes config in storage
++     *
++     * @param string $key
++     * @param array $config
++     * @return void
++     */
++    public function write(string $key, array $config)
++    {
++        $this->initialize();
++        $configuration = sprintf('<?php return %s;', var_export($config, true));
++        file_put_contents(
++            $this->directoryList->getPath(DirectoryList::GENERATED_METADATA) . '/' . $key  . '.php',
++            $configuration
++        );
++    }
++
++    /**
++     * Initializes writer
++     *
++     * @return void
++     */
++    private function initialize()
++    {
++        if (!file_exists($this->directoryList->getPath(DirectoryList::GENERATED_METADATA))) {
++            mkdir($this->directoryList->getPath(DirectoryList::GENERATED_METADATA));
++        }
++    }
++}
