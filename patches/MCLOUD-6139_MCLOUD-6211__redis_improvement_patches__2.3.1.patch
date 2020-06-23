@@ -1,3 +1,928 @@
+diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/magento/module-config/App/Config/Type/System.php
+--- a/vendor/magento/module-config/App/Config/Type/System.php
++++ b/vendor/magento/module-config/App/Config/Type/System.php
+@@ -3,6 +3,7 @@
+  * Copyright © Magento, Inc. All rights reserved.
+  * See COPYING.txt for license details.
+  */
++
+ namespace Magento\Config\App\Config\Type;
+ 
+ use Magento\Framework\App\Config\ConfigSourceInterface;
+@@ -13,11 +14,14 @@ use Magento\Framework\App\ObjectManager;
+ use Magento\Config\App\Config\Type\System\Reader;
+ use Magento\Framework\App\ScopeInterface;
+ use Magento\Framework\Cache\FrontendInterface;
++use Magento\Framework\Cache\LockGuardedCacheLoader;
+ use Magento\Framework\Lock\LockManagerInterface;
+ use Magento\Framework\Serialize\SerializerInterface;
+ use Magento\Store\Model\Config\Processor\Fallback;
+-use Magento\Store\Model\ScopeInterface as StoreScope;
+ use Magento\Framework\Encryption\Encryptor;
++use Magento\Store\Model\ScopeInterface as StoreScope;
++use Magento\Framework\App\Cache\StateInterface;
++use Magento\Framework\App\Cache\Type\Config;
+
+ /**
+  * System configuration type
+@@ -25,6 +29,7 @@ use Magento\Framework\Encryption\Encryptor;
+  * @api
+  * @since 100.1.2
+  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
++ * @SuppressWarnings(PHPMD.UnusedPrivateMethod)
+  */
+ class System implements ConfigTypeInterface
+ {
+@@ -42,22 +47,6 @@ class System implements ConfigTypeInterface
+      * @var string
+      */
+     private static $lockName = 'SYSTEM_CONFIG';
+-    /**
+-     * Timeout between retrieves to load the configuration from the cache.
+-     *
+-     * Value of the variable in microseconds.
+-     *
+-     * @var int
+-     */
+-    private static $delayTimeout = 100000;
+-    /**
+-     * Lifetime of the lock for write in cache.
+-     *
+-     * Value of the variable in seconds.
+-     *
+-     * @var int
+-     */
+-    private static $lockTimeout = 42;
+
+     /**
+      * @var array
+@@ -106,11 +95,17 @@ class System implements ConfigTypeInterface
+     private $encryptor;
+
+     /**
+-     * @var LockManagerInterface
++     * @var LockGuardedCacheLoader
+      */
+-    private $locker;
++    private $lockQuery;
+
+     /**
++     * @var StateInterface
++     */
++    private $cacheState;
++
++    /**
++     * System constructor.
+      * @param ConfigSourceInterface $source
+      * @param PostProcessorInterface $postProcessor
+      * @param Fallback $fallback
+@@ -122,6 +117,8 @@ class System implements ConfigTypeInterface
+      * @param Reader|null $reader
+      * @param Encryptor|null $encryptor
+      * @param LockManagerInterface|null $locker
++     * @param LockGuardedCacheLoader|null $lockQuery
++     * @param StateInterface|null $cacheState
+      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+@@ -136,7 +133,9 @@ class System implements ConfigTypeInterface
+         $configType = self::CONFIG_TYPE,
+         Reader $reader = null,
+         Encryptor $encryptor = null,
+-        LockManagerInterface $locker = null
++        LockManagerInterface $locker = null,
++        LockGuardedCacheLoader $lockQuery = null,
++        StateInterface $cacheState = null
+     ) {
+         $this->postProcessor = $postProcessor;
+         $this->cache = $cache;
+@@ -145,8 +144,10 @@ class System implements ConfigTypeInterface
+         $this->reader = $reader ?: ObjectManager::getInstance()->get(Reader::class);
+         $this->encryptor = $encryptor
+             ?: ObjectManager::getInstance()->get(Encryptor::class);
+-        $this->locker = $locker
+-            ?: ObjectManager::getInstance()->get(LockManagerInterface::class);
++        $this->lockQuery = $lockQuery
++            ?: ObjectManager::getInstance()->get(LockGuardedCacheLoader::class);
++        $this->cacheState = $cacheState
++            ?: ObjectManager::getInstance()->get(StateInterface::class);
+     }
+
+     /**
+@@ -225,83 +226,64 @@ class System implements ConfigTypeInterface
+     }
+
+     /**
+-     * Make lock on data load.
++     * Load configuration data for all scopes.
+      *
+-     * @param callable $dataLoader
+-     * @param bool $flush
+      * @return array
+      */
+-    private function lockedLoadData(callable $dataLoader, bool $flush = false): array
++    private function loadAllData()
+     {
+-        $cachedData = $dataLoader(); //optimistic read
+-
+-        while ($cachedData === false && $this->locker->isLocked(self::$lockName)) {
+-            usleep(self::$delayTimeout);
+-            $cachedData = $dataLoader();
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
+         }
+
+-        while ($cachedData === false) {
+-            try {
+-                if ($this->locker->lock(self::$lockName, self::$lockTimeout)) {
+-                    if (!$flush) {
+-                        $data = $this->readData();
+-                        $this->cacheData($data);
+-                        $cachedData = $data;
+-                    } else {
+-                        $this->cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, [self::CACHE_TAG]);
+-                        $cachedData = [];
+-                    }
+-                }
+-            } finally {
+-                $this->locker->unlock(self::$lockName);
+-            }
+-
+-            if ($cachedData === false) {
+-                usleep(self::$delayTimeout);
+-                $cachedData = $dataLoader();
+-            }
+-        }
+-
+-        return $cachedData;
+-    }
+-
+-    /**
+-     * Load configuration data for all scopes
+-     *
+-     * @return array
+-     */
+-    private function loadAllData()
+-    {
+-        return $this->lockedLoadData(function () {
++        $loadAction = function () {
+             $cachedData = $this->cache->load($this->configType);
+             $data = false;
+             if ($cachedData !== false) {
+                 $data = $this->serializer->unserialize($this->encryptor->decrypt($cachedData));
+             }
+             return $data;
+-        });
++        };
++
++        return $this->lockQuery->lockedLoadData(
++            self::$lockName,
++            $loadAction,
++            \Closure::fromCallable([$this, 'readData']),
++            \Closure::fromCallable([$this, 'cacheData'])
++        );
+     }
+
+     /**
+-     * Load configuration data for default scope
++     * Load configuration data for default scope.
+      *
+      * @param string $scopeType
+      * @return array
+      */
+     private function loadDefaultScopeData($scopeType)
+     {
+-        return $this->lockedLoadData(function () use ($scopeType) {
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
++        }
++
++        $loadAction = function () use ($scopeType) {
+             $cachedData = $this->cache->load($this->configType . '_' . $scopeType);
+             $scopeData = false;
+             if ($cachedData !== false) {
+                 $scopeData = [$scopeType => $this->serializer->unserialize($this->encryptor->decrypt($cachedData))];
+             }
+             return $scopeData;
+-        });
++        };
++
++        return $this->lockQuery->lockedLoadData(
++            self::$lockName,
++            $loadAction,
++            \Closure::fromCallable([$this, 'readData']),
++            \Closure::fromCallable([$this, 'cacheData'])
++        );
+     }
+
+     /**
+-     * Load configuration data for a specified scope
++     * Load configuration data for a specified scope.
+      *
+      * @param string $scopeType
+      * @param string $scopeId
+@@ -309,7 +291,11 @@ class System implements ConfigTypeInterface
+      */
+     private function loadScopeData($scopeType, $scopeId)
+     {
+-        return $this->lockedLoadData(function () use ($scopeType, $scopeId) {
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
++        }
++
++        $loadAction = function () use ($scopeType, $scopeId) {
+             $cachedData = $this->cache->load($this->configType . '_' . $scopeType . '_' . $scopeId);
+             $scopeData = false;
+             if ($cachedData === false) {
+@@ -329,7 +315,14 @@ class System implements ConfigTypeInterface
+             }
+
+             return $scopeData;
+-        });
++        };
++
++        return $this->lockQuery->lockedLoadData(
++            self::$lockName,
++            $loadAction,
++            \Closure::fromCallable([$this, 'readData']),
++            \Closure::fromCallable([$this, 'cacheData'])
++        );
+     }
+
+     /**
+@@ -371,7 +364,7 @@ class System implements ConfigTypeInterface
+     }
+
+     /**
+-     * Walk nested hash map by keys from $pathParts
++     * Walk nested hash map by keys from $pathParts.
+      *
+      * @param array $data to walk in
+      * @param array $pathParts keys path
+@@ -408,7 +401,7 @@ class System implements ConfigTypeInterface
+     }
+
+     /**
+-     * Clean cache and global variables cache
++     * Clean cache and global variables cache.
+      *
+      * Next items cleared:
+      * - Internal property intended to store already loaded configuration data
+@@ -420,11 +413,17 @@ class System implements ConfigTypeInterface
+     public function clean()
+     {
+         $this->data = [];
+-        $this->lockedLoadData(
+-            function () {
+-                return false;
+-            },
+-            true
++        $cleanAction = function () {
++            $this->cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, [self::CACHE_TAG]);
++        };
++
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $cleanAction();
++        }
++
++        $this->lockQuery->lockedCleanData(
++            self::$lockName,
++            $cleanAction
+         );
+     }
+ }
+diff -Nuar a/vendor/magento/module-config/etc/di.xml b/vendor/magento/module-config/etc/di.xml
+--- a/vendor/magento/module-config/etc/di.xml
++++ b/vendor/magento/module-config/etc/di.xml
+@@ -90,9 +90,16 @@
+             <argument name="preProcessor" xsi:type="object">Magento\Framework\App\Config\PreProcessorComposite</argument>
+             <argument name="serializer" xsi:type="object">Magento\Framework\Serialize\Serializer\Serialize</argument>
+             <argument name="reader" xsi:type="object">Magento\Config\App\Config\Type\System\Reader\Proxy</argument>
+-            <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
++            <argument name="lockQuery" xsi:type="object">systemConfigQueryLocker</argument>
+         </arguments>
+     </type>
++
++    <virtualType name="systemConfigQueryLocker" type="Magento\Framework\Cache\LockGuardedCacheLoader">
++        <arguments>
++            <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
++        </arguments>
++    </virtualType>
++
+     <type name="Magento\Config\App\Config\Type\System\Reader">
+         <arguments>
+             <argument name="source" xsi:type="object">systemConfigSourceAggregated</argument>
+diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
+--- a/app/etc/di.xml
++++ b/app/etc/di.xml
+@@ -1756,4 +1756,19 @@
+             </argument>
+         </arguments>
+     </type>
++    <type name="Magento\Framework\Cache\LockGuardedCacheLoader">
++        <arguments>
++            <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
++        </arguments>
++    </type>
++    <virtualType name="configured_block_cache" type="Magento\Framework\App\Cache">
++        <arguments>
++            <argument name="cacheIdentifier" xsi:type="string">block_html</argument>
++        </arguments>
++    </virtualType>
++    <type name="Magento\Framework\View\Element\Context">
++        <arguments>
++            <argument name="cache" xsi:type="object">configured_block_cache</argument>
++        </arguments>
++    </type>
+ </config>
+diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
+@@ -0,0 +1,147 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++namespace Magento\Framework\Cache;
++
++use Magento\Framework\Lock\LockManagerInterface;
++
++/**
++ * Default mutex that provide concurrent access to cache storage.
++ */
++class LockGuardedCacheLoader
++{
++    /**
++     * @var LockManagerInterface
++     */
++    private $locker;
++
++    /**
++     * Lifetime of the lock for write in cache.
++     *
++     * Value of the variable in milliseconds.
++     *
++     * @var int
++     */
++    private $lockTimeout;
++
++    /**
++     * Timeout between retrieves to load the configuration from the cache.
++     *
++     * Value of the variable in milliseconds.
++     *
++     * @var int
++     */
++    private $delayTimeout;
++
++    /**
++     * Timeout for information to be collected and saved.
++     * If timeout passed that means that data cannot be saved right now.
++     * And we will just return collected data.
++     *
++     * Value of the variable in milliseconds.
++     *
++     * @var int
++     */
++    private $loadTimeout;
++
++    /**
++     * Minimal delay timeout in ms.
++     *
++     * @var int
++     */
++    private $minimalDelayTimeout;
++
++    /**
++     * @param LockManagerInterface $locker
++     * @param int $lockTimeout
++     * @param int $delayTimeout
++     * @param int $loadTimeout
++     * @param int $minimalDelayTimeout
++     */
++    public function __construct(
++        LockManagerInterface $locker,
++        int $lockTimeout = 10000,
++        int $delayTimeout = 20,
++        int $loadTimeout = 10000,
++        int $minimalDelayTimeout = 5
++    ) {
++        $this->locker = $locker;
++        $this->lockTimeout = $lockTimeout;
++        $this->delayTimeout = $delayTimeout;
++        $this->loadTimeout = $loadTimeout;
++        $this->minimalDelayTimeout = $minimalDelayTimeout;
++    }
++
++    /**
++     * Load data.
++     *
++     * @param string $lockName
++     * @param callable $dataLoader
++     * @param callable $dataCollector
++     * @param callable $dataSaver
++     * @return mixed
++     */
++    public function lockedLoadData(
++        string $lockName,
++        callable $dataLoader,
++        callable $dataCollector,
++        callable $dataSaver
++    ) {
++        $cachedData = $dataLoader(); //optimistic read
++        $deadline = microtime(true) + $this->loadTimeout / 100;
++
++        while ($cachedData === false) {
++            if ($deadline <= microtime(true)) {
++                return $dataCollector();
++            }
++
++            if ($this->locker->lock($lockName, $this->lockTimeout / 1000)) {
++                try {
++                    $data = $dataCollector();
++                    $dataSaver($data);
++                    $cachedData = $data;
++                } finally {
++                    $this->locker->unlock($lockName);
++                }
++            }
++
++            if ($cachedData === false) {
++                usleep($this->getLookupTimeout() * 1000);
++                $cachedData = $dataLoader();
++            }
++        }
++
++        return $cachedData;
++    }
++
++    /**
++     * Clean data.
++     *
++     * @param string $lockName
++     * @param callable $dataCleaner
++     * @return void
++     */
++    public function lockedCleanData(string $lockName, callable $dataCleaner)
++    {
++        while ($this->locker->isLocked($lockName)) {
++            usleep($this->getLookupTimeout() * 1000);
++        }
++
++        $dataCleaner();
++    }
++
++    /**
++     * Delay will be applied as rand($minimalDelayTimeout, $delayTimeout).
++     * This helps to desynchronize multiple clients trying
++     * to acquire the lock for the same resource at the same time
++     *
++     * @return int
++     */
++    private function getLookupTimeout()
++    {
++        return rand($this->minimalDelayTimeout, $this->delayTimeout);
++    }
++}
+diff -Nuar a/vendor/magento/framework/Lock/Backend/Cache.php b/vendor/magento/framework/Lock/Backend/Cache.php
+--- a/vendor/magento/framework/Lock/Backend/Cache.php
++++ b/vendor/magento/framework/Lock/Backend/Cache.php
+@@ -14,24 +14,57 @@ use Magento\Framework\Cache\FrontendInterface;
+  */
+ class Cache implements \Magento\Framework\Lock\LockManagerInterface
+ {
++    /**
++     * Prefix for marking that key is locked or not.
++     */
++    const LOCK_PREFIX = 'LOCKED_RECORD_INFO_';
++
+     /**
+      * @var FrontendInterface
+      */
+     private $cache;
+
++    /**
++     * Sign for locks, helps to avoid removing a lock that was created by another client
++     *
++     * @string
++     */
++    private $lockSign;
++
+     /**
+      * @param FrontendInterface $cache
+      */
+     public function __construct(FrontendInterface $cache)
+     {
+         $this->cache = $cache;
++        $this->lockSign = $this->generateLockSign();
+     }
++
+     /**
+      * @inheritdoc
+      */
+     public function lock(string $name, int $timeout = -1): bool
+     {
+-        return $this->cache->save('1', $name, [], $timeout);
++        if (empty($this->lockSign)) {
++            $this->lockSign = $this->generateLockSign();
++        }
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if (false !== $data) {
++             return false;
++        }
++
++        $timeout = $timeout <= 0 ? null : $timeout;
++        $this->cache->save($this->lockSign, $this->getIdentifier($name), [], $timeout);
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if ($data === $this->lockSign) {
++            return true;
++        }
++
++        return false;
+     }
+
+     /**
+@@ -39,7 +72,22 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
+      */
+     public function unlock(string $name): bool
+     {
+-        return $this->cache->remove($name);
++        if (empty($this->lockSign)) {
++            return false;
++        }
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if (false === $data) {
++            return false;
++        }
++
++        $removeResult = false;
++        if ($data === $this->lockSign) {
++            $removeResult = (bool)$this->cache->remove($this->getIdentifier($name));
++        }
++
++        return $removeResult;
+     }
+
+     /**
+@@ -47,6 +95,40 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
+      */
+     public function isLocked(string $name): bool
+     {
+-        return (bool)$this->cache->test($name);
++        return (bool)$this->cache->test($this->getIdentifier($name));
++    }
++
++    /**
++     * Get cache locked identifier based on cache identifier.
++     *
++     * @param string $cacheIdentifier
++     * @return string
++     */
++    private function getIdentifier(string $cacheIdentifier): string
++    {
++        return self::LOCK_PREFIX . $cacheIdentifier;
++    }
++
++    /**
++     * Function that generates lock sign that helps to avoid removing a lock that was created by another client.
++     *
++     * @return string
++     */
++    private function generateLockSign()
++    {
++        $sign = implode(
++            '-',
++            [
++                \getmypid(), \crc32(\gethostname())
++            ]
++        );
++
++        try {
++            $sign .= '-' . \bin2hex(\random_bytes(4));
++        } catch (\Exception $e) {
++            $sign .= '-' . \uniqid('-uniqid-');
++        }
++
++        return $sign;
+     }
+ }
+diff -Nuar a/vendor/magento/framework/View/Element/AbstractBlock.php b/vendor/magento/framework/View/Element/AbstractBlock.php
+--- a/vendor/magento/framework/View/Element/AbstractBlock.php
++++ b/vendor/magento/framework/View/Element/AbstractBlock.php
+@@ -3,8 +3,10 @@
+  * Copyright © Magento, Inc. All rights reserved.
+  * See COPYING.txt for license details.
+  */
++
+ namespace Magento\Framework\View\Element;
+ 
++use Magento\Framework\Cache\LockGuardedCacheLoader;
+ use Magento\Framework\DataObject\IdentityInterface;
+ 
+ /**
+@@ -14,6 +16,7 @@ use Magento\Framework\DataObject\IdentityInterface;
+  *
+  * Marked as public API because it is actively used now.
+  *
++ * phpcs:disable Magento2.Classes.AbstractApi
+  * @api
+  * @SuppressWarnings(PHPMD.ExcessivePublicCount)
+  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+@@ -52,6 +55,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+      * SID Resolver
+      *
+      * @var \Magento\Framework\Session\SidResolverInterface
++     * @deprecated 102.0.5 Not used anymore.
+      */
+     protected $_sidResolver;
+ 
+@@ -176,14 +180,21 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+      */
+     protected $_cache;
+ 
++    /**
++     * @var LockGuardedCacheLoader
++     */
++    private $lockQuery;
++
+     /**
+      * Constructor
+      *
+      * @param \Magento\Framework\View\Element\Context $context
+      * @param array $data
+      */
+-    public function __construct(\Magento\Framework\View\Element\Context $context, array $data = [])
+-    {
++    public function __construct(
++        \Magento\Framework\View\Element\Context $context,
++        array $data = []
++    ) {
+         $this->_request = $context->getRequest();
+         $this->_layout = $context->getLayout();
+         $this->_eventManager = $context->getEventManager();
+@@ -201,6 +212,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+         $this->filterManager = $context->getFilterManager();
+         $this->_localeDate = $context->getLocaleDate();
+         $this->inlineTranslation = $context->getInlineTranslation();
++        $this->lockQuery = $context->getLockGuardedCacheLoader();
+         if (isset($data['jsLayout'])) {
+             $this->jsLayout = $data['jsLayout'];
+             unset($data['jsLayout']);
+@@ -235,6 +247,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+      * Please override this one instead of overriding real __construct constructor
+      *
+      * @return void
++     * phpcs:disable Magento2.CodeAnalysis.EmptyBlock
+      */
+     protected function _construct()
+     {
+@@ -430,9 +443,9 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+      */
+     public function unsetCallChild($alias, $callback, $result, $params)
+     {
++        $args = func_get_args();
+         $child = $this->getChildBlock($alias);
+         if ($child) {
+-            $args = func_get_args();
+             $alias = array_shift($args);
+             $callback = array_shift($args);
+             $result = (string)array_shift($args);
+@@ -659,19 +672,6 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+         }
+ 
+         $html = $this->_loadCache();
+-        if ($html === false) {
+-            if ($this->hasData('translate_inline')) {
+-                $this->inlineTranslation->suspend($this->getData('translate_inline'));
+-            }
+-
+-            $this->_beforeToHtml();
+-            $html = $this->_toHtml();
+-            $this->_saveCache($html);
+-
+-            if ($this->hasData('translate_inline')) {
+-                $this->inlineTranslation->resume();
+-            }
+-        }
+         $html = $this->_afterToHtml($html);
+ 
+         /** @var \Magento\Framework\DataObject */
+@@ -680,10 +680,13 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+                 'html' => $html,
+             ]
+         );
+-        $this->_eventManager->dispatch('view_block_abstract_to_html_after', [
+-            'block' => $this,
+-            'transport' => $transportObject
+-        ]);
++        $this->_eventManager->dispatch(
++            'view_block_abstract_to_html_after',
++            [
++                'block' => $this,
++                'transport' => $transportObject
++            ]
++        );
+         $html = $transportObject->getHtml();
+ 
+         return $html;
+@@ -726,7 +729,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+      */
+     public function getUiId($arg1 = null, $arg2 = null, $arg3 = null, $arg4 = null, $arg5 = null)
+     {
+-        return ' data-ui-id="' . $this->getJsId($arg1, $arg2, $arg3, $arg4, $arg5) . '" ';
++        return ' data-ui-id="' . $this->escapeHtmlAttr($this->getJsId($arg1, $arg2, $arg3, $arg4, $arg5)) . '" ';
+     }
+ 
+     /**
+@@ -875,7 +878,7 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+         $namespace = substr(
+             $className,
+             0,
+-            strpos($className, '\\' . 'Block')
++            strpos($className, '\\' . 'Block' . '\\')
+         );
+         return str_replace('\\', '_', $namespace);
+     }
+@@ -973,8 +976,8 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+      *
+      * Use $addSlashes = false for escaping js that inside html attribute (onClick, onSubmit etc)
+      *
+-     * @param  string $data
+-     * @param  bool $addSlashes
++     * @param string $data
++     * @param bool $addSlashes
+      * @return string
+      * @deprecated 101.0.0
+      */
+@@ -1084,23 +1087,43 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+     /**
+      * Load block html from cache storage
+      *
+-     * @return string|false
++     * @return string
+      */
+     protected function _loadCache()
+     {
++        $collectAction = function () {
++            if ($this->hasData('translate_inline')) {
++                $this->inlineTranslation->suspend($this->getData('translate_inline'));
++            }
++
++            $this->_beforeToHtml();
++            return $this->_toHtml();
++        };
++
+         if ($this->getCacheLifetime() === null || !$this->_cacheState->isEnabled(self::CACHE_GROUP)) {
+-            return false;
+-        }
+-        $cacheKey = $this->getCacheKey();
+-        $cacheData = $this->_cache->load($cacheKey);
+-        if ($cacheData) {
+-            $cacheData = str_replace(
+-                $this->_getSidPlaceholder($cacheKey),
+-                $this->_sidResolver->getSessionIdQueryParam($this->_session) . '=' . $this->_session->getSessionId(),
+-                $cacheData
+-            );
++            $html = $collectAction();
++            if ($this->hasData('translate_inline')) {
++                $this->inlineTranslation->resume();
++            }
++            return $html;
+         }
+-        return $cacheData;
++        $loadAction = function () {
++            return $this->_cache->load($this->getCacheKey());
++        };
++
++        $saveAction = function ($data) {
++            $this->_saveCache($data);
++            if ($this->hasData('translate_inline')) {
++                $this->inlineTranslation->resume();
++            }
++        };
++
++        return (string)$this->lockQuery->lockedLoadData(
++            $this->getCacheKey(),
++            $loadAction,
++            $collectAction,
++            $saveAction
++        );
+     }
+ 
+     /**
+@@ -1115,11 +1138,6 @@ abstract class AbstractBlock extends \Magento\Framework\DataObject implements Bl
+             return false;
+         }
+         $cacheKey = $this->getCacheKey();
+-        $data = str_replace(
+-            $this->_sidResolver->getSessionIdQueryParam($this->_session) . '=' . $this->_session->getSessionId(),
+-            $this->_getSidPlaceholder($cacheKey),
+-            $data
+-        );
+ 
+         $this->_cache->save($data, $cacheKey, array_unique($this->getCacheTags()), $this->getCacheLifetime());
+         return $this;
+diff -Nuar a/vendor/magento/framework/View/Element/Context.php b/vendor/magento/framework/View/Element/Context.php
+--- a/vendor/magento/framework/View/Element/Context.php
++++ b/vendor/magento/framework/View/Element/Context.php
+@@ -5,6 +5,9 @@
+  */
+ namespace Magento\Framework\View\Element;
+ 
++use Magento\Framework\Cache\LockGuardedCacheLoader;
++use Magento\Framework\App\ObjectManager;
++
+ /**
+  * Constructor modification point for Magento\Framework\View\Element\AbstractBlock.
+  *
+@@ -16,8 +19,7 @@ namespace Magento\Framework\View\Element;
+  * As Magento moves from inheritance-based APIs all such classes will be deprecated together with
+  * the classes they were introduced for.
+  *
+- * @SuppressWarnings(PHPMD.TooManyFields)
+- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
++ * @SuppressWarnings(PHPMD)
+  *
+  * @api
+  * @since 100.0.2
+@@ -137,12 +139,16 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
+      */
+     protected $inlineTranslation;
+ 
++    /**
++     * @var LockGuardedCacheLoader
++     */
++    private $lockQuery;
++
+     /**
+      * @param \Magento\Framework\App\RequestInterface $request
+      * @param \Magento\Framework\View\LayoutInterface $layout
+      * @param \Magento\Framework\Event\ManagerInterface $eventManager
+      * @param \Magento\Framework\UrlInterface $urlBuilder
+-     * @param \Magento\Framework\TranslateInterface $translator
+      * @param \Magento\Framework\App\CacheInterface $cache
+      * @param \Magento\Framework\View\DesignInterface $design
+      * @param \Magento\Framework\Session\SessionManagerInterface $session
+@@ -156,6 +162,7 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
+      * @param \Magento\Framework\Filter\FilterManager $filterManager
+      * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate
+      * @param \Magento\Framework\Translate\Inline\StateInterface $inlineTranslation
++     * @param LockGuardedCacheLoader $lockQuery
+      *
+      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+@@ -176,7 +183,8 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
+         \Magento\Framework\Escaper $escaper,
+         \Magento\Framework\Filter\FilterManager $filterManager,
+         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
+-        \Magento\Framework\Translate\Inline\StateInterface $inlineTranslation
++        \Magento\Framework\Translate\Inline\StateInterface $inlineTranslation,
++        LockGuardedCacheLoader $lockQuery = null
+     ) {
+         $this->_request = $request;
+         $this->_layout = $layout;
+@@ -195,6 +203,7 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
+         $this->_filterManager = $filterManager;
+         $this->_localeDate = $localeDate;
+         $this->inlineTranslation = $inlineTranslation;
++        $this->lockQuery = $lockQuery ?: ObjectManager::getInstance()->get(LockGuardedCacheLoader::class);
+     }
+ 
+     /**
+@@ -358,10 +367,23 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
+     }
+ 
+     /**
++     * Get locale date.
++     *
+      * @return \Magento\Framework\Stdlib\DateTime\TimezoneInterface
+      */
+     public function getLocaleDate()
+     {
+         return $this->_localeDate;
+     }
++
++    /**
++     * Lock guarded cache loader.
++     *
++     * @return LockGuardedCacheLoader
++     * @since 102.0.2
++     */
++    public function getLockGuardedCacheLoader()
++    {
++        return $this->lockQuery;
++    }
+ }
+
 diff -Nuar a/vendor/magento/module-eav/Model/Config.php b/vendor/magento/module-eav/Model/Config.php
 --- a/vendor/magento/module-eav/Model/Config.php
 +++ b/vendor/magento/module-eav/Model/Config.php
@@ -459,24 +1384,6 @@ diff -Nuar a/vendor/magento/module-theme/etc/di.xml b/vendor/magento/module-them
 +    <type name="Magento\Theme\Model\Theme\ThemeProvider">
 +        <arguments>
 +            <argument name="cache" xsi:type="object">configured_design_cache</argument>
-+        </arguments>
-+    </type>
- </config>
-diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
---- a/app/etc/di.xml
-+++ b/app/etc/di.xml
-@@ -1768,4 +1768,14 @@
-     <preference for="Magento\Framework\MessageQueue\PoisonPill\PoisonPillPutInterface" type="Magento\Framework\MessageQueue\PoisonPill\PoisonPillPut"/>
-     <preference for="Magento\Framework\MessageQueue\PoisonPill\PoisonPillReadInterface" type="Magento\Framework\MessageQueue\PoisonPill\PoisonPillRead"/>
-     <preference for="Magento\Framework\MessageQueue\CallbackInvokerInterface" type="Magento\Framework\MessageQueue\CallbackInvoker"/>
-+    <virtualType name="configured_block_cache" type="Magento\Framework\App\Cache">
-+        <arguments>
-+            <argument name="cacheIdentifier" xsi:type="string">block_html</argument>
-+        </arguments>
-+    </virtualType>
-+    <type name="Magento\Framework\View\Element\Context">
-+        <arguments>
-+            <argument name="cache" xsi:type="object">configured_block_cache</argument>
 +        </arguments>
 +    </type>
  </config>
@@ -947,75 +1854,6 @@ diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php 
       */
      public function getCapabilities()
      {
-diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
---- a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
-+++ b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
-@@ -37,18 +37,33 @@ class LockGuardedCacheLoader
-     private $delayTimeout;
- 
-     /**
-+     * Timeout for information to be collected and saved.
-+     * If timeout passed that means that data cannot be saved right now.
-+     * And we will just return collected data.
-+     *
-+     * Value of the variable in milliseconds.
-+     *
-+     * @var int
-+     */
-+    private $loadTimeout;
-+
-+    /**
-+     * LockGuardedCacheLoader constructor.
-      * @param LockManagerInterface $locker
-      * @param int $lockTimeout
-      * @param int $delayTimeout
-+     * @param int $loadTimeout
-      */
-     public function __construct(
-         LockManagerInterface $locker,
-         int $lockTimeout = 10000,
--        int $delayTimeout = 20
-+        int $delayTimeout = 20,
-+        int $loadTimeout = 10000
-     ) {
-         $this->locker = $locker;
-         $this->lockTimeout = $lockTimeout;
-         $this->delayTimeout = $delayTimeout;
-+        $this->loadTimeout = $loadTimeout;
-     }
- 
-     /**
-@@ -67,21 +82,21 @@ class LockGuardedCacheLoader
-         callable $dataSaver
-     ) {
-         $cachedData = $dataLoader(); //optimistic read
--
--        while ($cachedData === false && $this->locker->isLocked($lockName)) {
--            usleep($this->delayTimeout * 1000);
--            $cachedData = $dataLoader();
--        }
-+        $deadline = microtime(true) + $this->loadTimeout;
- 
-         while ($cachedData === false) {
--            try {
--                if ($this->locker->lock($lockName, $this->lockTimeout / 1000)) {
-+            if ($deadline <= microtime(true)) {
-+                return $dataCollector();
-+            }
-+
-+            if ($this->locker->lock($lockName, $this->lockTimeout / 1000)) {
-+                try {
-                     $data = $dataCollector();
-                     $dataSaver($data);
-                     $cachedData = $data;
-+                } finally {
-+                    $this->locker->unlock($lockName);
-                 }
--            } finally {
--                $this->locker->unlock($lockName);
-             }
- 
-             if ($cachedData === false) {
 diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/magento/framework/Interception/Config/Config.php
 --- a/vendor/magento/framework/Interception/Config/Config.php
 +++ b/vendor/magento/framework/Interception/Config/Config.php
@@ -1028,20 +1866,6 @@ diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/ma
          $this->generateIntercepted($classDefinitions);
  
          $this->cacheManager->save($this->_cacheId, $this->_intercepted);
-diff -Nuar a/vendor/magento/framework/Lock/Backend/Cache.php b/vendor/magento/framework/Lock/Backend/Cache.php
---- a/vendor/magento/framework/Lock/Backend/Cache.php
-+++ b/vendor/magento/framework/Lock/Backend/Cache.php
-@@ -37,6 +37,10 @@ class Cache implements \Magento\Framework\Lock\LockManagerInterface
-      */
-     public function lock(string $name, int $timeout = -1): bool
-     {
-+        if ((bool)$this->cache->test($this->getIdentifier($name))) {
-+             return false;
-+        }
-+
-         return $this->cache->save('1', $this->getIdentifier($name), [], $timeout);
-     }
-
 diff -Nuar a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php b/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
 --- a/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
 +++ b/setup/src/Magento/Setup/Console/Command/DiCompileCommand.php
@@ -1170,3 +1994,67 @@ diff -Nuar a/setup/src/Magento/Setup/Module/Di/App/Task/OperationFactory.php b/s
      ];
  
      /**
+
+diff -Nuar a/vendor/magento/module-catalog/Model/Product.php b/vendor/magento/module-catalog/Model/Product.php
+--- a/vendor/magento/module-catalog/Model/Product.php
++++ b/vendor/magento/module-catalog/Model/Product.php
+@@ -72,9 +72,9 @@ class Product extends \Magento\Catalog\Model\AbstractModel implements
+     const STORE_ID = 'store_id';
+
+     /**
+-     * @var string
++     * @var string|bool
+      */
+-    protected $_cacheTag = self::CACHE_TAG;
++    protected $_cacheTag = false;
+
+     /**
+      * @var string
+@@ -868,7 +868,6 @@ class Product extends \Magento\Catalog\Model\AbstractModel implements
+      */
+     public function beforeSave()
+     {
+-        $this->cleanCache();
+         $this->setTypeHasOptions(false);
+         $this->setTypeHasRequiredOptions(false);
+         $this->setHasOptions(false);
+diff -Nuar a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+@@ -20,7 +20,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class PageCache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_PAGE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_PAGE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_PAGE_CACHE_REDIS = \Magento\Framework\Cache\Backend\Redis::class;
+
+     const INPUT_KEY_PAGE_CACHE_BACKEND = 'page-cache';
+     const INPUT_KEY_PAGE_CACHE_BACKEND_REDIS_SERVER = 'page-cache-redis-server';
+@@ -273,6 +273,6 @@ class PageCache implements ConfigOptionsListInterface
+      */
+     private function generateCachePrefix(): string
+     {
+-        return substr(\md5(dirname(__DIR__, 6)), 0, 3) . '_';
++        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
+     }
+ }
+diff -Nuar a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+@@ -20,7 +20,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class Cache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_CACHE_REDIS = \Magento\Framework\Cache\Backend\Redis::class;
+
+     const INPUT_KEY_CACHE_BACKEND = 'cache-backend';
+     const INPUT_KEY_CACHE_BACKEND_REDIS_SERVER = 'cache-backend-redis-server';
+@@ -262,6 +262,6 @@ class Cache implements ConfigOptionsListInterface
+      */
+     private function generateCachePrefix(): string
+     {
+-        return substr(\md5(dirname(__DIR__, 6)), 0, 3) . '_';
++        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
+     }
+ }
