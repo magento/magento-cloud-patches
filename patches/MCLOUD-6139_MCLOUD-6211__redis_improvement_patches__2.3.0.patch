@@ -9,7 +9,7 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
  namespace Magento\Config\App\Config\Type;
  
  use Magento\Framework\App\Config\ConfigSourceInterface;
-@@ -13,10 +14,12 @@ use Magento\Framework\App\ObjectManager;
+@@ -13,10 +14,14 @@ use Magento\Framework\App\ObjectManager;
  use Magento\Config\App\Config\Type\System\Reader;
  use Magento\Framework\App\ScopeInterface;
  use Magento\Framework\Cache\FrontendInterface;
@@ -20,10 +20,12 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 -use Magento\Store\Model\ScopeInterface as StoreScope;
  use Magento\Framework\Encryption\Encryptor;
 +use Magento\Store\Model\ScopeInterface as StoreScope;
- 
++use Magento\Framework\App\Cache\StateInterface;
++use Magento\Framework\App\Cache\Type\Config;
+
  /**
   * System configuration type
-@@ -24,12 +27,25 @@ use Magento\Framework\Encryption\Encryptor;
+@@ -24,12 +29,25 @@ use Magento\Framework\Encryption\Encryptor;
   * @api
   * @since 100.1.2
   * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -40,7 +42,7 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 +     * System config type.
 +     */
      const CONFIG_TYPE = 'system';
- 
+
 +    /**
 +     * @var string
 +     */
@@ -49,36 +51,44 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
      /**
       * @var array
       */
-@@ -76,6 +92,11 @@ class System implements ConfigTypeInterface
-      */
+@@ -77,6 +95,17 @@ class System implements ConfigTypeInterface
      private $encryptor;
- 
-+    /**
+
+     /**
 +     * @var LockGuardedCacheLoader
 +     */
 +    private $lockQuery;
 +
-     /**
++    /**
++     * @var StateInterface
++     */
++    private $cacheState;
++
++    /**
++     * System constructor.
       * @param ConfigSourceInterface $source
       * @param PostProcessorInterface $postProcessor
-@@ -87,7 +108,8 @@ class System implements ConfigTypeInterface
+      * @param Fallback $fallback
+@@ -87,7 +116,9 @@ class System implements ConfigTypeInterface
       * @param string $configType
       * @param Reader|null $reader
       * @param Encryptor|null $encryptor
 -     *
 +     * @param LockManagerInterface|null $locker
 +     * @param LockGuardedCacheLoader|null $lockQuery
++     * @param StateInterface|null $cacheState
       * @SuppressWarnings(PHPMD.UnusedFormalParameter)
       * @SuppressWarnings(PHPMD.ExcessiveParameterList)
       */
-@@ -101,14 +123,19 @@ class System implements ConfigTypeInterface
+@@ -101,14 +132,22 @@ class System implements ConfigTypeInterface
          $cachingNestedLevel = 1,
          $configType = self::CONFIG_TYPE,
          Reader $reader = null,
 -        Encryptor $encryptor = null
 +        Encryptor $encryptor = null,
 +        LockManagerInterface $locker = null,
-+        LockGuardedCacheLoader $lockQuery = null
++        LockGuardedCacheLoader $lockQuery = null,
++        StateInterface $cacheState = null
      ) {
          $this->postProcessor = $postProcessor;
          $this->cache = $cache;
@@ -90,12 +100,14 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 +            ?: ObjectManager::getInstance()->get(Encryptor::class);
 +        $this->lockQuery = $lockQuery
 +            ?: ObjectManager::getInstance()->get(LockGuardedCacheLoader::class);
++        $this->cacheState = $cacheState
++            ?: ObjectManager::getInstance()->get(StateInterface::class);
      }
- 
+
      /**
-@@ -187,45 +214,56 @@ class System implements ConfigTypeInterface
+@@ -187,45 +226,64 @@ class System implements ConfigTypeInterface
      }
- 
+
      /**
 -     * Load configuration data for all scopes
 +     * Load configuration data for all scopes.
@@ -110,8 +122,10 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 -            $data = $this->readData();
 -        } else {
 -            $data = $this->serializer->unserialize($this->encryptor->decrypt($cachedData));
--        }
--
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
+         }
+
 -        return $data;
 +        $loadAction = function () {
 +            $cachedData = $this->cache->load($this->configType);
@@ -129,7 +143,7 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 +            \Closure::fromCallable([$this, 'cacheData'])
 +        );
      }
- 
+
      /**
 -     * Load configuration data for default scope
 +     * Load configuration data for default scope.
@@ -146,8 +160,10 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 -            $this->cacheData($data);
 -        } else {
 -            $data = [$scopeType => $this->serializer->unserialize($this->encryptor->decrypt($cachedData))];
--        }
--
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
+         }
+
 -        return $data;
 +        $loadAction = function () use ($scopeType) {
 +            $cachedData = $this->cache->load($this->configType . '_' . $scopeType);
@@ -165,14 +181,14 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 +            \Closure::fromCallable([$this, 'cacheData'])
 +        );
      }
- 
+
      /**
 -     * Load configuration data for a specified scope
 +     * Load configuration data for a specified scope.
       *
       * @param string $scopeType
       * @param string $scopeId
-@@ -233,31 +271,38 @@ class System implements ConfigTypeInterface
+@@ -233,31 +291,42 @@ class System implements ConfigTypeInterface
       */
      private function loadScopeData($scopeType, $scopeId)
      {
@@ -184,6 +200,10 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 -                if ($cachedScopeData !== false) {
 -                    $serializedCachedData = $this->encryptor->decrypt($cachedScopeData);
 -                    $this->availableDataScopes = $this->serializer->unserialize($serializedCachedData);
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $this->readData();
++        }
++
 +        $loadAction = function () use ($scopeType, $scopeId) {
 +            $cachedData = $this->cache->load($this->configType . '_' . $scopeType . '_' . $scopeId);
 +            $scopeData = false;
@@ -211,7 +231,7 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 -            $serializedCachedData = $this->encryptor->decrypt($cachedData);
 -            $data = [$scopeType => [$scopeId => $this->serializer->unserialize($serializedCachedData)]];
 -        }
- 
+
 -        return $data;
 +            return $scopeData;
 +        };
@@ -223,32 +243,32 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 +            \Closure::fromCallable([$this, 'cacheData'])
 +        );
      }
- 
+
      /**
 -     * Cache configuration data
 +     * Cache configuration data.
       *
       * Caches data per scope to avoid reading data for all scopes on every request
       *
-@@ -295,7 +340,7 @@ class System implements ConfigTypeInterface
+@@ -295,7 +364,7 @@ class System implements ConfigTypeInterface
      }
- 
+
      /**
 -     * Walk nested hash map by keys from $pathParts
 +     * Walk nested hash map by keys from $pathParts.
       *
       * @param array $data to walk in
       * @param array $pathParts keys path
-@@ -332,7 +377,7 @@ class System implements ConfigTypeInterface
+@@ -332,7 +401,7 @@ class System implements ConfigTypeInterface
      }
- 
+
      /**
 -     * Clean cache and global variables cache
 +     * Clean cache and global variables cache.
       *
       * Next items cleared:
       * - Internal property intended to store already loaded configuration data
-@@ -344,6 +389,13 @@ class System implements ConfigTypeInterface
+@@ -344,6 +413,17 @@ class System implements ConfigTypeInterface
      public function clean()
      {
          $this->data = [];
@@ -256,6 +276,10 @@ diff -Nuar a/vendor/magento/module-config/App/Config/Type/System.php b/vendor/ma
 +        $cleanAction = function () {
 +            $this->cache->clean(\Zend_Cache::CLEANING_MODE_MATCHING_TAG, [self::CACHE_TAG]);
 +        };
++
++        if (!$this->cacheState->isEnabled(Config::TYPE_IDENTIFIER)) {
++            return $cleanAction();
++        }
 +
 +        $this->lockQuery->lockedCleanData(
 +            self::$lockName,
@@ -278,7 +302,7 @@ diff -Nuar a/vendor/magento/module-config/etc/di.xml b/vendor/magento/module-con
      <type name="Magento\Config\App\Config\Type\System">
          <arguments>
              <argument name="source" xsi:type="object">systemConfigSourceAggregatedProxy</argument>
-@@ -85,8 +90,18 @@
+@@ -85,8 +90,16 @@
              <argument name="preProcessor" xsi:type="object">Magento\Framework\App\Config\PreProcessorComposite</argument>
              <argument name="serializer" xsi:type="object">Magento\Framework\Serialize\Serializer\Serialize</argument>
              <argument name="reader" xsi:type="object">Magento\Config\App\Config\Type\System\Reader\Proxy</argument>
@@ -289,8 +313,6 @@ diff -Nuar a/vendor/magento/module-config/etc/di.xml b/vendor/magento/module-con
 +    <virtualType name="systemConfigQueryLocker" type="Magento\Framework\Cache\LockGuardedCacheLoader">
 +        <arguments>
 +            <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
-+            <argument name="lockTimeout" xsi:type="number">42000</argument>
-+            <argument name="delayTimeout" xsi:type="number">100</argument>
 +        </arguments>
 +    </virtualType>
 +
@@ -471,15 +493,13 @@ diff -Nuar a/vendor/magento/framework/Interception/Config/Config.php b/vendor/ma
 diff -Nuar a/app/etc/di.xml b/app/etc/di.xml
 --- a/app/etc/di.xml
 +++ b/app/etc/di.xml
-@@ -1742,4 +1742,27 @@
+@@ -1742,4 +1742,25 @@
              </argument>
          </arguments>
      </type>
 +    <type name="Magento\Framework\Cache\LockGuardedCacheLoader">
 +        <arguments>
 +            <argument name="locker" xsi:type="object">Magento\Framework\Lock\Backend\Cache</argument>
-+            <argument name="lockTimeout" xsi:type="number">10000</argument>
-+            <argument name="delayTimeout" xsi:type="number">20</argument>
 +        </arguments>
 +    </type>
 +    <virtualType name="configured_block_cache" type="Magento\Framework\App\Cache">
@@ -503,7 +523,7 @@ diff -Nuar a/vendor/magento/framework/Cache/LockGuardedCacheLoader.php b/vendor/
 new file mode 100644
 --- /dev/null
 +++ b/vendor/magento/framework/Cache/LockGuardedCacheLoader.php
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,147 @@
 +<?php
 +/**
 + * Copyright © Magento, Inc. All rights reserved.
@@ -554,22 +574,31 @@ new file mode 100644
 +    private $loadTimeout;
 +
 +    /**
-+     * LockGuardedCacheLoader constructor.
++     * Minimal delay timeout in ms.
++     *
++     * @var int
++     */
++    private $minimalDelayTimeout;
++
++    /**
 +     * @param LockManagerInterface $locker
 +     * @param int $lockTimeout
 +     * @param int $delayTimeout
 +     * @param int $loadTimeout
++     * @param int $minimalDelayTimeout
 +     */
 +    public function __construct(
 +        LockManagerInterface $locker,
 +        int $lockTimeout = 10000,
 +        int $delayTimeout = 20,
-+        int $loadTimeout = 10000
++        int $loadTimeout = 10000,
++        int $minimalDelayTimeout = 5
 +    ) {
 +        $this->locker = $locker;
 +        $this->lockTimeout = $lockTimeout;
 +        $this->delayTimeout = $delayTimeout;
 +        $this->loadTimeout = $loadTimeout;
++        $this->minimalDelayTimeout = $minimalDelayTimeout;
 +    }
 +
 +    /**
@@ -588,7 +617,7 @@ new file mode 100644
 +        callable $dataSaver
 +    ) {
 +        $cachedData = $dataLoader(); //optimistic read
-+        $deadline = microtime(true) + $this->loadTimeout;
++        $deadline = microtime(true) + $this->loadTimeout / 100;
 +
 +        while ($cachedData === false) {
 +            if ($deadline <= microtime(true)) {
@@ -606,7 +635,7 @@ new file mode 100644
 +            }
 +
 +            if ($cachedData === false) {
-+                usleep($this->delayTimeout * 1000);
++                usleep($this->getLookupTimeout() * 1000);
 +                $cachedData = $dataLoader();
 +            }
 +        }
@@ -624,15 +653,22 @@ new file mode 100644
 +    public function lockedCleanData(string $lockName, callable $dataCleaner)
 +    {
 +        while ($this->locker->isLocked($lockName)) {
-+            usleep($this->delayTimeout * 1000);
++            usleep($this->getLookupTimeout() * 1000);
 +        }
-+        try {
-+            if ($this->locker->lock($lockName, $this->lockTimeout / 1000)) {
-+                $dataCleaner();
-+            }
-+        } finally {
-+            $this->locker->unlock($lockName);
-+        }
++
++        $dataCleaner();
++    }
++
++    /**
++     * Delay will be applied as rand($minimalDelayTimeout, $delayTimeout).
++     * This helps to desynchronize multiple clients trying
++     * to acquire the lock for the same resource at the same time
++     *
++     * @return int
++     */
++    private function getLookupTimeout()
++    {
++        return rand($this->minimalDelayTimeout, $this->delayTimeout);
 +    }
 +}
 diff -Nuar a/vendor/magento/framework/View/Element/AbstractBlock.php b/vendor/magento/framework/View/Element/AbstractBlock.php
@@ -2219,3 +2255,187 @@ new file mode 100644
 +        }
 +    }
 +}
+diff -Nuar a/vendor/magento/module-catalog/Model/Product.php b/vendor/magento/module-catalog/Model/Product.php
+--- a/vendor/magento/module-catalog/Model/Product.php
++++ b/vendor/magento/module-catalog/Model/Product.php
+@@ -72,9 +72,9 @@ class Product extends \Magento\Catalog\Model\AbstractModel implements
+     const STORE_ID = 'store_id';
+
+     /**
+-     * @var string
++     * @var string|bool
+      */
+-    protected $_cacheTag = self::CACHE_TAG;
++    protected $_cacheTag = false;
+
+     /**
+      * @var string
+@@ -865,7 +865,6 @@ class Product extends \Magento\Catalog\Model\AbstractModel implements
+      */
+     public function beforeSave()
+     {
+-        $this->cleanCache();
+         $this->setTypeHasOptions(false);
+         $this->setTypeHasRequiredOptions(false);
+         $this->setHasOptions(false);
+diff -Nuar a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php
+@@ -20,19 +20,21 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class Cache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_CACHE_REDIS = \Magento\Framework\Cache\Backend\Redis::class;
+
+     const INPUT_KEY_CACHE_BACKEND = 'cache-backend';
+     const INPUT_KEY_CACHE_BACKEND_REDIS_SERVER = 'cache-backend-redis-server';
+     const INPUT_KEY_CACHE_BACKEND_REDIS_DATABASE = 'cache-backend-redis-db';
+     const INPUT_KEY_CACHE_BACKEND_REDIS_PORT = 'cache-backend-redis-port';
+     const INPUT_KEY_CACHE_BACKEND_REDIS_PASSWORD = 'cache-backend-redis-password';
++    const INPUT_KEY_CACHE_ID_PREFIX = 'cache-id-prefix';
+
+     const CONFIG_PATH_CACHE_BACKEND = 'cache/frontend/default/backend';
+     const CONFIG_PATH_CACHE_BACKEND_SERVER = 'cache/frontend/default/backend_options/server';
+     const CONFIG_PATH_CACHE_BACKEND_DATABASE = 'cache/frontend/default/backend_options/database';
+     const CONFIG_PATH_CACHE_BACKEND_PORT = 'cache/frontend/default/backend_options/port';
+     const CONFIG_PATH_CACHE_BACKEND_PASSWORD = 'cache/frontend/default/backend_options/password';
++    const CONFIG_PATH_CACHE_ID_PREFIX = 'cache/frontend/default/id_prefix';
+
+     /**
+      * @var array
+@@ -77,7 +79,7 @@ class Cache implements ConfigOptionsListInterface
+     }
+
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function getOptions()
+     {
+@@ -112,6 +114,12 @@ class Cache implements ConfigOptionsListInterface
+                 TextConfigOption::FRONTEND_WIZARD_TEXT,
+                 self::CONFIG_PATH_CACHE_BACKEND_PASSWORD,
+                 'Redis server password'
++            ),
++            new TextConfigOption(
++                self::INPUT_KEY_CACHE_ID_PREFIX,
++                TextConfigOption::FRONTEND_WIZARD_TEXT,
++                self::CONFIG_PATH_CACHE_ID_PREFIX,
++                'ID prefix for cache keys'
+             )
+         ];
+     }
+@@ -122,6 +130,11 @@ class Cache implements ConfigOptionsListInterface
+     public function createConfig(array $options, DeploymentConfig $deploymentConfig)
+     {
+         $configData = new ConfigData(ConfigFilePool::APP_ENV);
++        if (isset($options[self::INPUT_KEY_CACHE_ID_PREFIX])) {
++            $configData->set(self::CONFIG_PATH_CACHE_ID_PREFIX, $options[self::INPUT_KEY_CACHE_ID_PREFIX]);
++        } else {
++            $configData->set(self::CONFIG_PATH_CACHE_ID_PREFIX, $this->generateCachePrefix());
++        }
+
+         if (isset($options[self::INPUT_KEY_CACHE_BACKEND])) {
+             if ($options[self::INPUT_KEY_CACHE_BACKEND] == self::INPUT_VALUE_CACHE_REDIS) {
+@@ -241,4 +254,14 @@ class Cache implements ConfigOptionsListInterface
+             return '';
+         }
+     }
++
++    /**
++     * Generate default cache ID prefix based on installation dir
++     *
++     * @return string
++     */
++    private function generateCachePrefix(): string
++    {
++        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
++    }
+ }
+diff -Nuar a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+--- a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
++++ b/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php
+@@ -20,7 +20,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
+ class PageCache implements ConfigOptionsListInterface
+ {
+     const INPUT_VALUE_PAGE_CACHE_REDIS = 'redis';
+-    const CONFIG_VALUE_PAGE_CACHE_REDIS = 'Cm_Cache_Backend_Redis';
++    const CONFIG_VALUE_PAGE_CACHE_REDIS = \Magento\Framework\Cache\Backend\Redis::class;
+
+     const INPUT_KEY_PAGE_CACHE_BACKEND = 'page-cache';
+     const INPUT_KEY_PAGE_CACHE_BACKEND_REDIS_SERVER = 'page-cache-redis-server';
+@@ -28,6 +28,7 @@ class PageCache implements ConfigOptionsListInterface
+     const INPUT_KEY_PAGE_CACHE_BACKEND_REDIS_PORT = 'page-cache-redis-port';
+     const INPUT_KEY_PAGE_CACHE_BACKEND_REDIS_COMPRESS_DATA = 'page-cache-redis-compress-data';
+     const INPUT_KEY_PAGE_CACHE_BACKEND_REDIS_PASSWORD = 'page-cache-redis-password';
++    const INPUT_KEY_PAGE_CACHE_ID_PREFIX = 'page-cache-id-prefix';
+
+     const CONFIG_PATH_PAGE_CACHE_BACKEND = 'cache/frontend/page_cache/backend';
+     const CONFIG_PATH_PAGE_CACHE_BACKEND_SERVER = 'cache/frontend/page_cache/backend_options/server';
+@@ -35,6 +36,7 @@ class PageCache implements ConfigOptionsListInterface
+     const CONFIG_PATH_PAGE_CACHE_BACKEND_PORT = 'cache/frontend/page_cache/backend_options/port';
+     const CONFIG_PATH_PAGE_CACHE_BACKEND_COMPRESS_DATA = 'cache/frontend/page_cache/backend_options/compress_data';
+     const CONFIG_PATH_PAGE_CACHE_BACKEND_PASSWORD = 'cache/frontend/page_cache/backend_options/password';
++    const CONFIG_PATH_PAGE_CACHE_ID_PREFIX = 'cache/frontend/page_cache/id_prefix';
+
+     /**
+      * @var array
+@@ -81,7 +83,7 @@ class PageCache implements ConfigOptionsListInterface
+     }
+
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function getOptions()
+     {
+@@ -122,6 +124,12 @@ class PageCache implements ConfigOptionsListInterface
+                 TextConfigOption::FRONTEND_WIZARD_TEXT,
+                 self::CONFIG_PATH_PAGE_CACHE_BACKEND_PASSWORD,
+                 'Redis server password'
++            ),
++            new TextConfigOption(
++                self::INPUT_KEY_PAGE_CACHE_ID_PREFIX,
++                TextConfigOption::FRONTEND_WIZARD_TEXT,
++                self::CONFIG_PATH_PAGE_CACHE_ID_PREFIX,
++                'ID prefix for cache keys'
+             )
+         ];
+     }
+@@ -132,6 +140,11 @@ class PageCache implements ConfigOptionsListInterface
+     public function createConfig(array $options, DeploymentConfig $deploymentConfig)
+     {
+         $configData = new ConfigData(ConfigFilePool::APP_ENV);
++        if (isset($options[self::INPUT_KEY_PAGE_CACHE_ID_PREFIX])) {
++            $configData->set(self::CONFIG_PATH_PAGE_CACHE_ID_PREFIX, $options[self::INPUT_KEY_PAGE_CACHE_ID_PREFIX]);
++        } else {
++            $configData->set(self::CONFIG_PATH_PAGE_CACHE_ID_PREFIX, $this->generateCachePrefix());
++        }
+
+         if (isset($options[self::INPUT_KEY_PAGE_CACHE_BACKEND])) {
+             if ($options[self::INPUT_KEY_PAGE_CACHE_BACKEND] == self::INPUT_VALUE_PAGE_CACHE_REDIS) {
+@@ -241,7 +254,7 @@ class PageCache implements ConfigOptionsListInterface
+     /**
+      * Get the default value for input key
+      *
+-     * @param string $inputKey
++     * @param string $inputKeyz
+      * @return string
+      */
+     private function getDefaultConfigValue($inputKey)
+@@ -252,4 +265,14 @@ class PageCache implements ConfigOptionsListInterface
+             return '';
+         }
+     }
++
++    /**
++     * Generate default cache ID prefix based on installation dir
++     *
++     * @return string
++     */
++    private function generateCachePrefix(): string
++    {
++        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
++    }
+ }
