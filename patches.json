@@ -256,7 +256,7 @@
       ">=2.3.2 <2.3.3": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.2.patch",
       "2.3.3": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3.patch",
       ">=2.3.3-p1 <2.3.4": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3-p1.patch",
-      ">=2.3.4 <2.3.5": "MCLOUD-6139_MCLOUD_6211__redis_improvement_patches__2.3.4.patch",
+      ">=2.3.4 <2.3.5": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.4.patch",
       ">=2.3.5 <2.3.6": "MCLOUD-6211__redis_improvement_patches__2.3.5.patch"
     }
   },

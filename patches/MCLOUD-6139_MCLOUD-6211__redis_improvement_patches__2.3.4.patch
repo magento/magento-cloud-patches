@@ -1181,15 +1181,6 @@ diff -Nuar a/setup/src/Magento/Setup/Model/ConfigOptionsList/Cache.php b/setup/s
 
      const INPUT_KEY_CACHE_BACKEND = 'cache-backend';
      const INPUT_KEY_CACHE_BACKEND_REDIS_SERVER = 'cache-backend-redis-server';
-@@ -233,7 +233,7 @@ class Cache implements ConfigOptionsListInterface
-                 self::CONFIG_PATH_CACHE_BACKEND_DATABASE,
-                 $this->getDefaultConfigValue(self::INPUT_KEY_CACHE_BACKEND_REDIS_DATABASE)
-             );
--
-+
-         $config['password'] = isset($options[self::INPUT_KEY_CACHE_BACKEND_REDIS_PASSWORD])
-             ? $options[self::INPUT_KEY_CACHE_BACKEND_REDIS_PASSWORD]
-             : $deploymentConfig->get(
 @@ -282,6 +282,6 @@ class Cache implements ConfigOptionsListInterface
       */
      private function generateCachePrefix(): string
