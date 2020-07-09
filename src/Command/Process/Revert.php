@@ -10,6 +10,7 @@ namespace Magento\CloudPatches\Command\Process;
 use Magento\CloudPatches\Command\Process\Action\RevertAction;
 use Magento\CloudPatches\Command\Revert as RevertCommand;
 use Magento\CloudPatches\Patch\FilterFactory;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -31,15 +32,23 @@ class Revert implements ProcessInterface
     private $revertAction;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * @param FilterFactory $filterFactory
      * @param Action\RevertAction $revertAction
+     * @param LoggerInterface $logger
      */
     public function __construct(
         FilterFactory $filterFactory,
-        RevertAction $revertAction
+        RevertAction $revertAction,
+        LoggerInterface $logger
     ) {
         $this->filterFactory = $filterFactory;
         $this->revertAction = $revertAction;
+        $this->logger = $logger;
     }
 
     /**
@@ -47,15 +56,19 @@ class Revert implements ProcessInterface
      */
     public function run(InputInterface $input, OutputInterface $output)
     {
-        $patchFilter = $this->filterFactory->createRevertFilter(
-            $input->getOption(RevertCommand::OPT_ALL),
-            $input->getArgument(RevertCommand::ARG_QUALITY_PATCHES)
-        );
+        $argPatches = $input->getArgument(RevertCommand::ARG_QUALITY_PATCHES);
+        $optAll =  $input->getOption(RevertCommand::OPT_ALL);
+        $patchFilter = $this->filterFactory->createRevertFilter($optAll, $argPatches);
 
         if ($patchFilter === null) {
             return;
         }
+        $this->logger->notice('Start of reverting optional patches');
 
+        $this->logger->info('Command argument: ' . implode(' ', $argPatches));
+        $this->logger->info('Command option: ' . $optAll ? '--all' : '');
         $this->revertAction->execute($input, $output, $patchFilter);
+
+        $this->logger->notice('End of reverting optional patches');
     }
 }

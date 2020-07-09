@@ -61,6 +61,7 @@ class ApplyOptional implements ProcessInterface
         }
 
         $this->logger->notice('Start of applying optional patches');
+        $this->logger->info('Command argument: ' . implode(' ', $argPatches));
         $this->actionPool->execute($input, $output, $patchFilter);
         $this->logger->notice('End of applying optional patches');
     }

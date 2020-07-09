@@ -9,7 +9,7 @@ namespace Magento\CloudPatches\Patch\Collector;
 
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Composer\Package;
-use Magento\CloudPatches\Patch\PatchFactory;
+use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
@@ -49,11 +49,6 @@ class QualityCollector
     const PROP_DEPRECATED = 'deprecated';
 
     /**
-     * @var PatchFactory
-     */
-    private $patchFactory;
-
-    /**
      * @var SourceProvider
      */
     private $sourceProvider;
@@ -74,21 +69,26 @@ class QualityCollector
     private $config = null;
 
     /**
-     * @param PatchFactory $patchFactory
+     * @var PatchBuilder
+     */
+    private $patchBuilder;
+
+    /**
      * @param SourceProvider $sourceProvider
      * @param Package $package
      * @param QualityPatchesInfo $qualityPatchesInfo
+     * @param PatchBuilder $patchBuilder
      */
     public function __construct(
-        PatchFactory $patchFactory,
         SourceProvider $sourceProvider,
         Package $package,
-        QualityPatchesInfo $qualityPatchesInfo
+        QualityPatchesInfo $qualityPatchesInfo,
+        PatchBuilder $patchBuilder
     ) {
-        $this->patchFactory = $patchFactory;
         $this->sourceProvider = $sourceProvider;
         $this->package = $package;
         $this->qualityPatchesInfo = $qualityPatchesInfo;
+        $this->patchBuilder = $patchBuilder;
     }
 
     /**
@@ -205,18 +205,17 @@ class QualityCollector
     ): PatchInterface {
         try {
             $patchPath = $this->qualityPatchesInfo->getPatchesDirectory() . '/' . $patchFile;
-            $patch = $this->patchFactory->create(
-                $patchId,
-                $patchTitle,
-                $patchFile,
-                $patchPath,
-                PatchInterface::TYPE_OPTIONAL,
-                $packageName,
-                $packageConstraint,
-                $patchRequire,
-                $patchReplacedWith,
-                $patchDeprecated
-            );
+            $this->patchBuilder->setId($patchId);
+            $this->patchBuilder->setTitle($patchTitle);
+            $this->patchBuilder->setFilename($patchFile);
+            $this->patchBuilder->setPath($patchPath);
+            $this->patchBuilder->setType(PatchInterface::TYPE_OPTIONAL);
+            $this->patchBuilder->setPackageName($packageName);
+            $this->patchBuilder->setPackageConstraint($packageConstraint);
+            $this->patchBuilder->setRequire($patchRequire);
+            $this->patchBuilder->setReplacedWith($patchReplacedWith);
+            $this->patchBuilder->setDeprecated($patchDeprecated);
+            $patch = $this->patchBuilder->build();
         } catch (PatchIntegrityException $e) {
             throw new CollectorException($e->getMessage(), $e->getCode(), $e);
         }

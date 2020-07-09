@@ -115,12 +115,12 @@ class ApplyOptionalAction implements ActionInterface
     private function printPatchWasApplied(OutputInterface $output, PatchInterface $patch)
     {
         $message = sprintf(
-            '<info>Patch %s %s was already applied</info>',
+            '<info>Patch %s (%s) was already applied</info>',
             $patch->getId(),
             $patch->getFilename()
         );
 
-        $output->writeln($message);
+        $output->writeln($message . PHP_EOL);
         $this->logger->info($message);
     }
 
@@ -136,13 +136,13 @@ class ApplyOptionalAction implements ActionInterface
     private function printPatchApplyingFailed(OutputInterface $output, PatchInterface $patch, string $errorOutput)
     {
         $errorMessage = sprintf(
-            'Applying patch %s %s failed.%s',
+            'Applying patch %s (%s) failed.%s',
             $patch->getId(),
             $patch->getPath(),
             $this->renderer->formatErrorOutput($errorOutput)
         );
 
-        $output->writeln('<error>' . $errorMessage . '</error>');
+        $output->writeln('<error>' . $errorMessage . '</error>' . PHP_EOL);
         $this->logger->error($errorMessage);
     }
 

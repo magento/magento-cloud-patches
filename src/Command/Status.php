@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Command;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\ShowStatus;
+use Magento\CloudPatches\Composer\MagentoVersion;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,15 +32,23 @@ class Status extends AbstractCommand
     private $logger;
 
     /**
+     * @var MagentoVersion
+     */
+    private $magentoVersion;
+
+    /**
      * @param ShowStatus $showStatus
      * @param LoggerInterface $logger
+     * @param MagentoVersion $magentoVersion
      */
     public function __construct(
         ShowStatus $showStatus,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        MagentoVersion $magentoVersion
     ) {
         $this->showStatus = $showStatus;
         $this->logger = $logger;
+        $this->magentoVersion = $magentoVersion;
 
         parent::__construct(self::NAME);
     }
@@ -62,6 +71,7 @@ class Status extends AbstractCommand
     {
         try {
             $this->showStatus->run($input, $output);
+            $output->writeln('<info>' . $this->magentoVersion->get() . '</info>');
         } catch (RuntimeException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             $this->logger->error($e->getMessage());

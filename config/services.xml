@@ -75,5 +75,6 @@
         <service id="Magento\CloudPatches\Command\Process\ApplyOptional">
             <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
         </service>
+        <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>
     </services>
 </container>

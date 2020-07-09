@@ -154,7 +154,7 @@ class ApplyOptionalActionTest extends TestCase
             ->withConsecutive(
                 [
                     $this->stringContains(
-                        'Patch ' . $patch1->getId() .' ' . $patch1->getFilename() . ' was already applied'
+                        'Patch ' . $patch1->getId() .' (' . $patch1->getFilename() . ') was already applied'
                     )
                 ]
             );

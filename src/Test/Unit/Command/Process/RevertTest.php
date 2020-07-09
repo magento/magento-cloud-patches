@@ -14,6 +14,7 @@ use Magento\CloudPatches\Command\Revert as RevertCommand;
 use Magento\CloudPatches\Patch\FilterFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -38,16 +39,23 @@ class RevertTest extends TestCase
     private $filterFactory;
 
     /**
+     * @var LoggerInterface|MockObject
+     */
+    private $logger;
+
+    /**
      * @inheritdoc
      */
     protected function setUp()
     {
         $this->filterFactory = $this->createMock(FilterFactory::class);
         $this->revertAction = $this->createMock(RevertAction::class);
+        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
 
         $this->manager = new Revert(
             $this->filterFactory,
-            $this->revertAction
+            $this->revertAction,
+            $this->logger
         );
     }
 

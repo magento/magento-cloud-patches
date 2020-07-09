@@ -86,9 +86,6 @@ class RevertAction implements ActionInterface
      */
     public function execute(InputInterface $input, OutputInterface $output, array $patchFilter)
     {
-        $strFilter = $patchFilter ? implode(' ', $patchFilter) : '"all patches"';
-        $this->logger->notice('Start reverting ' . $strFilter);
-
         $this->revertValidator->validate($patchFilter);
 
         try {
@@ -108,11 +105,9 @@ class RevertAction implements ActionInterface
 
         if (!$this->revert($patches, $output)) {
             throw new RuntimeException(
-                'Revert operation for ' . $strFilter . ' finished with errors.'
+                'Revert operation for ' . implode(' ', $patchFilter) . ' finished with errors.'
             );
         }
-
-        $this->logger->notice('End reverting ' . $strFilter);
     }
 
     /**
@@ -158,7 +153,7 @@ class RevertAction implements ActionInterface
     {
         $output->writeln(
             sprintf(
-                '<info>Patch %s %s is not applied</info>',
+                '<info>Patch %s (%s) is not applied</info>',
                 $patch->getId(),
                 $patch->getFilename()
             )
@@ -181,7 +176,7 @@ class RevertAction implements ActionInterface
     private function printPatchRevertingFailed(OutputInterface $output, PatchInterface $patch, string $errorOutput)
     {
         $errorMessage = sprintf(
-            'Reverting patch %s %s failed.%s',
+            'Reverting patch %s (%s) failed.%s',
             $patch->getId(),
             $patch->getPath(),
             $this->renderer->formatErrorOutput($errorOutput)

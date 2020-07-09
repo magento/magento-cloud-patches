@@ -10,7 +10,7 @@ namespace Magento\CloudPatches\Test\Unit\Patch\Collector;
 use Magento\CloudPatches\Patch\Collector\LocalCollector;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
-use Magento\CloudPatches\Patch\PatchFactory;
+use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\SourceProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -26,9 +26,9 @@ class LocalCollectorTest extends TestCase
     private $collector;
 
     /**
-     * @var PatchFactory|MockObject
+     * @var PatchBuilder|MockObject
      */
-    private $patchFactory;
+    private $patchBuilder;
 
     /**
      * @var SourceProvider|MockObject
@@ -40,12 +40,12 @@ class LocalCollectorTest extends TestCase
      */
     protected function setUp()
     {
-        $this->patchFactory = $this->createMock(PatchFactory::class);
+        $this->patchBuilder = $this->createMock(PatchBuilder::class);
         $this->sourceProvider = $this->createMock(SourceProvider::class);
 
         $this->collector = new LocalCollector(
-            $this->patchFactory,
-            $this->sourceProvider
+            $this->sourceProvider,
+            $this->patchBuilder
         );
     }
 
@@ -61,36 +61,27 @@ class LocalCollectorTest extends TestCase
             ->method('getLocalPatches')
             ->willReturn([$file1, $file2]);
 
-        $this->patchFactory->expects($this->exactly(2))
-            ->method('create')
+        $this->patchBuilder->expects($this->exactly(2))
+            ->method('setId')
+            ->withConsecutive([md5($file1)], [md5($file2)]);
+        $this->patchBuilder->expects($this->exactly(2))
+            ->method('setTitle')
             ->withConsecutive(
-                [
-                    md5($file1),
-                    '../' . SourceProvider::HOT_FIXES_DIR . '/patch1.patch',
-                    $file1,
-                    $file1,
-                    PatchInterface::TYPE_CUSTOM,
-                    '',
-                    '',
-                    [],
-                    '',
-                    false
-                ],
-                [
-                    md5($file2),
-                    '../' . SourceProvider::HOT_FIXES_DIR . '/patch2.patch',
-                    $file2,
-                    $file2,
-                    PatchInterface::TYPE_CUSTOM,
-                    '',
-                    '',
-                    [],
-                    '',
-                    false
-                ]
-            )->willReturn(
-                $this->createMock(Patch::class)
+                ['../' . SourceProvider::HOT_FIXES_DIR . '/patch1.patch'],
+                ['../' . SourceProvider::HOT_FIXES_DIR . '/patch2.patch']
             );
+        $this->patchBuilder->expects($this->exactly(2))
+            ->method('setFilename')
+            ->withConsecutive(['patch1.patch'], ['patch2.patch']);
+        $this->patchBuilder->expects($this->exactly(2))
+            ->method('setPath')
+            ->withConsecutive([$file1], [$file2]);
+        $this->patchBuilder->expects($this->exactly(2))
+            ->method('setType')
+            ->withConsecutive([PatchInterface::TYPE_CUSTOM], [PatchInterface::TYPE_CUSTOM]);
+        $this->patchBuilder->expects($this->exactly(2))
+            ->method('build')
+            ->willReturn($this->createMock(Patch::class));
 
         $this->assertTrue(is_array($this->collector->collect()));
     }

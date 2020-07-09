@@ -155,7 +155,7 @@ class RevertActionTest extends TestCase
             ->withConsecutive(
                 [
                     $this->stringContains(
-                        'Patch ' . $patch1->getId() . ' ' . $patch1->getFilename() . ' is not applied'
+                        'Patch ' . $patch1->getId() . ' (' . $patch1->getFilename() . ') is not applied'
                     )
                 ]
             );
@@ -172,7 +172,7 @@ class RevertActionTest extends TestCase
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
         $patchFilter = [$patch1->getId()];
-        $errorMessage = sprintf('Reverting patch %s %s failed.', $patch1->getId(), $patch1->getPath());
+        $errorMessage = sprintf('Reverting patch %s (%s) failed.', $patch1->getId(), $patch1->getPath());
 
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);

@@ -53,7 +53,7 @@ class Patch implements PatchInterface
     private $affectedComponents;
 
     /**
-     * @var string
+     * @var array
      */
     private $require;
     /**
@@ -75,7 +75,7 @@ class Patch implements PatchInterface
      * @param string $packageName
      * @param string $packageConstraint
      * @param string[] $affectedComponents
-     * @param array $require
+     * @param string[] $require
      * @param string $replacedWith
      * @param bool $isDeprecated
      *

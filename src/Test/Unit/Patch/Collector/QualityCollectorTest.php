@@ -12,7 +12,7 @@ use Magento\CloudPatches\Patch\Collector\CollectorException;
 use Magento\CloudPatches\Patch\Collector\QualityCollector;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
-use Magento\CloudPatches\Patch\PatchFactory;
+use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
@@ -33,9 +33,9 @@ class QualityCollectorTest extends TestCase
     private $collector;
 
     /**
-     * @var PatchFactory|MockObject
+     * @var PatchBuilder|MockObject
      */
-    private $patchFactory;
+    private $patchBuilder;
 
     /**
      * @var SourceProvider|MockObject
@@ -57,16 +57,16 @@ class QualityCollectorTest extends TestCase
      */
     protected function setUp()
     {
-        $this->patchFactory = $this->createMock(PatchFactory::class);
         $this->sourceProvider = $this->createMock(SourceProvider::class);
         $this->package = $this->createMock(Package::class);
         $this->qualityPatchesInfo = $this->createMock(QualityPatchesInfo::class);
+        $this->patchBuilder = $this->createMock(PatchBuilder::class);
 
         $this->collector = new QualityCollector(
-            $this->patchFactory,
             $this->sourceProvider,
             $this->package,
-            $this->qualityPatchesInfo
+            $this->qualityPatchesInfo,
+            $this->patchBuilder
         );
     }
 
@@ -89,42 +89,71 @@ class QualityCollectorTest extends TestCase
                 ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
              ]);
 
-        $this->patchFactory->expects($this->exactly(3))
-            ->method('create')
+        $this->package->method('matchConstraint')
+            ->willReturnMap([
+                ['magento/magento2-base', '2.1.4 - 2.1.14', false],
+                ['magento/magento2-base', '2.2.0 - 2.2.5', true],
+                ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
+            ]);
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setId')
+            ->withConsecutive(['MDVA-2470'], ['MDVA-2470'], ['MDVA-2033']);
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setTitle')
             ->withConsecutive(
-                [
-                    'MDVA-2470',
-                    'Fix asset locker race condition when using Redis',
-                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
-                    self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
-                    PatchInterface::TYPE_OPTIONAL,
-                    'magento/magento2-base',
-                    '2.2.0 - 2.2.5'
-                ],
-                [
-                    'MDVA-2470',
-                    'Fix asset locker race condition when using Redis EE',
-                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
-                    self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
-                    PatchInterface::TYPE_OPTIONAL,
-                    'magento/magento2-ee-base',
-                    '2.2.0 - 2.2.5'
-                ],
-                [
-                    'MDVA-2033',
-                    'Allow DB dumps done with the support module to complete',
-                    'MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch',
-                    self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch',
-                    PatchInterface::TYPE_OPTIONAL,
-                    'magento/magento2-ee-base',
-                    '2.2.0 - 2.2.5',
-                    ['MC-11111', 'MC-22222'],
-                    'MC-33333',
-                    true
-                ]
-            )->willReturn(
-                $this->createMock(Patch::class)
+                ['Fix asset locker race condition when using Redis'],
+                ['Fix asset locker race condition when using Redis EE'],
+                ['Allow DB dumps done with the support module to complete']
             );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setFilename')
+            ->withConsecutive(
+                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
+                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
+                ['MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPath')
+            ->withConsecutive(
+                [self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
+                [self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
+                [self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setType')
+            ->withConsecutive(
+                [PatchInterface::TYPE_OPTIONAL],
+                [PatchInterface::TYPE_OPTIONAL],
+                [PatchInterface::TYPE_OPTIONAL]
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPackageName')
+            ->withConsecutive(
+                ['magento/magento2-base'],
+                ['magento/magento2-ee-base'],
+                ['magento/magento2-ee-base']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPackageConstraint')
+            ->withConsecutive(
+                ['2.2.0 - 2.2.5'],
+                ['2.2.0 - 2.2.5'],
+                ['2.2.0 - 2.2.5']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setRequire')
+            ->withConsecutive([[]], [[]], [['MC-11111', 'MC-22222']]);
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setReplacedWith')
+            ->withConsecutive([''], [''], ['MC-33333']);
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setDeprecated')
+            ->withConsecutive([false], [false], [true]);
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('build')
+            ->willReturn($this->createMock(Patch::class));
 
         $this->assertTrue(is_array($this->collector->collect()));
     }
@@ -146,8 +175,8 @@ class QualityCollectorTest extends TestCase
             ->method('getQualityPatches')
             ->willReturn($config);
 
-        $this->patchFactory->expects($this->never())
-            ->method('create');
+        $this->patchBuilder->expects($this->never())
+            ->method('build');
 
         $this->expectException(CollectorException::class);
         $this->expectExceptionMessage($expectedExceptionMessage);
@@ -172,7 +201,7 @@ class QualityCollectorTest extends TestCase
                 ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
             ]);
 
-        $this->patchFactory->method('create')
+        $this->patchBuilder->method('build')
             ->willThrowException(new PatchIntegrityException(''));
 
         $this->expectException(CollectorException::class);
@@ -188,8 +217,8 @@ class QualityCollectorTest extends TestCase
             ->method('getQualityPatches')
             ->willThrowException(new SourceProviderException(''));
 
-        $this->patchFactory->expects($this->never())
-            ->method('create');
+        $this->patchBuilder->expects($this->never())
+            ->method('build');
 
         $this->expectException(CollectorException::class);
         $this->collector->collect();

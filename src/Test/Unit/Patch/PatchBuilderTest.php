@@ -9,7 +9,8 @@ namespace Magento\CloudPatches\Test\Unit\Patch;
 
 use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Filesystem\FileSystemException;
-use Magento\CloudPatches\Patch\PatchFactory;
+use Magento\CloudPatches\Patch\Data\PatchInterface;
+use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -17,14 +18,14 @@ use PHPUnit\Framework\TestCase;
 /**
  * @inheritDoc
  */
-class PatchFactoryTest extends TestCase
+class PatchBuilderTest extends TestCase
 {
     const PATCH_FILENAME = 'filename.patch';
 
     /**
-     * @var PatchFactory
+     * @var PatchBuilder
      */
-    private $patchFactory;
+    private $patchBuilder;
 
     /**
      * @var Filesystem|MockObject
@@ -38,13 +39,13 @@ class PatchFactoryTest extends TestCase
     {
         $this->filesystem = $this->createMock(Filesystem::class);
 
-        $this->patchFactory = new PatchFactory($this->filesystem);
+        $this->patchBuilder = new PatchBuilder($this->filesystem);
     }
 
     /**
      * Tests patch creation.
      */
-    public function testCreate()
+    public function testBuild()
     {
         $patchData = [
             'id' => 'mc-1',
@@ -63,18 +64,7 @@ class PatchFactoryTest extends TestCase
         $this->filesystem->method('get')
             ->willReturn($patchContent);
 
-        $patch = $this->patchFactory->create(
-            $patchData['id'],
-            $patchData['title'],
-            $patchData['filename'],
-            $patchData['path'],
-            $patchData['type'],
-            $patchData['packageName'],
-            $patchData['packageConstraint'],
-            $patchData['require'],
-            $patchData['replacedWith'],
-            $patchData['deprecated']
-        );
+        $patch = $this->buildPatch($patchData);
 
         $this->assertEquals($patch->getType(), $patchData['type']);
         $this->assertEquals($patch->getPath(), $patchData['path']);
@@ -97,7 +87,7 @@ class PatchFactoryTest extends TestCase
      *
      * @throws PatchIntegrityException
      */
-    public function testCreateWithException()
+    public function testBuildWithException()
     {
         $patchData = [
             'id' => 'mc-1',
@@ -116,17 +106,30 @@ class PatchFactoryTest extends TestCase
             ->willThrowException(new FileSystemException(''));
 
         $this->expectException(PatchIntegrityException::class);
-        $this->patchFactory->create(
-            $patchData['id'],
-            $patchData['title'],
-            $patchData['filename'],
-            $patchData['path'],
-            $patchData['type'],
-            $patchData['packageName'],
-            $patchData['packageConstraint'],
-            $patchData['require'],
-            $patchData['replacedWith'],
-            $patchData['deprecated']
-        );
+        $this->buildPatch($patchData);
+    }
+
+    /**
+     * Builds a patch.
+     *
+     * @param array $patchData
+     *
+     * @return PatchInterface
+     * @throws PatchIntegrityException
+     */
+    private function buildPatch(array $patchData): PatchInterface
+    {
+        $this->patchBuilder->setId($patchData['id']);
+        $this->patchBuilder->setTitle($patchData['title']);
+        $this->patchBuilder->setFilename($patchData['filename']);
+        $this->patchBuilder->setPath($patchData['path']);
+        $this->patchBuilder->setType($patchData['type']);
+        $this->patchBuilder->setPackageName($patchData['packageName']);
+        $this->patchBuilder->setPackageConstraint($patchData['packageConstraint']);
+        $this->patchBuilder->setRequire($patchData['require']);
+        $this->patchBuilder->setReplacedWith($patchData['replacedWith']);
+        $this->patchBuilder->setDeprecated($patchData['deprecated']);
+
+        return $this->patchBuilder->build();
     }
 }

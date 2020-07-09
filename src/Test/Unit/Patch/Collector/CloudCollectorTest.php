@@ -14,7 +14,7 @@ use Magento\CloudPatches\Patch\Collector\CollectorException;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Environment;
-use Magento\CloudPatches\Patch\PatchFactory;
+use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
@@ -34,9 +34,9 @@ class CloudCollectorTest extends TestCase
     private $collector;
 
     /**
-     * @var PatchFactory|MockObject
+     * @var PatchBuilder|MockObject
      */
-    private $patchFactory;
+    private $patchBuilder;
 
     /**
      * @var SourceProvider|MockObject
@@ -63,18 +63,18 @@ class CloudCollectorTest extends TestCase
      */
     protected function setUp()
     {
-        $this->patchFactory = $this->createMock(PatchFactory::class);
         $this->sourceProvider = $this->createMock(SourceProvider::class);
         $this->package = $this->createMock(Package::class);
         $this->environment = $this->createMock(Environment::class);
         $this->directoryList = $this->createMock(DirectoryList::class);
+        $this->patchBuilder = $this->createMock(PatchBuilder::class);
 
         $this->collector = new CloudCollector(
-            $this->patchFactory,
             $this->sourceProvider,
             $this->package,
             $this->directoryList,
-            $this->environment
+            $this->environment,
+            $this->patchBuilder
         );
     }
 
@@ -103,39 +103,54 @@ class CloudCollectorTest extends TestCase
                 ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
              ]);
 
-        $this->patchFactory->expects($this->exactly(3))
-            ->method('create')
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setId')
+            ->withConsecutive(['MDVA-2470'], ['MDVA-2470'], ['MAGECLOUD-2033']);
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setTitle')
             ->withConsecutive(
-                [
-                    'MDVA-2470',
-                    'Fix asset locker race condition when using Redis',
-                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
-                    self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
-                    $expectedType,
-                    'magento/magento2-base',
-                    '2.2.0 - 2.2.5'
-                ],
-                [
-                    'MDVA-2470',
-                    'Fix asset locker race condition when using Redis EE',
-                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
-                    self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
-                    $expectedType,
-                    'magento/magento2-ee-base',
-                    '2.2.0 - 2.2.5'
-                ],
-                [
-                    'MAGECLOUD-2033',
-                    'Allow DB dumps done with the support module to complete',
-                    'MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch',
-                    self::CLOUD_PATCH_DIR . '/MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch',
-                    $expectedType,
-                    'magento/magento2-ee-base',
-                    '2.2.0 - 2.2.5'
-                ]
-            )->willReturn(
-                $this->createMock(Patch::class)
+                ['Fix asset locker race condition when using Redis'],
+                ['Fix asset locker race condition when using Redis EE'],
+                ['Allow DB dumps done with the support module to complete']
             );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setFilename')
+            ->withConsecutive(
+                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
+                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
+                ['MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPath')
+            ->withConsecutive(
+                [self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
+                [self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
+                [self::CLOUD_PATCH_DIR . '/MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setType')
+            ->withConsecutive(
+                [$expectedType],
+                [$expectedType],
+                [$expectedType]
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPackageName')
+            ->withConsecutive(
+                ['magento/magento2-base'],
+                ['magento/magento2-ee-base'],
+                ['magento/magento2-ee-base']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPackageConstraint')
+            ->withConsecutive(
+                ['2.2.0 - 2.2.5'],
+                ['2.2.0 - 2.2.5'],
+                ['2.2.0 - 2.2.5']
+            );
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('build')
+            ->willReturn($this->createMock(Patch::class));
 
         $this->assertTrue(is_array($this->collector->collect()));
     }
@@ -212,8 +227,8 @@ class CloudCollectorTest extends TestCase
             ->method('getCloudPatches')
             ->willReturn($config);
 
-        $this->patchFactory->expects($this->never())
-            ->method('create');
+        $this->patchBuilder->expects($this->never())
+            ->method('build');
 
         $this->expectException(CollectorException::class);
         $this->collector->collect();
@@ -259,7 +274,7 @@ class CloudCollectorTest extends TestCase
                 ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
             ]);
 
-        $this->patchFactory->method('create')
+        $this->patchBuilder->method('build')
             ->willThrowException(new PatchIntegrityException(''));
 
         $this->expectException(CollectorException::class);
@@ -275,8 +290,8 @@ class CloudCollectorTest extends TestCase
             ->method('getCloudPatches')
             ->willThrowException(new SourceProviderException(''));
 
-        $this->patchFactory->expects($this->never())
-            ->method('create');
+        $this->patchBuilder->expects($this->never())
+            ->method('build');
 
         $this->expectException(CollectorException::class);
         $this->collector->collect();

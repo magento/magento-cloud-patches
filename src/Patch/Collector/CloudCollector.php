@@ -11,7 +11,7 @@ use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Composer\Package;
 use Magento\CloudPatches\Patch\Environment;
-use Magento\CloudPatches\Patch\PatchFactory;
+use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
@@ -21,11 +21,6 @@ use Magento\CloudPatches\Patch\SourceProviderException;
  */
 class CloudCollector
 {
-    /**
-     * @var PatchFactory
-     */
-    private $patchFactory;
-
     /**
      * @var SourceProvider
      */
@@ -47,24 +42,29 @@ class CloudCollector
     private $environment;
 
     /**
-     * @param PatchFactory $patchFactory
+     * @var PatchBuilder
+     */
+    private $patchBuilder;
+
+    /**
      * @param SourceProvider $sourceProvider
      * @param Package $package
      * @param DirectoryList $directoryList
      * @param Environment $environment
+     * @param PatchBuilder $patchBuilder
      */
     public function __construct(
-        PatchFactory $patchFactory,
         SourceProvider $sourceProvider,
         Package $package,
         DirectoryList $directoryList,
-        Environment $environment
+        Environment $environment,
+        PatchBuilder $patchBuilder
     ) {
-        $this->patchFactory = $patchFactory;
         $this->sourceProvider = $sourceProvider;
         $this->package = $package;
         $this->directoryList = $directoryList;
         $this->environment = $environment;
+        $this->patchBuilder = $patchBuilder;
     }
 
     /**
@@ -93,18 +93,16 @@ class CloudCollector
                             $patchPath = $this->directoryList->getPatches() . '/' . $patchFile;
                             $patchType = $this->environment->isCloud()
                                 ? PatchInterface::TYPE_REQUIRED : PatchInterface::TYPE_OPTIONAL;
-                            $result[] = $this->patchFactory->create(
-                                $patchId,
-                                $patchTitle,
-                                $patchFile,
-                                $patchPath,
-                                $patchType,
-                                $packageName,
-                                $packageConstraint,
-                                [],
-                                '',
-                                false
-                            );
+
+                            $this->patchBuilder->setId($patchId);
+                            $this->patchBuilder->setTitle($patchTitle);
+                            $this->patchBuilder->setFilename($patchFile);
+                            $this->patchBuilder->setPath($patchPath);
+                            $this->patchBuilder->setType($patchType);
+                            $this->patchBuilder->setPackageName($packageName);
+                            $this->patchBuilder->setPackageConstraint($packageConstraint);
+
+                            $result[] = $this->patchBuilder->build();
                         } catch (PatchIntegrityException $e) {
                             throw new CollectorException($e->getMessage(), $e->getCode(), $e);
                         }
