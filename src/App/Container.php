@@ -10,6 +10,7 @@ namespace Magento\CloudPatches\App;
 use Composer;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Psr\Container\ContainerInterface;
+use Symfony\Bridge\ProxyManager\LazyProxy\Instantiator\RuntimeInstantiator;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -37,6 +38,8 @@ class Container implements ContainerInterface
     public function __construct(string $basePath, string $magentoBasePath)
     {
         $containerBuilder = new ContainerBuilder();
+        $containerBuilder->setProxyInstantiator(new RuntimeInstantiator());
+
         $containerBuilder->set('container', $containerBuilder);
         $containerBuilder->setDefinition('container', new Definition(__CLASS__))
             ->setArguments([$basePath, $magentoBasePath]);
@@ -72,7 +75,9 @@ class Container implements ContainerInterface
             new Composer\IO\BufferIO(),
             $composerFile,
             false,
-            $directoryList->getMagentoRoot()
+            is_dir($directoryList->getMagentoRoot())
+                ? $directoryList->getMagentoRoot()
+                : $directoryList->getRoot()
         );
 
         return $composer;
