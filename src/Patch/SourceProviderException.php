@@ -5,13 +5,13 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Filesystem;
+namespace Magento\CloudPatches\Patch;
 
 use Magento\CloudPatches\App\GenericException;
 
 /**
- * Exception if file can not be found
+ * Exception if there are some troubles with reading patch source configuration.
  */
-class FileNotFoundException extends GenericException
+class SourceProviderException extends GenericException
 {
 }

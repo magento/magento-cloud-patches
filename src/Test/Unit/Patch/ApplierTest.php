@@ -7,14 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
-use Composer\Composer;
-use Composer\Package\PackageInterface;
-use Composer\Repository\RepositoryInterface;
-use Composer\Repository\RepositoryManager;
-use Magento\CloudPatches\Filesystem\DirectoryList;
-use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
+use Magento\CloudPatches\Patch\Status\StatusPool;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -32,235 +27,244 @@ class ApplierTest extends TestCase
     private $applier;
 
     /**
-     * @var Composer|MockObject
-     */
-    private $composerMock;
-
-    /**
      * @var ProcessFactory|MockObject
      */
-    private $processFactoryMock;
-
-    /**
-     * @var RepositoryInterface|MockObject
-     */
-    private $localRepositoryMock;
-
-    /**
-     * @var DirectoryList|MockObject
-     */
-    private $directoryListMock;
-
-    /**
-     * @var Filesystem|MockObject
-     */
-    private $filesystemMock;
+    private $processFactory;
 
     /**
      * @inheritDoc
      */
     protected function setUp()
     {
-        $this->composerMock = $this->createMock(Composer::class);
-        $this->localRepositoryMock = $this->getMockForAbstractClass(RepositoryInterface::class);
-        $this->directoryListMock = $this->createMock(DirectoryList::class);
-        $this->filesystemMock = $this->createMock(Filesystem::class);
-        $this->processFactoryMock = $this->createMock(ProcessFactory::class);
+        $this->processFactory = $this->createMock(ProcessFactory::class);
 
-        $repositoryManagerMock = $this->createMock(RepositoryManager::class);
-
-        $repositoryManagerMock->expects($this->once())
-            ->method('getLocalRepository')
-            ->willReturn($this->localRepositoryMock);
-        $this->composerMock->expects($this->once())
-            ->method('getRepositoryManager')
-            ->willReturn($repositoryManagerMock);
-
-        $this->applier = new Applier(
-            $this->composerMock,
-            $this->processFactoryMock,
-            $this->directoryListMock,
-            $this->filesystemMock
-        );
+        $this->applier = new Applier($this->processFactory);
     }
 
     /**
-     * @param string $path
-     * @param string $name
-     * @param string $packageName
-     * @param string $constraint
-     * @param string $expectedLog
-     * @dataProvider applyDataProvider
+     * Tests apply operation, case when patch applied successfully.
      *
      * @throws ApplierException
      */
-    public function testApply(string $path, string $name, string $packageName, string $constraint, string $expectedLog)
+    public function testApply()
     {
-        $this->filesystemMock->expects($this->once())
-            ->method('exists')
-            ->with($path)
-            ->willReturn(true);
-        $this->localRepositoryMock->method('findPackage')
-            ->with($packageName, $constraint)
-            ->willReturn($this->getMockForAbstractClass(PackageInterface::class));
+        $path = 'path/to/patch';
+        $patchId = 'MC-11111';
+        $expectedMessage = 'Patch ' . $patchId . ' has been applied';
 
         $processMock = $this->createMock(Process::class);
 
-        $this->processFactoryMock->expects($this->once())
+        $this->processFactory->expects($this->once())
             ->method('create')
             ->with(['git', 'apply', $path])
             ->willReturn($processMock);
         $processMock->expects($this->once())
             ->method('mustRun');
 
-        $this->assertSame(
-            $expectedLog,
-            $this->applier->apply($path, $name, $packageName, $constraint, false)
-        );
+        $this->assertSame($expectedMessage, $this->applier->apply($path, $patchId));
     }
 
     /**
-     * @return array
+     * Tests apply operation, case when applying patch fails.
      */
-    public function applyDataProvider(): array
+    public function testApplyFailed()
     {
-        return [
-            ['path/to/patch', 'patchName', 'packageName', '1.0', 'Patch "patchName (path/to/patch) 1.0" applied']
-        ];
+        $path = 'path/to/patch';
+        $patchId = 'MC-11111';
+
+        /** @var Process|MockObject $result */
+        $processMock = $this->createMock(Process::class);
+        $processMock->method('mustRun')
+            ->willThrowException(new ProcessFailedException($processMock));
+
+        $this->processFactory->expects($this->exactly(2))
+            ->method('create')
+            ->willReturn($processMock);
+
+        $this->expectException(ApplierException::class);
+        $this->applier->apply($path, $patchId);
     }
 
     /**
-     * @param string $path
-     * @param string $expectedLog
-     * @dataProvider applyFileDataProvider
+     * Tests apply operation, case when patch was already applied.
      *
-     * @throws ApplierException
-     */
-    public function testApplyFile(string $path, string $expectedLog)
-    {
-        $processMock = $this->createMock(Process::class);
-
-        $this->processFactoryMock->expects($this->once())
-            ->method('create')
-            ->with(['git', 'apply', $path])
-            ->willReturn($processMock);
-        $processMock->expects($this->once())
-            ->method('mustRun');
-
-        $this->assertSame(
-            $expectedLog,
-            $this->applier->applyFile($path, false)
-        );
-    }
-
-    /**
-     * @return array
-     */
-    public function applyFileDataProvider(): array
-    {
-        return [
-            ['path/to/patch2', 'Patch "path/to/patch2" applied'],
-        ];
-    }
-
-    /**
-     * @throws ApplierException
-     */
-    public function testApplyPathNotExists()
-    {
-        $path = 'path/to/patch';
-        $name = 'patchName';
-        $packageName = 'packageName';
-        $constraint = '1.0';
-
-        $this->filesystemMock->expects($this->once())
-            ->method('exists')
-            ->with($path)
-            ->willReturn(false);
-        $this->localRepositoryMock->expects($this->once())
-            ->method('findPackage')
-            ->with($packageName, $constraint)
-            ->willReturn($this->getMockForAbstractClass(PackageInterface::class));
-        $this->directoryListMock->expects($this->once())
-            ->method('getPatches')
-            ->willReturn('root');
-
-        $processMock = $this->createMock(Process::class);
-
-        $this->processFactoryMock->expects($this->once())
-            ->method('create')
-            ->with(['git', 'apply', 'root/path/to/patch'])
-            ->willReturn($processMock);
-        $processMock->expects($this->once())
-            ->method('mustRun');
-
-        $this->applier->apply($path, $name, $packageName, $constraint, false);
-    }
-
-    /**
-     * @throws ApplierException
-     */
-    public function testApplyPathNotExistsAndNotMatchedConstraints()
-    {
-        $path = 'path/to/patch';
-        $name = 'patchName';
-        $packageName = 'packageName';
-        $constraint = '1.0';
-
-        $this->localRepositoryMock->expects($this->once())
-            ->method('findPackage')
-            ->with($packageName, $constraint)
-            ->willReturn(null);
-
-        $processMock = $this->createMock(Process::class);
-
-        $this->processFactoryMock->expects($this->never())
-            ->method('create')
-            ->with(['git', 'apply', 'root/path/to/patch'])
-            ->willReturn($processMock);
-
-        $this->applier->apply($path, $name, $packageName, $constraint, false);
-    }
-
-    /**
      * @throws ApplierException
      */
     public function testApplyPatchAlreadyApplied()
     {
         $path = 'path/to/patch';
-        $name = 'patchName';
-        $packageName = 'packageName';
-        $constraint = '1.0';
+        $patchId = 'MC-11111';
+        $expectedMessage = 'Patch ' . $patchId . ' was already applied';
 
-        $this->filesystemMock->expects($this->once())
-            ->method('exists')
-            ->with($path)
-            ->willReturn(true);
-        $this->localRepositoryMock->expects($this->once())
-            ->method('findPackage')
-            ->with($packageName, $constraint)
-            ->willReturn($this->getMockForAbstractClass(PackageInterface::class));
-
-        $this->processFactoryMock->expects($this->exactly(2))
+        $this->processFactory->expects($this->exactly(2))
             ->method('create')
             ->willReturnMap([
-                [['git', 'apply', 'path/to/patch']],
-                [['git', 'apply', 'path/to/patch', '--revert']]
-            ])->willReturnCallback([$this, 'shellMockReverseCallback']);
+                [['git', 'apply', $path]],
+                [['git', 'apply', $path, '--check', '--reverse']]
+            ])->willReturnCallback([$this, 'shellApplyRevertCallback']);
 
-        $this->assertSame(
-            'Patch "patchName (path/to/patch) 1.0" was already applied',
-            $this->applier->apply($path, $name, $packageName, $constraint, false)
-        );
+        $this->assertSame($expectedMessage, $this->applier->apply($path, $patchId));
     }
 
     /**
+     * Callback for 'apply' and 'revert' operations.
+     *
      * @param array $command
      * @return Process
      *
      * @throws ProcessFailedException when the command isn't a reverse
      */
-    public function shellMockReverseCallback(array $command): Process
+    public function shellApplyRevertCallback(array $command): Process
+    {
+        if (in_array('--reverse', $command, true) && in_array('--check', $command, true) ||
+            !in_array('--reverse', $command, true) && in_array('--check', $command, true)
+        ) {
+            // Command was the reverse check, it's all good.
+            /** @var Process|MockObject $result */
+            $result = $this->createMock(Process::class);
+            $result->expects($this->once())
+                ->method('mustRun');
+
+            return $result;
+        }
+
+        /** @var Process|MockObject $result */
+        $result = $this->createMock(Process::class);
+        $result->expects($this->once())
+            ->method('mustRun')
+            ->willThrowException(new ProcessFailedException($result));
+
+        return $result;
+    }
+
+    /**
+     * Tests revert operation, case when patch reverted successfully.
+     *
+     * @throws ApplierException
+     */
+    public function testRevert()
+    {
+        $path = 'path/to/patch';
+        $patchId = 'MC-11111';
+        $expectedMessage = 'Patch ' . $patchId . ' has been reverted';
+
+        $processMock = $this->createMock(Process::class);
+
+        $this->processFactory->expects($this->once())
+            ->method('create')
+            ->with(['git', 'apply', '--reverse', $path])
+            ->willReturn($processMock);
+        $processMock->expects($this->once())
+            ->method('mustRun');
+
+        $this->assertSame($expectedMessage, $this->applier->revert($path, $patchId));
+    }
+
+    /**
+     * Tests revert operation, case when patch revert fails.
+     */
+    public function testRevertFailed()
+    {
+        $path = 'path/to/patch';
+        $patchId = 'MC-11111';
+
+        /** @var Process|MockObject $result */
+        $processMock = $this->createMock(Process::class);
+        $processMock->method('mustRun')
+            ->willThrowException(new ProcessFailedException($processMock));
+
+        $this->processFactory->expects($this->exactly(2))
+            ->method('create')
+            ->willReturn($processMock);
+
+        $this->expectException(ApplierException::class);
+        $this->applier->revert($path, $patchId);
+    }
+
+    /**
+     * Tests revert operation, case when patch wasn't applied.
+     *
+     * @throws ApplierException
+     */
+    public function testRevertPatchWasntApplied()
+    {
+        $path = 'path/to/patch';
+        $patchId = 'MC-11111';
+        $expectedMessage = 'Patch ' . $patchId . ' wasn\'t applied';
+
+        $this->processFactory->expects($this->exactly(2))
+            ->method('create')
+            ->willReturnMap([
+                [['git', 'apply', $path]],
+                [['git', 'apply', $path, '--check']]
+            ])->willReturnCallback([$this, 'shellApplyRevertCallback']);
+
+        $this->assertSame($expectedMessage, $this->applier->revert($path, $patchId));
+    }
+
+    /**
+     * Tests status operation, case when patch is not applied.
+     */
+    public function testStatusNotApplied()
+    {
+        $patchContent = 'patch content';
+        $processMock = $this->createMock(Process::class);
+
+        $this->processFactory->expects($this->once())
+            ->method('create')
+            ->withConsecutive([['git', 'apply', '--check'], $patchContent])
+            ->willReturn($processMock);
+        $processMock->expects($this->once())
+            ->method('mustRun');
+
+        $this->assertSame(StatusPool::NOT_APPLIED, $this->applier->status($patchContent));
+    }
+
+    /**
+     * Tests status operation, case when patch status can't be defined.
+     */
+    public function testStatusNotAvailable()
+    {
+        $patchContent = 'patch content';
+
+        /** @var Process|MockObject $result */
+        $processMock = $this->createMock(Process::class);
+        $processMock->method('mustRun')
+            ->willThrowException(new ProcessFailedException($processMock));
+
+        $this->processFactory->expects($this->exactly(2))
+            ->method('create')
+            ->willReturn($processMock);
+
+        $this->assertSame(StatusPool::NA, $this->applier->status($patchContent));
+    }
+
+    /**
+     * Tests status operation, case when patch is applied.
+     */
+    public function testStatusApplied()
+    {
+        $patchContent = 'patch content';
+
+        $this->processFactory->expects($this->exactly(2))
+            ->method('create')
+            ->willReturnMap([
+                [['git', 'apply', '--check']],
+                [['git', 'apply', '--check', '--reverse']]
+            ])->willReturnCallback([$this, 'shellStatusCallback']);
+
+        $this->assertSame(StatusPool::APPLIED, $this->applier->status($patchContent));
+    }
+
+    /**
+     * Callback for 'status' operations.
+     *
+     * @param array $command
+     * @return Process
+     *
+     * @throws ProcessFailedException when the command isn't a reverse
+     */
+    public function shellStatusCallback(array $command): Process
     {
         if (in_array('--reverse', $command, true) && in_array('--check', $command, true)) {
             // Command was the reverse check, it's all good.

@@ -37,10 +37,15 @@ class AbstractCest
         $I->createArtifactCurrentTestedCode('patches', '1.0.99');
         $I->addArtifactsRepoToComposer();
         $I->addEceDockerGitRepoToComposer();
+        $I->addQualityPatchesGitRepoToComposer();
         $I->addDependencyToComposer('magento/magento-cloud-patches', '1.0.99');
         $I->addDependencyToComposer(
             'magento/magento-cloud-docker',
             $I->getDependencyVersion('magento/magento-cloud-docker')
+        );
+        $I->addDependencyToComposer(
+            'magento/quality-patches',
+            $I->getDependencyVersion('magento/quality-patches')
         );
 
         if ($this->edition === 'CE') {
@@ -51,6 +56,15 @@ class AbstractCest
         }
 
         $I->composerUpdate();
+    }
+
+    /**
+     * @param array $data
+     * @return string
+     */
+    protected function convertEnvFromArrayToJson(array $data): string
+    {
+        return addslashes(json_encode($data));
     }
 
     /**

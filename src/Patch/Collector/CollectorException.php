@@ -5,13 +5,13 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Command\Patch;
+namespace Magento\CloudPatches\Patch\Collector;
 
 use Magento\CloudPatches\App\GenericException;
 
 /**
- * Error for wrong format of constraints.
+ * Exception if there are some troubles with collecting patches from source.
  */
-class ManagerException extends GenericException
+class CollectorException extends GenericException
 {
 }
