@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-namespace Magento\QualityPatches\Test\Functional\Acceptance;
+namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
 /**
  * @group php71Part2
