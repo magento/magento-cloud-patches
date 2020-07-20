@@ -1,0 +1,244 @@
+diff --git a/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php b/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php
+index e5e419328eea..827b26c64b33 100644
+--- a/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php
++++ b/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php
+@@ -5,6 +5,9 @@
+  */
+ namespace Magento\Shipping\Block\Adminhtml\Order;
+
++use Magento\Framework\App\ObjectManager;
++use Magento\Shipping\Helper\Carrier;
++
+ /**
+  * Adminhtml shipment packaging
+  *
+@@ -44,6 +47,7 @@ class Packaging extends \Magento\Backend\Block\Template
+      * @param \Magento\Framework\Registry $coreRegistry
+      * @param \Magento\Shipping\Model\CarrierFactory $carrierFactory
+      * @param array $data
++     * @param Carrier|null $carrierHelper
+      */
+     public function __construct(
+         \Magento\Backend\Block\Template\Context $context,
+@@ -51,12 +55,14 @@ public function __construct(
+         \Magento\Shipping\Model\Carrier\Source\GenericInterface $sourceSizeModel,
+         \Magento\Framework\Registry $coreRegistry,
+         \Magento\Shipping\Model\CarrierFactory $carrierFactory,
+-        array $data = []
++        array $data = [],
++        Carrier $carrierHelper = null
+     ) {
+         $this->_jsonEncoder = $jsonEncoder;
+         $this->_coreRegistry = $coreRegistry;
+         $this->_sourceSizeModel = $sourceSizeModel;
+         $this->_carrierFactory = $carrierFactory;
++        $data['carrierHelper'] = $carrierHelper ?? ObjectManager::getInstance()->get(Carrier::class);
+         parent::__construct($context, $data);
+     }
+
+diff --git a/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml
+index 54d7aaec21f9..9b55d2b969d3 100644
+--- a/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml
++++ b/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml
+@@ -77,14 +77,14 @@
+                            name="shipment[create_shipping_label]"
+                            value="1"
+                            type="checkbox"/>
++                    <label class="admin__field-label"
++                           for="create_shipping_label">
++                        <span><?= $block->escapeHtml(__('Create Shipping Label')) ?></span></label>
+                     <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+                         'onclick',
+                         'toggleCreateLabelCheckbox();',
+                         'input#create_shipping_label'
+                     ) ?>
+-                    <label class="admin__field-label"
+-                           for="create_shipping_label">
+-                        <span><?= $block->escapeHtml(__('Create Shipping Label')) ?></span></label>
+                 </div>
+             <?php endif ?>
+
+diff --git a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml
+index 4a3cad2066d3..b214074ce84a 100644
+--- a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml
++++ b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml
+@@ -109,7 +109,10 @@
+                                 data-action="package-delete-item">
+                             <span><?= $block->escapeHtml(__('Delete')) ?></span>
+                         </button>
+-                        <?= /* @noEscape */ $secureRenderer->renderStyleAsTag('display:none', 'button.action-delete') ?>
++                        <?= /* @noEscape */ $secureRenderer->renderStyleAsTag(
++                            'display:none',
++                            'button#packaging-delete-item-' . $item->getId()
++                        ) ?>
+                         <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+                             'onclick',
+                             'packaging.deleteItem(this);',
+diff --git a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml
+index 0093c46d211f..b4e113d81ead 100644
+--- a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml
++++ b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml
+@@ -22,21 +22,11 @@
+                         data-action="package-save-items">
+                     <span><?= $block->escapeHtml(__('Add Selected Product(s) to Package')) ?></span>
+                 </button>
+-                <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                    'onclick',
+-                    'packaging.packItems(this);',
+-                    "button[data-action='package-save-items']"
+-                ) ?>
+                 <button type="button"
+                         class="action-secondary"
+                         data-action="package-add-items">
+                     <span><?= $block->escapeHtml(__('Add Products to Package')) ?></span>
+                 </button>
+-                <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                    'onclick',
+-                    'packaging.getItemsForPack(this);',
+-                    "button[data-action='package-add-items']"
+-                ) ?>
+             </div>
+         </div>
+         <div class="admin__control-table-wrapper admin__page-subsection">
+@@ -87,12 +77,6 @@
+                                     </option>
+                                 <?php endforeach; ?>
+                             </select>
+-                            <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                                'onchange',
+-                                "packaging.changeContainerType(this);
+-                                packaging.checkSizeAndGirthParameter(this, {$block->escapeJs($girthEnabled)});",
+-                                "select[name='package_container']"
+-                            ) ?>
+                         </td>
+                         <?php if ($girthEnabled == 1 && !empty($sizeSource)): ?>
+                         <td>
+@@ -103,11 +87,6 @@
+                                 </option>
+                                 <?php endforeach; ?>
+                             </select>
+-                            <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                                'onchange',
+-                                "packaging.checkSizeAndGirthParameter(this, {$block->escapeJs($girthEnabled)});",
+-                                "select[name='package_size']"
+-                            ) ?>
+                         </td>
+                         <td>
+                             <input type="text"
+@@ -124,11 +103,6 @@
+                                     <?= $block->escapeHtml(__('cm')) ?>
+                                 </option>
+                             </select>
+-                            <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                                'onchange',
+-                                "packaging.changeMeasures(this);",
+-                                "select[name='container_girth_dimension_units']"
+-                            ) ?>
+                         </td>
+                         <?php endif; ?>
+                         <?php
+@@ -169,11 +143,6 @@
+                                             <?= $block->escapeHtml(__('kg')) ?>
+                                         </option>
+                                     </select>
+-                                    <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                                        'onchange',
+-                                        "packaging.changeMeasures(this);",
+-                                        "select[name='container_weight_units']"
+-                                    ) ?>
+                                 <span class="admin__addon-prefix"></span>
+                             </div>
+                         </td>
+@@ -202,11 +171,6 @@
+                                     <?= $block->escapeHtml(__('cm')) ?>
+                                 </option>
+                             </select>
+-                            <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                                'onchange',
+-                                "packaging.changeMeasures(this);",
+-                                "select[name='container_dimension_units']"
+-                            ) ?>
+                         </td>
+                         <?php if ($block->getDeliveryConfirmationTypes()): ?>
+                         <td>
+@@ -224,11 +188,6 @@
+                                     class="action-delete DeletePackageBtn">
+                                 <span><?= $block->escapeHtml(__('Delete Package')) ?></span>
+                             </button>
+-                            <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                                'onclick',
+-                                'packaging.deletePackage(this);',
+-                                "button.action-delete.DeletePackageBtn"
+-                            ) ?>
+                         </td>
+                     </tr>
+                 </tbody>
+@@ -252,11 +211,6 @@
+                                     </option>
+                                 <?php endforeach; ?>
+                             </select>
+-                            <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
+-                                'onchange',
+-                                "packaging.changeContentTypes(this);",
+-                                "select[name='content_type']"
+-                            ) ?>
+                         </td>
+                         <td>
+                             <input name="content_type_other"
+@@ -273,10 +227,53 @@
+             <div class="grid_prepare admin__page-subsection"></div>
+         </div>
+     </section>
+-    <?= /* @noEscape */ $secureRenderer->renderStyleAsTag("display:none;", 'div#package_template') ?>
++    <?= /* @noEscape */ $secureRenderer->renderStyleAsTag('display:none', '#package_template') ?>
+     <div id="packages_content"></div>
++    <?php $scriptString = <<<script
++require(['jquery'], function($){
++    $("div#packages_content").on('click', "button[data-action='package-add-items']",
++        function(){packaging.getItemsForPack(this)});
++    $("div#packages_content").on('click', "button[data-action='package-save-items']",
++        function(){event.preventDefault();packaging.packItems(this)});
++    $("div#packages_content").on('click', "button.action-delete.DeletePackageBtn",
++        function(){packaging.deletePackage(this)});
++    $("div#packages_content").on('change', "select[name='package_container']",
++        function(){
++            packaging.changeContainerType(this);
++            packaging.checkSizeAndGirthParameter(this, {$block->escapeJs($girthEnabled)})
++        });
++    $("div#packages_content").on('change', "select[name='container_girth_dimension_units']",
++        function(){packaging.changeMeasures(this)});
++    $("div#packages_content").on('change', "select[name='container_weight_units']",
++        function(){packaging.changeMeasures(this)});
++
++script;
++    if ($girthEnabled == 1 && !empty($sizeSource)) {
++         $scriptString .= <<<script
++    $("div#packages_content").on('change', "select[name='package_size']",
++        function(){packaging.checkSizeAndGirthParameter(this, {$block->escapeJs($girthEnabled)})});
++script;
++    }
++    $scriptString .= <<<script
++    $("div#packages_content").on('change', "select[name='container_dimension_units']",
++        function(){packaging.changeMeasures(this)});
++
++script;
++    if ($block->getContentTypes()) {
++        $scriptString .= <<<script
++    $("div#packages_content").on('change', "select[name='content_type']",
++        function(){packaging.changeContentTypes(this)});
++
++script;
++    }
++    $scriptString .= <<<script
++})
++script;
++    ?>
++    <?= /* @noEscape */ $secureRenderer->renderTag('script', [], $scriptString, false) ?>
++
+ </div>
+ <?= /* @noEscape */ $secureRenderer->renderStyleAsTag(
+-    "display:none;",
+-    'div#packaging_window div.message message-warning'
++    'display:none',
++    'div#packaging_window div.message.message-warning'
+ ) ?>

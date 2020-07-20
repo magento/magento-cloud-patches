@@ -252,6 +252,9 @@
     },
     "Large amount of Keys Block Cache": {
       ">=2.3.1 <2.3.5": "MDVA-22950__large_amount_of_keys_block_cache__2.3.1.patch"
+    },
+    "Fix shipping label creation issue": {
+     "2.4.0": "MC-35514__fix_shipping_label_creation_issue__2.4.0.patch"
     }
   },
   "magento/module-paypal": {
