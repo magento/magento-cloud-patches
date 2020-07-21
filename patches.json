@@ -348,6 +348,9 @@
     },
     "Re-work consumers to terminate as soon as there is nothing left to process": {
       ">=2.2.0 <2.3.2": "MAGECLOUD-4071__terminate_consumers_if_the_queue_is_empty__2.2.0.patch"
+    },
+    "Fix RMA edit page issue with shipping label": {
+      "2.4.0": "MC-35984__fix_rma_edit_page_issue_with_shipping_label__2.4.0.patch"
     }
   }
 }
