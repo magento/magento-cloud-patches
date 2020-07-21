@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Composer;
 
 use Composer\Composer;
 use Composer\Package\PackageInterface;
+use Composer\Package\RootPackageInterface;
 use Composer\Repository\RepositoryManager;
 use Composer\Repository\WritableRepositoryInterface;
 use Magento\CloudPatches\Composer\MagentoVersion;
@@ -33,11 +34,17 @@ class MagentoVersionTest extends TestCase
     private $magentoVersion;
 
     /**
+     * @var RootPackageInterface|MockObject
+     */
+    private $rootPackage;
+
+    /**
      * @inheritDoc
      */
     protected function setUp()
     {
         $this->repository = $this->getMockForAbstractClass(WritableRepositoryInterface::class);
+        $this->rootPackage = $this->getMockForAbstractClass(RootPackageInterface::class);
         $repositoryManager = $this->createMock(RepositoryManager::class);
         $repositoryManager->method('getLocalRepository')
             ->willReturn($this->repository);
@@ -46,6 +53,8 @@ class MagentoVersionTest extends TestCase
         $composer = $this->createMock(Composer::class);
         $composer->method('getRepositoryManager')
             ->willReturn($repositoryManager);
+        $composer->method('getPackage')
+            ->willReturn($this->rootPackage);
 
         $this->magentoVersion = new MagentoVersion($composer);
     }
@@ -56,12 +65,18 @@ class MagentoVersionTest extends TestCase
      * @param bool $ce
      * @param bool $ee
      * @param bool $b2b
+     * @param string $rootPackage
      * @param string $expectedResult
      *
      * @dataProvider getDataProvider
      */
-    public function testGet(bool $ce, bool $ee, bool $b2b, string $expectedResult)
+    public function testGet(bool $ce, bool $ee, bool $b2b, string $rootPackage, string $expectedResult)
     {
+        $this->rootPackage->method('getName')
+            ->willReturn($rootPackage);
+        $this->rootPackage->method('getVersion')
+            ->willReturn(self::VERSION);
+
         $package = $this->getMockForAbstractClass(PackageInterface::class);
         $package->method('getVersion')
             ->willReturn(self::VERSION);
@@ -81,10 +96,140 @@ class MagentoVersionTest extends TestCase
     public function getDataProvider(): array
     {
         return [
-            ['CE' => false, 'EE' => false, 'B2B' => false, 'Magento 2 is not installed'],
-            ['CE' => true, 'EE' => true, 'B2B' => false, 'Magento 2 Enterprise Edition, version ' . self::VERSION],
-            ['CE' => true, 'EE' => false, 'B2B' => true, 'Magento 2 B2B Edition, version ' . self::VERSION],
-            ['CE' => true, 'EE' => false, 'B2B' => false, 'Magento 2 Community Edition, version ' . self::VERSION],
+            [
+                'CE' => false,
+                'EE' => false,
+                'B2B' => false,
+                'gitPackage' => '',
+                'Magento 2 is not installed'
+            ],
+            [
+                'CE' => true,
+                'EE' => true,
+                'B2B' => false,
+                'gitPackage' => '',
+                'Magento 2 Enterprise Edition, version ' . self::VERSION
+            ],
+            [
+                'CE' => true,
+                'EE' => false,
+                'B2B' => true,
+                'gitPackage' => '',
+                'Magento 2 B2B Edition, version ' . self::VERSION
+            ],
+            [
+                'CE' => true,
+                'EE' => false,
+                'B2B' => false,
+                'gitPackage' => '',
+                'Magento 2 Community Edition, version ' . self::VERSION
+            ],
+            [
+                'CE' => false,
+                'EE' => false,
+                'B2B' => false,
+                'gitPackage' => 'magento/magento2ce',
+                'Git-based: Magento 2 Community Edition, version ' . self::VERSION
+            ],
+            [
+                'CE' => false,
+                'EE' => false,
+                'B2B' => false,
+                'gitPackage' => 'magento/magento2ee',
+                'Git-based: Magento 2 Enterprise Edition, version ' . self::VERSION
+            ],
+        ];
+    }
+
+    /**
+     * Tests Magento git-version identifying .
+     *
+     * @param string $rootPackageName
+     * @param bool $expectedResult
+     * @dataProvider isGitBasedDataProvider
+     */
+    public function testIsGitBased(string $rootPackageName, bool $expectedResult)
+    {
+        $this->rootPackage->method('getName')
+            ->willReturn($rootPackageName);
+
+        $this->assertEquals($expectedResult, $this->magentoVersion->isGitBased());
+    }
+
+    /**
+     * @return array
+     */
+    public function isGitBasedDataProvider(): array
+    {
+        return [
+            ['rootPackageName' => 'magento/magento2ce', 'expectedResult' => true],
+            ['rootPackageName' => 'magento/magento2ee', 'expectedResult' => true],
+            ['rootPackageName' => 'magento/magento2-ce-base', 'expectedResult' => false]
+        ];
+    }
+
+    /**
+     * Tests package matching using composer root package.
+     *
+     * @param string $rootPackageName
+     * @param string $rootPackageVersion
+     * @param string $testPackageName
+     * @param string $testPackageVersion
+     * @param bool $expectedResult
+     * @dataProvider matchPackageGitProvider
+     */
+    public function testMatchPackageGit(
+        string $rootPackageName,
+        string $rootPackageVersion,
+        string $testPackageName,
+        string $testPackageVersion,
+        bool $expectedResult
+    ) {
+        $this->rootPackage->method('getName')
+            ->willReturn($rootPackageName);
+        $this->rootPackage->method('getVersion')
+            ->willReturn($rootPackageVersion);
+
+        $this->assertEquals(
+            $expectedResult,
+            $this->magentoVersion->matchPackageGit($testPackageName, $testPackageVersion)
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public function matchPackageGitProvider(): array
+    {
+        return [
+            [
+                'magento/magento2ce',
+                '2.3.5',
+                'magento/magento2-base',
+                '<=2.3.5 <2.3.6',
+                'expectedResult' => true
+            ],
+            [
+                'magento/magento2ce',
+                '2.3.5',
+                'magento/magento2-base',
+                '<2.3.5',
+                'expectedResult' => false
+            ],
+            [
+                'magento/magento2ce',
+                '2.3.5',
+                'magento/magento2-ee-base',
+                '<=2.3.5 <2.3.6',
+                'expectedResult' => false
+            ],
+            [
+                'magento/magento2ee',
+                '2.3.5',
+                'magento/magento2-ee-base',
+                '<=2.3.5 <2.3.6',
+                'expectedResult' => true
+            ],
         ];
     }
 }
