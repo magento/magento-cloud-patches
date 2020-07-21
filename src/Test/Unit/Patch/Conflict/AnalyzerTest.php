@@ -83,6 +83,8 @@ class AnalyzerTest extends TestCase
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturn([]);
+        $this->optionalPool->method('getDependencies')
+            ->willReturn([]);
         $this->rollbackProcessor->expects($this->once())
             ->method('process');
 

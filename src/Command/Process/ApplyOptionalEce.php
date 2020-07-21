@@ -7,17 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command\Process;
 
-use Magento\CloudPatches\Command\Apply;
 use Magento\CloudPatches\Command\Process\Action\ActionPool;
+use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Patch\FilterFactory;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Applies optional patches (OnPrem).
+ * Applies optional patches (Cloud).
  */
-class ApplyOptional implements ProcessInterface
+class ApplyOptionalEce implements ProcessInterface
 {
     /**
      * @var FilterFactory
@@ -35,18 +35,26 @@ class ApplyOptional implements ProcessInterface
     private $logger;
 
     /**
+     * @var Config
+     */
+    private $config;
+
+    /**
      * @param FilterFactory $filterFactory
      * @param ActionPool $actionPool
      * @param LoggerInterface $logger
+     * @param Config $config
      */
     public function __construct(
         FilterFactory $filterFactory,
         ActionPool $actionPool,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        Config $config
     ) {
         $this->filterFactory = $filterFactory;
         $this->actionPool = $actionPool;
         $this->logger = $logger;
+        $this->config = $config;
     }
 
     /**
@@ -54,14 +62,14 @@ class ApplyOptional implements ProcessInterface
      */
     public function run(InputInterface $input, OutputInterface $output)
     {
-        $argPatches = $input->getArgument(Apply::ARG_LIST_OF_PATCHES);
-        $patchFilter = $this->filterFactory->createApplyFilter($argPatches);
+        $envQualityPatches = $this->config->getQualityPatches();
+        $patchFilter = $this->filterFactory->createApplyFilter($envQualityPatches);
         if ($patchFilter === null) {
             return;
         }
 
         $this->logger->notice('Start of applying optional patches');
-        $this->logger->info('Command argument: ' . implode(' ', $argPatches));
+        $this->logger->info('QUALITY_PATCHES env variable: ' . implode(' ', $envQualityPatches));
         $this->actionPool->execute($input, $output, $patchFilter);
         $this->logger->notice('End of applying optional patches');
     }

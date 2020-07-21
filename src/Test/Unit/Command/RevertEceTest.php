@@ -9,8 +9,8 @@ namespace Magento\CloudPatches\Test\Unit\Command;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\AbstractCommand;
-use Magento\CloudPatches\Command\Apply;
-use Magento\CloudPatches\Command\Process\ApplyOptional;
+use Magento\CloudPatches\Command\Process\RevertEce as RevertEceProcess;
+use Magento\CloudPatches\Command\RevertEce;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -21,17 +21,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritDoc
  */
-class ApplyTest extends TestCase
+class RevertEceTest extends TestCase
 {
     /**
-     * @var Apply
+     * @var RevertEce
      */
     private $command;
 
     /**
-     * @var ApplyOptional|MockObject
+     * @var RevertEceProcess|MockObject
      */
-    private $applyOptional;
+    private $revertEce;
 
     /**
      * @var LoggerInterface|MockObject
@@ -39,37 +39,34 @@ class ApplyTest extends TestCase
     private $logger;
 
     /**
-     * @var MagentoVersion|MockObject
-     */
-    private $magentoVersion;
-
-    /**
      * @inheritDoc
      */
     protected function setUp()
     {
-        $this->applyOptional = $this->createMock(ApplyOptional::class);
+        $this->revertEce = $this->createMock(RevertEceProcess::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
-        $this->magentoVersion = $this->createMock(MagentoVersion::class);
 
-        $this->command = new Apply(
-            $this->applyOptional,
+        /** @var MagentoVersion|MockObject $magentoVersion */
+        $magentoVersion = $this->createMock(MagentoVersion::class);
+
+        $this->command = new RevertEce(
+            $this->revertEce,
             $this->logger,
-            $this->magentoVersion
+            $magentoVersion
         );
     }
 
     /**
      * Tests successful command execution.
      */
-    public function testExecute()
+    public function testRevertSuccess()
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptional->expects($this->once())
+        $this->revertEce->expects($this->once())
             ->method('run');
 
         $this->assertEquals(
@@ -88,7 +85,7 @@ class ApplyTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptional->expects($this->once())
+        $this->revertEce->expects($this->once())
             ->method('run')
             ->willThrowException(new RuntimeException('Error!'));
         $this->logger->expects($this->once())
@@ -110,7 +107,7 @@ class ApplyTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptional->expects($this->once())
+        $this->revertEce->expects($this->once())
             ->method('run')
             ->willThrowException(new \InvalidArgumentException('Critical error!'));
         $this->logger->expects($this->once())

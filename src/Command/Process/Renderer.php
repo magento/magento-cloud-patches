@@ -87,10 +87,13 @@ class Renderer
         $rows = [];
         foreach ($patchList as $patch) {
             $rows[] = $this->createRow($patch);
-            $rows[] = new TableSeparator();
         }
-        array_pop($rows);
 
+        usort($rows, function ($a, $b) {
+            return strcmp($a[self::STATUS], $b[self::STATUS]);
+        });
+
+        $rows = $this->addTableSeparator($rows);
         $table->addRows($rows);
         $table->render();
     }
@@ -109,7 +112,6 @@ class Renderer
         string $prependedMessage = ''
     ) {
         $info = [
-            sprintf('<comment>Id:</comment> %s', $patch->getId()),
             sprintf('<comment>Title:</comment> %s', $patch->getTitle()),
             sprintf('<comment>File:</comment> %s', $patch->getFilename()),
             sprintf(
@@ -200,5 +202,23 @@ class Renderer
             self::STATUS => $this->statusPool->get($patch->getId()),
             self::DETAILS => $details
         ];
+    }
+
+    /**
+     * Adds table separator.
+     *
+     * @param array $rowItems
+     * @return array
+     */
+    private function addTableSeparator(array $rowItems): array
+    {
+        $result = [];
+        foreach ($rowItems as $row) {
+            $result[] = $row;
+            $result[] = new TableSeparator();
+        }
+        array_pop($result);
+
+        return $result;
     }
 }

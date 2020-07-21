@@ -94,9 +94,12 @@ class ProcessorTest extends TestCase
             ->method('formatErrorOutput')
             ->withConsecutive([$exceptionMessage])
             ->willReturn($formattedOutput);
-        $outputMock->expects($this->once())
+        $outputMock->expects($this->exactly(2))
             ->method('writeln')
-            ->withConsecutive([$rollbackMessages]);
+            ->withConsecutive(
+                [$this->stringContains('Error: patch conflict happened')],
+                [$rollbackMessages]
+            );
 
         $expectedErrorMessage = sprintf(
             'Applying patch %s (%s) failed.%s%s',

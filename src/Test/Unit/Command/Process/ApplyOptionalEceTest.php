@@ -8,9 +8,9 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Command\Process;
 
 use Magento\CloudPatches\App\RuntimeException;
-use Magento\CloudPatches\Command\Apply;
 use Magento\CloudPatches\Command\Process\Action\ActionPool;
-use Magento\CloudPatches\Command\Process\ApplyOptional;
+use Magento\CloudPatches\Command\Process\ApplyOptionalEce;
+use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Patch\FilterFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -21,12 +21,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritdoc
  */
-class ApplyOptionalTest extends TestCase
+class ApplyOptionalEceTest extends TestCase
 {
     /**
-     * @var ApplyOptional
+     * @var ApplyOptionalEce
      */
-    private $applyOptional;
+    private $applyOptionalEce;
 
     /**
      * @var LoggerInterface|MockObject
@@ -44,6 +44,11 @@ class ApplyOptionalTest extends TestCase
     private $filterFactory;
 
     /**
+     * @var Config|MockObject
+     */
+    private $config;
+
+    /**
      * @inheritdoc
      */
     protected function setUp()
@@ -51,11 +56,13 @@ class ApplyOptionalTest extends TestCase
         $this->filterFactory = $this->createMock(FilterFactory::class);
         $this->actionPool = $this->createMock(ActionPool::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->config = $this->createMock(Config::class);
 
-        $this->applyOptional = new ApplyOptional(
+        $this->applyOptionalEce = new ApplyOptionalEce(
             $this->filterFactory,
             $this->actionPool,
-            $this->logger
+            $this->logger,
+            $this->config
         );
     }
 
@@ -64,53 +71,51 @@ class ApplyOptionalTest extends TestCase
      *
      * @throws RuntimeException
      */
-    public function testApplyWithPatchArgumentProvided()
+    public function testApplyWithPatchEnvVariableProvided()
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $cliPatchArgument = ['MC-1111', 'MC-22222'];
-        $inputMock->expects($this->once())
-            ->method('getArgument')
-            ->with(Apply::ARG_LIST_OF_PATCHES)
-            ->willReturn($cliPatchArgument);
+        $configQualityPatches = ['MC-1111', 'MC-22222'];
+        $this->config->expects($this->once())
+            ->method('getQualityPatches')
+            ->willReturn($configQualityPatches);
         $this->filterFactory->method('createApplyFilter')
-            ->with($cliPatchArgument)
-            ->willReturn($cliPatchArgument);
+            ->with($configQualityPatches)
+            ->willReturn($configQualityPatches);
 
         $this->actionPool->expects($this->once())
             ->method('execute')
-            ->withConsecutive([$inputMock, $outputMock, $cliPatchArgument]);
+            ->withConsecutive([$inputMock, $outputMock, $configQualityPatches]);
 
-        $this->applyOptional->run($inputMock, $outputMock);
+        $this->applyOptionalEce->run($inputMock, $outputMock);
     }
 
     /**
-     * Tests optional patches applying when CLI patch argument is empty.
+     * Tests optional patches applying when QUALITY_PATCHES env variable is empty.
      *
      * @throws RuntimeException
      */
-    public function testApplyWithEmptyPatchArgument()
+    public function testApplyWithEmptyPatchEnvVariable()
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $cliPatchArgument = [];
-        $inputMock->expects($this->once())
-            ->method('getArgument')
-            ->with(Apply::ARG_LIST_OF_PATCHES)
-            ->willReturn($cliPatchArgument);
+        $configQualityPatches = [];
+        $this->config->expects($this->once())
+            ->method('getQualityPatches')
+            ->willReturn($configQualityPatches);
         $this->filterFactory->method('createApplyFilter')
-            ->with($cliPatchArgument)
+            ->with($configQualityPatches)
             ->willReturn(null);
 
         $this->actionPool->expects($this->never())
             ->method('execute');
 
-        $this->applyOptional->run($inputMock, $outputMock);
+        $this->applyOptionalEce->run($inputMock, $outputMock);
     }
 }

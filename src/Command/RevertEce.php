@@ -8,23 +8,26 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Command;
 
 use Magento\CloudPatches\App\RuntimeException;
-use Magento\CloudPatches\Command\Process\ShowStatus;
+use Magento\CloudPatches\Command\Process\RevertEce as RevertEceProcess;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * @inheritDoc
+ * Patch revert command (Cloud).
  */
-class Status extends AbstractCommand
+class RevertEce extends AbstractCommand
 {
-    const NAME = 'status';
+    /**
+     * Command name.
+     */
+    const NAME = 'revert';
 
     /**
-     * @var ShowStatus
+     * @var RevertEceProcess
      */
-    private $showStatus;
+    private $revertEce;
 
     /**
      * @var LoggerInterface
@@ -37,16 +40,16 @@ class Status extends AbstractCommand
     private $magentoVersion;
 
     /**
-     * @param ShowStatus $showStatus
+     * @param RevertEceProcess $revertEce
      * @param LoggerInterface $logger
      * @param MagentoVersion $magentoVersion
      */
     public function __construct(
-        ShowStatus $showStatus,
+        RevertEceProcess $revertEce,
         LoggerInterface $logger,
         MagentoVersion $magentoVersion
     ) {
-        $this->showStatus = $showStatus;
+        $this->revertEce = $revertEce;
         $this->logger = $logger;
         $this->magentoVersion = $magentoVersion;
 
@@ -59,7 +62,7 @@ class Status extends AbstractCommand
     protected function configure()
     {
         $this->setName(self::NAME)
-            ->setDescription('Shows the list of available patches and their statuses');
+            ->setDescription('Reverts patches (Magento Cloud only)');
 
         parent::configure();
     }
@@ -69,9 +72,10 @@ class Status extends AbstractCommand
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->logger->notice($this->magentoVersion->get());
+
         try {
-            $this->showStatus->run($input, $output);
-            $output->writeln('<info>' . $this->magentoVersion->get() . '</info>');
+            $this->revertEce->run($input, $output);
         } catch (RuntimeException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             $this->logger->error($e->getMessage());

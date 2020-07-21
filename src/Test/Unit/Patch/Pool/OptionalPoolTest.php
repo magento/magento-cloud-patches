@@ -141,6 +141,24 @@ class OptionalPoolTest extends TestCase
     }
 
     /**
+     * Tests retrieving ids of patch dependencies.
+     */
+    public function testGetDependencies()
+    {
+        $patch1 = $this->createPatch('MC-1');
+        $patch2 = $this->createPatch('MC-2', ['MC-1']);
+        $patch3 = $this->createPatch('MC-3', ['MC-2']);
+        $patch4 = $this->createPatch('MC-4', ['MC-3']);
+
+        $pool = $this->createPool([$patch1, $patch2, $patch3, $patch4]);
+
+        $this->assertEquals(
+            ['MC-1', 'MC-2', 'MC-3'],
+            array_values($pool->getDependencies('MC-4'))
+        );
+    }
+
+    /**
      * Tests retrieving additional required patches which are not included in patch filter.
      */
     public function testGetAdditionalRequiredPatches()
@@ -175,6 +193,34 @@ class OptionalPoolTest extends TestCase
         $this->assertEquals(
             [$patch2->getId(), $patch3->getId()],
             array_values($pool->getReplacedBy($patchForReplaceId))
+        );
+    }
+
+    /**
+     * Tests retrieving not deprecated patch ids by type.
+     */
+    public function testGetIdsByType()
+    {
+        $patch1 = $this->createPatch('OPTIONAL-1');
+        $patch1->method('getType')->willReturn(PatchInterface::TYPE_OPTIONAL);
+        $patch2 = $this->createPatch('OPTIONAL-2');
+        $patch2->method('getType')->willReturn(PatchInterface::TYPE_OPTIONAL);
+        $patch2->method('isDeprecated')->willReturn(true);
+        $patch3 = $this->createPatch('REQUIRED-3');
+        $patch3->method('getType')->willReturn(PatchInterface::TYPE_REQUIRED);
+        $patch4 = $this->createPatch('REQUIRED-4');
+        $patch4->method('getType')->willReturn(PatchInterface::TYPE_REQUIRED);
+
+        $pool = $this->createPool([$patch1, $patch2, $patch3, $patch4]);
+
+        $this->assertEquals(
+            ['OPTIONAL-1'],
+            array_values($pool->getIdsByType(PatchInterface::TYPE_OPTIONAL))
+        );
+
+        $this->assertEquals(
+            ['REQUIRED-3', 'REQUIRED-4'],
+            array_values($pool->getIdsByType(PatchInterface::TYPE_REQUIRED))
         );
     }
 

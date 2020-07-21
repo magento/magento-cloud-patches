@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Command\Process\Action;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Renderer;
+use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
@@ -52,24 +53,32 @@ class ApplyOptionalAction implements ActionInterface
     private $logger;
 
     /**
+     * @var ConflictProcessor
+     */
+    private $conflictProcessor;
+
+    /**
      * @param Applier $applier
      * @param OptionalPool $optionalPool
      * @param StatusPool $statusPool
      * @param Renderer $renderer
      * @param LoggerInterface $logger
+     * @param ConflictProcessor $conflictProcessor
      */
     public function __construct(
         Applier $applier,
         OptionalPool $optionalPool,
         StatusPool $statusPool,
         Renderer $renderer,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ConflictProcessor $conflictProcessor
     ) {
         $this->applier = $applier;
         $this->optionalPool = $optionalPool;
         $this->statusPool = $statusPool;
         $this->renderer = $renderer;
         $this->logger = $logger;
+        $this->conflictProcessor = $conflictProcessor;
     }
 
     /**
@@ -93,13 +102,7 @@ class ApplyOptionalAction implements ActionInterface
                 $this->logger->info($message, ['file' => $patch->getPath()]);
                 array_push($appliedPatches, $patch);
             } catch (ApplierException $exception) {
-                $this->printPatchApplyingFailed($output, $patch, $exception->getMessage());
-                $this->rollback($output, $appliedPatches);
-
-                throw new RuntimeException(
-                    'Applying optional patches ' . implode(' ', $patchFilter) . ' failed.',
-                    $exception->getCode()
-                );
+                $this->conflictProcessor->process($output, $patch, $appliedPatches, $exception->getMessage());
             }
         }
     }
@@ -122,28 +125,6 @@ class ApplyOptionalAction implements ActionInterface
 
         $output->writeln($message . PHP_EOL);
         $this->logger->info($message);
-    }
-
-    /**
-     * Prints and logs 'applying patch failed' message.
-     *
-     * @param OutputInterface $output
-     * @param PatchInterface $patch
-     * @param string $errorOutput
-     *
-     * @return void
-     */
-    private function printPatchApplyingFailed(OutputInterface $output, PatchInterface $patch, string $errorOutput)
-    {
-        $errorMessage = sprintf(
-            'Applying patch %s (%s) failed.%s',
-            $patch->getId(),
-            $patch->getPath(),
-            $this->renderer->formatErrorOutput($errorOutput)
-        );
-
-        $output->writeln('<error>' . $errorMessage . '</error>' . PHP_EOL);
-        $this->logger->error($errorMessage);
     }
 
     /**
@@ -170,26 +151,5 @@ class ApplyOptionalAction implements ActionInterface
         } catch (PatchNotFoundException $e) {
             throw new RuntimeException($e->getMessage(), $e->getCode());
         }
-    }
-
-    /**
-     * Rollback applied patches.
-     *
-     * @param OutputInterface $output
-     * @param PatchInterface[] $appliedPatches
-     *
-     * @return void
-     */
-    private function rollback(OutputInterface $output, array $appliedPatches)
-    {
-        $this->logger->info('Start rollback');
-
-        foreach (array_reverse($appliedPatches) as $appliedPatch) {
-            $message = $this->applier->revert($appliedPatch->getPath(), $appliedPatch->getId());
-            $this->renderer->printPatchInfo($output, $appliedPatch, $message);
-            $this->logger->info($message, ['file' => $appliedPatch->getPath()]);
-        }
-
-        $this->logger->info('End rollback');
     }
 }

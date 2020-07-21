@@ -73,7 +73,10 @@ class Processor
         array $appliedPatches,
         string $exceptionMessage
     ) {
-        $this->logger->error('Patch conflict happened');
+        $errorMessage = 'Error: patch conflict happened';
+        $this->logger->error($errorMessage);
+        $output->writeln('<error>' . $errorMessage . '</error>');
+
         $messages = $this->rollbackProcessor->process($appliedPatches);
         $output->writeln($messages);
         $conflictDetails = $this->conflictAnalyzer->analyze($patch);

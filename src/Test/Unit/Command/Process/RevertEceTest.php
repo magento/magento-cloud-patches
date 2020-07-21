@@ -8,13 +8,14 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Command\Process;
 
 use Magento\CloudPatches\App\RuntimeException;
-use Magento\CloudPatches\Command\Process\ApplyLocal;
+use Magento\CloudPatches\Command\Process\Action\RevertAction;
 use Magento\CloudPatches\Command\Process\Renderer;
+use Magento\CloudPatches\Command\Process\RevertEce;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
-use Magento\CloudPatches\Patch\RollbackProcessor;
+use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -24,17 +25,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritdoc
  */
-class ApplyLocalTest extends TestCase
+class RevertEceTest extends TestCase
 {
     /**
-     * @var ApplyLocal
+     * @var RevertEce
      */
-    private $manager;
+    private $revertEce;
 
     /**
-     * @var Applier|MockObject
+     * @var RevertAction|MockObject
      */
-    private $applier;
+    private $revertAction;
 
     /**
      * @var LoggerInterface|MockObject
@@ -42,14 +43,14 @@ class ApplyLocalTest extends TestCase
     private $logger;
 
     /**
+     * @var Applier|MockObject
+     */
+    private $applier;
+
+    /**
      * @var LocalPool|MockObject
      */
     private $localPool;
-
-    /**
-     * @var RollbackProcessor|MockObject
-     */
-    private $rollbackProcessor;
 
     /**
      * @var Renderer|MockObject
@@ -57,57 +58,48 @@ class ApplyLocalTest extends TestCase
     private $renderer;
 
     /**
+     * @var StatusPool|MockObject
+     */
+    private $statusPool;
+
+    /**
      * @inheritdoc
      */
     protected function setUp()
     {
-        $this->applier = $this->createMock(Applier::class);
+        $this->revertAction = $this->createMock(RevertAction::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->applier = $this->createMock(Applier::class);
         $this->localPool = $this->createMock(LocalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
-        $this->rollbackProcessor = $this->createMock(RollbackProcessor::class);
+        $this->statusPool = $this->createMock(StatusPool::class);
 
-        $this->manager = new ApplyLocal(
+        $this->revertEce = new RevertEce(
+            $this->revertAction,
+            $this->logger,
             $this->applier,
             $this->localPool,
             $this->renderer,
-            $this->logger,
-            $this->rollbackProcessor
+            $this->statusPool
         );
     }
 
     /**
-     * Tests case when there are no local patches in m2-hotfix directory.
+     * Tests successful patches reverting.
      *
      * @throws RuntimeException
      */
-    public function testExecuteLocalPatchesNotFound()
-    {
-        $expectedMessage = '<info>Hot-fixes were not found. Skipping</info>';
-
-        /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
-        /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
-        $this->localPool->method('getList')
-            ->willReturn([]);
-        $outputMock->expects($this->once())
-            ->method('writeln')
-            ->with($expectedMessage);
-
-        $this->manager->run($inputMock, $outputMock);
-    }
-
-    /**
-     * Tests successful local patches applying.
-     *
-     * @throws RuntimeException
-     */
-    public function testApplySuccessful()
+    public function testRevertSuccessful()
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
         $patch3 = $this->createPatch('/path/patch3.patch', '../m2-hotfixes/patch3.patch');
+        $this->statusPool->method('isNotApplied')
+            ->willReturnMap([
+                ['../m2-hotfixes/patch1.patch', false],
+                ['../m2-hotfixes/patch2.patch', false],
+                ['../m2-hotfixes/patch3.patch', true]
+            ]);
 
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);
@@ -116,35 +108,41 @@ class ApplyLocalTest extends TestCase
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2, $patch3]);
 
-        $this->applier->method('apply')
+        $this->applier->method('revert')
             ->willReturnMap([
-                [$patch1->getPath(), $patch1->getTitle(), 'Patch ' . $patch1->getTitle() .' has been applied'],
-                [$patch2->getPath(), $patch2->getTitle(), 'Patch ' . $patch2->getTitle() .' has been applied'],
-                [$patch3->getPath(), $patch3->getTitle(), 'Patch ' . $patch3->getTitle() .' has been applied'],
+                [$patch2->getPath(), $patch2->getTitle(), 'Patch ' . $patch2->getTitle() .' has been reverted'],
+                [$patch1->getPath(), $patch1->getTitle(), 'Patch ' . $patch1->getTitle() .' has been reverted'],
             ]);
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
             ->withConsecutive(
                 [$this->anything()],
-                [$this->stringContains('Patch ' . $patch1->getTitle() .' has been applied')],
-                [$this->stringContains('Patch ' . $patch2->getTitle() .' has been applied')],
-                [$this->stringContains('Patch ' . $patch3->getTitle() .' has been applied')]
+                [$this->stringContains('Patch ' . $patch2->getTitle() .' has been reverted')],
+                [$this->stringContains('Patch ' . $patch1->getTitle() .' has been reverted')]
             );
 
-        $this->manager->run($inputMock, $outputMock);
+        $this->revertAction->expects($this->once())
+            ->method('execute')
+            ->withConsecutive([$inputMock, $outputMock, []]);
+
+        $this->revertEce->run($inputMock, $outputMock);
     }
 
     /**
-     * Tests local patches applying with exception.
+     * Tests patches reverting with exception.
      *
      * @throws RuntimeException
      */
-    public function testApplyWithException()
+    public function testRevertWithError()
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
-        $rollbackMessages = ['Patch 1 has been reverted'];
+        $this->statusPool->method('isNotApplied')
+            ->willReturnMap([
+                ['../m2-hotfixes/patch1.patch', false],
+                ['../m2-hotfixes/patch2.patch', false]
+            ]);
 
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);
@@ -153,7 +151,7 @@ class ApplyLocalTest extends TestCase
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2]);
 
-        $this->applier->method('apply')
+        $this->applier->method('revert')
             ->willReturnMap([
                 [$patch1->getPath(), $patch1->getTitle()],
                 [$patch2->getPath(), $patch2->getTitle()]
@@ -163,20 +161,19 @@ class ApplyLocalTest extends TestCase
                         throw new ApplierException('Applier error message');
                     }
 
-                    return "Patch {$path} {$title} has been applied";
+                    return "Patch {$path} {$title} has been reverted";
                 }
             );
 
-        $this->rollbackProcessor->expects($this->once())
-            ->method('process')
-            ->withConsecutive([[$patch1]])
-            ->willReturn($rollbackMessages);
         $this->renderer->expects($this->once())
             ->method('formatErrorOutput')
             ->with('Applier error message');
 
-        $this->expectException(RuntimeException::class);
-        $this->manager->run($inputMock, $outputMock);
+        $this->revertAction->expects($this->once())
+            ->method('execute')
+            ->withConsecutive([$inputMock, $outputMock, []]);
+
+        $this->revertEce->run($inputMock, $outputMock);
     }
 
     /**
@@ -192,6 +189,7 @@ class ApplyLocalTest extends TestCase
         $patch = $this->getMockForAbstractClass(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getTitle')->willReturn($title);
+        $patch->method('getId')->willReturn($title);
 
         return $patch;
     }

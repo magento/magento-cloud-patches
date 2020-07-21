@@ -9,8 +9,10 @@ namespace Magento\CloudPatches\Test\Unit\Command;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\AbstractCommand;
-use Magento\CloudPatches\Command\Apply;
-use Magento\CloudPatches\Command\Process\ApplyOptional;
+use Magento\CloudPatches\Command\ApplyEce;
+use Magento\CloudPatches\Command\Process\ApplyLocal;
+use Magento\CloudPatches\Command\Process\ApplyOptionalEce;
+use Magento\CloudPatches\Command\Process\ApplyRequired;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -21,17 +23,27 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritDoc
  */
-class ApplyTest extends TestCase
+class ApplyEceTest extends TestCase
 {
     /**
-     * @var Apply
+     * @var ApplyEce
      */
     private $command;
 
     /**
-     * @var ApplyOptional|MockObject
+     * @var ApplyLocal|MockObject
      */
-    private $applyOptional;
+    private $applyLocal;
+
+    /**
+     * @var ApplyOptionalEce|MockObject
+     */
+    private $applyOptionalEce;
+
+    /**
+     * @var ApplyRequired|MockObject
+     */
+    private $applyRequired;
 
     /**
      * @var LoggerInterface|MockObject
@@ -48,19 +60,23 @@ class ApplyTest extends TestCase
      */
     protected function setUp()
     {
-        $this->applyOptional = $this->createMock(ApplyOptional::class);
+        $this->applyLocal = $this->createMock(ApplyLocal::class);
+        $this->applyOptionalEce = $this->createMock(ApplyOptionalEce::class);
+        $this->applyRequired = $this->createMock(ApplyRequired::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
         $this->magentoVersion = $this->createMock(MagentoVersion::class);
 
-        $this->command = new Apply(
-            $this->applyOptional,
+        $this->command = new ApplyEce(
+            $this->applyRequired,
+            $this->applyOptionalEce,
+            $this->applyLocal,
             $this->logger,
             $this->magentoVersion
         );
     }
 
     /**
-     * Tests successful command execution.
+     * Tests successful command execution - Cloud environment.
      */
     public function testExecute()
     {
@@ -69,7 +85,11 @@ class ApplyTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptional->expects($this->once())
+        $this->applyLocal->expects($this->once())
+            ->method('run');
+        $this->applyOptionalEce->expects($this->once())
+            ->method('run');
+        $this->applyRequired->expects($this->once())
             ->method('run');
 
         $this->assertEquals(
@@ -88,7 +108,7 @@ class ApplyTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptional->expects($this->once())
+        $this->applyOptionalEce->expects($this->once())
             ->method('run')
             ->willThrowException(new RuntimeException('Error!'));
         $this->logger->expects($this->once())
@@ -110,7 +130,7 @@ class ApplyTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptional->expects($this->once())
+        $this->applyOptionalEce->expects($this->once())
             ->method('run')
             ->willThrowException(new \InvalidArgumentException('Critical error!'));
         $this->logger->expects($this->once())
