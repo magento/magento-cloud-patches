@@ -1,5 +1,4 @@
-diff --git a/vendor/magento/module-rma/Block/Adminhtml/Rma/Edit/Tab/General/Shippingmethod.php b/vendor/magento/module-rma/Block/Adminhtml/Rma/Edit/Tab/General/Shippingmethod.php
-index c8d385b6271..84b763fa5ae 100644
+diff -Nuar a/vendor/magento/module-rma/Block/Adminhtml/Rma/Edit/Tab/General/Shippingmethod.php b/vendor/magento/module-rma/Block/Adminhtml/Rma/Edit/Tab/General/Shippingmethod.php
 --- a/vendor/magento/module-rma/Block/Adminhtml/Rma/Edit/Tab/General/Shippingmethod.php
 +++ b/vendor/magento/module-rma/Block/Adminhtml/Rma/Edit/Tab/General/Shippingmethod.php
 @@ -8,6 +8,7 @@
