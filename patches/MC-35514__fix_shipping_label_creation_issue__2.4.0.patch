@@ -1,5 +1,4 @@
-diff --git a/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php b/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php
-index e5e419328eea..827b26c64b33 100644
+diff -Nuar a/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php b/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php
 --- a/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php
 +++ b/vendor/magento/module-shipping/Block/Adminhtml/Order/Packaging.php
 @@ -5,6 +5,9 @@
@@ -36,8 +35,7 @@ index e5e419328eea..827b26c64b33 100644
          parent::__construct($context, $data);
      }
 
-diff --git a/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml
-index 54d7aaec21f9..9b55d2b969d3 100644
+diff -Nuar a/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml
 --- a/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml
 +++ b/vendor/magento/module-shipping/view/adminhtml/templates/create/items.phtml
 @@ -77,14 +77,14 @@
@@ -58,8 +56,7 @@ index 54d7aaec21f9..9b55d2b969d3 100644
                  </div>
              <?php endif ?>
 
-diff --git a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml
-index 4a3cad2066d3..b214074ce84a 100644
+diff -Nuar a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml
 --- a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml
 +++ b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/grid.phtml
 @@ -109,7 +109,10 @@
@@ -74,8 +71,7 @@ index 4a3cad2066d3..b214074ce84a 100644
                          <?= /* @noEscape */ $secureRenderer->renderEventListenerAsTag(
                              'onclick',
                              'packaging.deleteItem(this);',
-diff --git a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml
-index 0093c46d211f..b4e113d81ead 100644
+diff -Nuar a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml
 --- a/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml
 +++ b/vendor/magento/module-shipping/view/adminhtml/templates/order/packaging/popup_content.phtml
 @@ -22,21 +22,11 @@
