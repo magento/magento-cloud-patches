@@ -29,7 +29,7 @@ class Revert extends AbstractCommand
     /**
      * List of patches to revert.
      */
-    const ARG_LIST_OF_PATCHES = 'list_of_patches';
+    const ARG_LIST_OF_PATCHES = 'list-of-patches';
 
     /**
      * Revert all patches.

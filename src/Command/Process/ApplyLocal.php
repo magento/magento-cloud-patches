@@ -89,7 +89,7 @@ class ApplyLocal implements ProcessInterface
                 $this->printInfo($output, $message);
                 array_push($appliedPatches, $patch);
             } catch (ApplierException $exception) {
-                $this->printInfo($output, 'Error: patch conflict happened');
+                $this->printError($output, 'Error: patch conflict happened');
                 $messages = $this->rollbackProcessor->process($appliedPatches);
                 $output->writeln($messages);
                 $errorMessage = sprintf(
@@ -115,5 +115,17 @@ class ApplyLocal implements ProcessInterface
     {
         $output->writeln('<info>' . $message . '</info>');
         $this->logger->info($message);
+    }
+
+    /**
+     * Prints and logs error message.
+     *
+     * @param OutputInterface $output
+     * @param string $message
+     */
+    private function printError(OutputInterface $output, string $message)
+    {
+        $output->writeln('<error>' . $message . '</error>');
+        $this->logger->error($message);
     }
 }

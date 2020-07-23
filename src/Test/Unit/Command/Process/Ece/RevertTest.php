@@ -5,12 +5,12 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Test\Unit\Command\Process;
+namespace Magento\CloudPatches\Test\Unit\Command\Process\Ece;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Action\RevertAction;
 use Magento\CloudPatches\Command\Process\Renderer;
-use Magento\CloudPatches\Command\Process\RevertEce;
+use Magento\CloudPatches\Command\Process\Ece\Revert;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
@@ -25,10 +25,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritdoc
  */
-class RevertEceTest extends TestCase
+class RevertTest extends TestCase
 {
     /**
-     * @var RevertEce
+     * @var Revert
      */
     private $revertEce;
 
@@ -74,7 +74,7 @@ class RevertEceTest extends TestCase
         $this->renderer = $this->createMock(Renderer::class);
         $this->statusPool = $this->createMock(StatusPool::class);
 
-        $this->revertEce = new RevertEce(
+        $this->revertEce = new Revert(
             $this->revertAction,
             $this->logger,
             $this->applier,

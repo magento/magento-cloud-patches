@@ -5,11 +5,12 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Command;
+namespace Magento\CloudPatches\Command\Ece;
 
 use Magento\CloudPatches\App\RuntimeException;
+use Magento\CloudPatches\Command\AbstractCommand;
 use Magento\CloudPatches\Command\Process\ApplyLocal;
-use Magento\CloudPatches\Command\Process\ApplyOptionalEce;
+use Magento\CloudPatches\Command\Process\Ece\ApplyOptional;
 use Magento\CloudPatches\Command\Process\ApplyRequired;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use Psr\Log\LoggerInterface;
@@ -19,7 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Patch apply command (Cloud).
  */
-class ApplyEce extends AbstractCommand
+class Apply extends AbstractCommand
 {
     /**
      * Command name.
@@ -27,9 +28,9 @@ class ApplyEce extends AbstractCommand
     const NAME = 'apply';
 
     /**
-     * @var ApplyOptionalEce
+     * @var ApplyOptional
      */
-    private $applyOptionalEce;
+    private $applyOptional;
 
     /**
      * @var ApplyRequired
@@ -53,20 +54,20 @@ class ApplyEce extends AbstractCommand
 
     /**
      * @param ApplyRequired $applyRequired
-     * @param ApplyOptionalEce $applyOptionalEce
+     * @param ApplyOptional $applyOptional
      * @param ApplyLocal $applyLocal
      * @param LoggerInterface $logger
      * @param MagentoVersion $magentoVersion
      */
     public function __construct(
         ApplyRequired $applyRequired,
-        ApplyOptionalEce $applyOptionalEce,
+        ApplyOptional $applyOptional,
         ApplyLocal $applyLocal,
         LoggerInterface $logger,
         MagentoVersion $magentoVersion
     ) {
         $this->applyRequired = $applyRequired;
-        $this->applyOptionalEce = $applyOptionalEce;
+        $this->applyOptional = $applyOptional;
         $this->applyLocal = $applyLocal;
         $this->logger = $logger;
         $this->magentoVersion = $magentoVersion;
@@ -94,7 +95,7 @@ class ApplyEce extends AbstractCommand
 
         try {
             $this->applyRequired->run($input, $output);
-            $this->applyOptionalEce->run($input, $output);
+            $this->applyOptional->run($input, $output);
             $this->applyLocal->run($input, $output);
         } catch (RuntimeException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');

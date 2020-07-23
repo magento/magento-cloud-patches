@@ -7,13 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
+use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
 use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Filesystem\FileSystemException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
-use Magento\QualityPatches\Info as QualityPatchesInfo;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -38,9 +38,9 @@ class SourceProviderTest extends TestCase
     private $directoryList;
 
     /**
-     * @var QualityPatchesInfo|MockObject
+     * @var QualityPackage|MockObject
      */
-    private $qualityPatchesInfo;
+    private $qualityPackage;
 
     /**
      * @var FileList|MockObject
@@ -55,13 +55,13 @@ class SourceProviderTest extends TestCase
         $this->filesystem = $this->createMock(Filesystem::class);
         $this->filelist = $this->createMock(FileList::class);
         $this->directoryList = $this->createMock(DirectoryList::class);
-        $this->qualityPatchesInfo = $this->createMock(QualityPatchesInfo::class);
+        $this->qualityPackage = $this->createMock(QualityPackage::class);
 
         $this->sourceProvider = new SourceProvider(
             $this->filesystem,
             $this->filelist,
             $this->directoryList,
-            $this->qualityPatchesInfo
+            $this->qualityPackage
         );
     }
 
@@ -95,7 +95,7 @@ class SourceProviderTest extends TestCase
         $configSource = require __DIR__ . '/Collector/Fixture/quality_config_valid.php';
         $jsonConfig = json_encode($configSource);
 
-        $this->qualityPatchesInfo->expects($this->once())
+        $this->qualityPackage->expects($this->once())
             ->method('getPatchesConfig')
             ->willReturn($configPath);
 
@@ -105,6 +105,23 @@ class SourceProviderTest extends TestCase
             ->willReturn($jsonConfig);
 
         $this->assertEquals($configSource, $this->sourceProvider->getQualityPatches());
+    }
+
+    /**
+     * Tests retrieving Quality patch configuration when config path is null.
+     *
+     * Case when magento/quality-patches package is not installed.
+     */
+    public function testGetQualityPatchesWithNullConfigPath()
+    {
+        $this->qualityPackage->expects($this->once())
+            ->method('getPatchesConfig')
+            ->willReturn(null);
+
+        $this->filesystem->expects($this->never())
+            ->method('get');
+
+        $this->assertEquals([], $this->sourceProvider->getQualityPatches());
     }
 
     /**
@@ -130,7 +147,7 @@ class SourceProviderTest extends TestCase
     {
         $configPath = '/quality/patches.json';
 
-        $this->qualityPatchesInfo->expects($this->once())
+        $this->qualityPackage->expects($this->once())
             ->method('getPatchesConfig')
             ->willReturn($configPath);
 
@@ -149,7 +166,7 @@ class SourceProviderTest extends TestCase
     {
         $configPath = '/quality/patches.json';
 
-        $this->qualityPatchesInfo->expects($this->once())
+        $this->qualityPackage->expects($this->once())
             ->method('getPatchesConfig')
             ->willReturn($configPath);
 

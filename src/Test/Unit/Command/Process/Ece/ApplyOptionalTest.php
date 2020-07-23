@@ -5,11 +5,11 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Test\Unit\Command\Process;
+namespace Magento\CloudPatches\Test\Unit\Command\Process\Ece;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Action\ActionPool;
-use Magento\CloudPatches\Command\Process\ApplyOptionalEce;
+use Magento\CloudPatches\Command\Process\Ece\ApplyOptional;
 use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Patch\FilterFactory;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -21,10 +21,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritdoc
  */
-class ApplyOptionalEceTest extends TestCase
+class ApplyOptionalTest extends TestCase
 {
     /**
-     * @var ApplyOptionalEce
+     * @var ApplyOptional
      */
     private $applyOptionalEce;
 
@@ -58,7 +58,7 @@ class ApplyOptionalEceTest extends TestCase
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
         $this->config = $this->createMock(Config::class);
 
-        $this->applyOptionalEce = new ApplyOptionalEce(
+        $this->applyOptionalEce = new ApplyOptional(
             $this->filterFactory,
             $this->actionPool,
             $this->logger,

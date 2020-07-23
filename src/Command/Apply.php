@@ -28,7 +28,7 @@ class Apply extends AbstractCommand
     /**
      * List of patches to apply.
      */
-    const ARG_LIST_OF_PATCHES = 'list_of_patches';
+    const ARG_LIST_OF_PATCHES = 'list-of-patches';
 
     /**
      * @var ApplyOptional

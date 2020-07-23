@@ -5,14 +5,12 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Test\Unit\Command;
+namespace Magento\CloudPatches\Test\Unit\Command\Ece;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\AbstractCommand;
-use Magento\CloudPatches\Command\ApplyEce;
-use Magento\CloudPatches\Command\Process\ApplyLocal;
-use Magento\CloudPatches\Command\Process\ApplyOptionalEce;
-use Magento\CloudPatches\Command\Process\ApplyRequired;
+use Magento\CloudPatches\Command\Process\Ece\Revert as RevertProcess;
+use Magento\CloudPatches\Command\Ece\Revert;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -23,27 +21,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritDoc
  */
-class ApplyEceTest extends TestCase
+class RevertTest extends TestCase
 {
     /**
-     * @var ApplyEce
+     * @var Revert
      */
     private $command;
 
     /**
-     * @var ApplyLocal|MockObject
+     * @var RevertProcess|MockObject
      */
-    private $applyLocal;
-
-    /**
-     * @var ApplyOptionalEce|MockObject
-     */
-    private $applyOptionalEce;
-
-    /**
-     * @var ApplyRequired|MockObject
-     */
-    private $applyRequired;
+    private $revertEce;
 
     /**
      * @var LoggerInterface|MockObject
@@ -51,45 +39,34 @@ class ApplyEceTest extends TestCase
     private $logger;
 
     /**
-     * @var MagentoVersion|MockObject
-     */
-    private $magentoVersion;
-
-    /**
      * @inheritDoc
      */
     protected function setUp()
     {
-        $this->applyLocal = $this->createMock(ApplyLocal::class);
-        $this->applyOptionalEce = $this->createMock(ApplyOptionalEce::class);
-        $this->applyRequired = $this->createMock(ApplyRequired::class);
+        $this->revertEce = $this->createMock(RevertProcess::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
-        $this->magentoVersion = $this->createMock(MagentoVersion::class);
 
-        $this->command = new ApplyEce(
-            $this->applyRequired,
-            $this->applyOptionalEce,
-            $this->applyLocal,
+        /** @var MagentoVersion|MockObject $magentoVersion */
+        $magentoVersion = $this->createMock(MagentoVersion::class);
+
+        $this->command = new Revert(
+            $this->revertEce,
             $this->logger,
-            $this->magentoVersion
+            $magentoVersion
         );
     }
 
     /**
-     * Tests successful command execution - Cloud environment.
+     * Tests successful command execution.
      */
-    public function testExecute()
+    public function testRevertSuccess()
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyLocal->expects($this->once())
-            ->method('run');
-        $this->applyOptionalEce->expects($this->once())
-            ->method('run');
-        $this->applyRequired->expects($this->once())
+        $this->revertEce->expects($this->once())
             ->method('run');
 
         $this->assertEquals(
@@ -108,7 +85,7 @@ class ApplyEceTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptionalEce->expects($this->once())
+        $this->revertEce->expects($this->once())
             ->method('run')
             ->willThrowException(new RuntimeException('Error!'));
         $this->logger->expects($this->once())
@@ -130,7 +107,7 @@ class ApplyEceTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
 
-        $this->applyOptionalEce->expects($this->once())
+        $this->revertEce->expects($this->once())
             ->method('run')
             ->willThrowException(new \InvalidArgumentException('Critical error!'));
         $this->logger->expects($this->once())

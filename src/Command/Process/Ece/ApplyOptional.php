@@ -5,9 +5,10 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Command\Process;
+namespace Magento\CloudPatches\Command\Process\Ece;
 
 use Magento\CloudPatches\Command\Process\Action\ActionPool;
+use Magento\CloudPatches\Command\Process\ProcessInterface;
 use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Patch\FilterFactory;
 use Psr\Log\LoggerInterface;
@@ -17,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Applies optional patches (Cloud).
  */
-class ApplyOptionalEce implements ProcessInterface
+class ApplyOptional implements ProcessInterface
 {
     /**
      * @var FilterFactory

@@ -5,10 +5,11 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Command;
+namespace Magento\CloudPatches\Command\Ece;
 
 use Magento\CloudPatches\App\RuntimeException;
-use Magento\CloudPatches\Command\Process\RevertEce as RevertEceProcess;
+use Magento\CloudPatches\Command\AbstractCommand;
+use Magento\CloudPatches\Command\Process\Ece\Revert as RevertProcess;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Patch revert command (Cloud).
  */
-class RevertEce extends AbstractCommand
+class Revert extends AbstractCommand
 {
     /**
      * Command name.
@@ -25,9 +26,9 @@ class RevertEce extends AbstractCommand
     const NAME = 'revert';
 
     /**
-     * @var RevertEceProcess
+     * @var RevertProcess
      */
-    private $revertEce;
+    private $revert;
 
     /**
      * @var LoggerInterface
@@ -40,16 +41,16 @@ class RevertEce extends AbstractCommand
     private $magentoVersion;
 
     /**
-     * @param RevertEceProcess $revertEce
+     * @param RevertProcess $revert
      * @param LoggerInterface $logger
      * @param MagentoVersion $magentoVersion
      */
     public function __construct(
-        RevertEceProcess $revertEce,
+        RevertProcess $revert,
         LoggerInterface $logger,
         MagentoVersion $magentoVersion
     ) {
-        $this->revertEce = $revertEce;
+        $this->revert = $revert;
         $this->logger = $logger;
         $this->magentoVersion = $magentoVersion;
 
@@ -75,7 +76,7 @@ class RevertEce extends AbstractCommand
         $this->logger->notice($this->magentoVersion->get());
 
         try {
-            $this->revertEce->run($input, $output);
+            $this->revert->run($input, $output);
         } catch (RuntimeException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             $this->logger->error($e->getMessage());

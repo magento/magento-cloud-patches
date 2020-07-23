@@ -40,8 +40,8 @@ class ApplicationEce extends \Symfony\Component\Console\Application
     protected function getDefaultCommands()
     {
         return array_merge(parent::getDefaultCommands(), [
-            $this->container->get(Command\ApplyEce::class),
-            $this->container->get(Command\RevertEce::class),
+            $this->container->get(Command\Ece\Apply::class),
+            $this->container->get(Command\Ece\Revert::class),
             $this->container->get(Command\Status::class)
         ]);
     }

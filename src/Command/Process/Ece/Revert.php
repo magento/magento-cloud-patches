@@ -5,10 +5,12 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Command\Process;
+namespace Magento\CloudPatches\Command\Process\Ece;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Action\RevertAction;
+use Magento\CloudPatches\Command\Process\ProcessInterface;
+use Magento\CloudPatches\Command\Process\Renderer;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
@@ -20,7 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Reverts all patches (Cloud).
  */
-class RevertEce implements ProcessInterface
+class Revert implements ProcessInterface
 {
     /**
      * @var RevertAction
@@ -53,7 +55,7 @@ class RevertEce implements ProcessInterface
     private $statusPool;
 
     /**
-     * @param Action\RevertAction $revertAction
+     * @param RevertAction $revertAction
      * @param LoggerInterface $logger
      * @param Applier $applier
      * @param LocalPool $localPool
