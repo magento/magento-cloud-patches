@@ -15,10 +15,8 @@
         "symfony/process": "^2.1||^4.1",
         "symfony/proxy-manager-bridge": "^3.3||^4.3",
         "symfony/yaml": "^3.3||^4.0",
-        "monolog/monolog": "^1.16"
-    },
-    "suggest": {
-        "magento/quality-patches": "Need to retrieve Magento quality patches"
+        "monolog/monolog": "^1.16",
+        "magento/quality-patches": "^1.0.0"
     },
     "require-dev": {
         "codeception/codeception": "^2.5.3",
