@@ -82,7 +82,6 @@ class Renderer
         $table = $this->tableFactory->create($output);
         $table->setHeaders([self::ID, self::TITLE, self::TYPE, self::STATUS, self::DETAILS]);
         $table->setStyle('box-double');
-        $table->setColumnMaxWidth(1, 50);
 
         $rows = [];
         foreach ($patchList as $patch) {
@@ -181,23 +180,32 @@ class Renderer
      */
     private function createRow(AggregatedPatchInterface $patch): array
     {
-        $glue = PHP_EOL . ' - ';
         $details = '';
         if ($patch->getReplacedWith()) {
-            $details .= '<info>Recommended replacement: ' . $patch->getReplacedWith() . PHP_EOL . '</info>';
+            $details .= '<info>Recommended replacement: ' . $patch->getReplacedWith() . '</info>' . PHP_EOL;
         }
+
         if ($patch->getRequire()) {
-            $details .= 'Required patches:' .
-                '<comment>' . $glue . implode($glue, $patch->getRequire()) . PHP_EOL . '</comment>';
+            $wrappedRequire = array_map(
+                function ($item) {
+                    return sprintf('<comment> - %s</comment>', $item);
+                },
+                $patch->getRequire()
+            );
+            $details .= 'Required patches:' . PHP_EOL . implode(PHP_EOL, $wrappedRequire) . PHP_EOL;
         }
+
         if ($patch->getAffectedComponents()) {
+            $glue = PHP_EOL . ' - ';
             $details .= 'Affected components:' . $glue . implode($glue, $patch->getAffectedComponents());
         }
+
         $id = $patch->getType() === PatchInterface::TYPE_CUSTOM ? 'N/A' : $patch->getId();
+        $title = chunk_split($patch->getTitle(), 60, PHP_EOL);
 
         return [
             self::ID => '<comment>' . $id . '</comment>',
-            self::TITLE => $patch->getTitle(),
+            self::TITLE => $title,
             self::TYPE => $patch->isDeprecated() ? '<error>DEPRECATED</error>' : $patch->getType(),
             self::STATUS => $this->statusPool->get($patch->getId()),
             self::DETAILS => $details
