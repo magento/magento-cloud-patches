@@ -15,7 +15,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Reverts patches.
+ * Reverts patches (OnPrem).
  *
  * Patches are reverting from bottom to top of config list.
  */
@@ -56,7 +56,7 @@ class Revert implements ProcessInterface
      */
     public function run(InputInterface $input, OutputInterface $output)
     {
-        $argPatches = $input->getArgument(RevertCommand::ARG_QUALITY_PATCHES);
+        $argPatches = $input->getArgument(RevertCommand::ARG_LIST_OF_PATCHES);
         $optAll =  $input->getOption(RevertCommand::OPT_ALL);
         $patchFilter = $this->filterFactory->createRevertFilter($optAll, $argPatches);
 

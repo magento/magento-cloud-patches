@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch\Collector;
 
+use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Composer\Package;
-use Magento\CloudPatches\Patch\Environment;
 use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
@@ -37,9 +37,9 @@ class CloudCollector
     private $directoryList;
 
     /**
-     * @var Environment
+     * @var Config
      */
-    private $environment;
+    private $envConfig;
 
     /**
      * @var PatchBuilder
@@ -50,20 +50,20 @@ class CloudCollector
      * @param SourceProvider $sourceProvider
      * @param Package $package
      * @param DirectoryList $directoryList
-     * @param Environment $environment
+     * @param Config $envConfig
      * @param PatchBuilder $patchBuilder
      */
     public function __construct(
         SourceProvider $sourceProvider,
         Package $package,
         DirectoryList $directoryList,
-        Environment $environment,
+        Config $envConfig,
         PatchBuilder $patchBuilder
     ) {
         $this->sourceProvider = $sourceProvider;
         $this->package = $package;
         $this->directoryList = $directoryList;
-        $this->environment = $environment;
+        $this->envConfig = $envConfig;
         $this->patchBuilder = $patchBuilder;
     }
 
@@ -91,7 +91,7 @@ class CloudCollector
                     if ($this->package->matchConstraint($packageName, $packageConstraint)) {
                         try {
                             $patchPath = $this->directoryList->getPatches() . '/' . $patchFile;
-                            $patchType = $this->environment->isCloud()
+                            $patchType = $this->envConfig->isCloud()
                                 ? PatchInterface::TYPE_REQUIRED : PatchInterface::TYPE_OPTIONAL;
 
                             $this->patchBuilder->setId($patchId);
