@@ -32,4 +32,20 @@ class FileList
     {
         return $this->directoryList->getRoot() . '/patches.json';
     }
+
+    /**
+     * @return string
+     */
+    public function getPatchLog(): string
+    {
+        return $this->directoryList->getMagentoRoot() . '/var/log/patch.log';
+    }
+
+    /**
+     * @return string
+     */
+    public function getInitPatchLog(): string
+    {
+        return $this->directoryList->getMagentoRoot() . '/init/var/log/patch.log';
+    }
 }
