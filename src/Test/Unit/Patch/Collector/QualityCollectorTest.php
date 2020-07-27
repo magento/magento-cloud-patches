@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Patch\Collector;
 
 use Magento\CloudPatches\Composer\Package;
+use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Patch\Collector\CollectorException;
 use Magento\CloudPatches\Patch\Collector\QualityCollector;
 use Magento\CloudPatches\Patch\Data\Patch;
@@ -16,7 +17,6 @@ use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
-use Magento\QualityPatches\Info as QualityPatchesInfo;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -48,9 +48,9 @@ class QualityCollectorTest extends TestCase
     private $package;
 
     /**
-     * @var QualityPatchesInfo|MockObject
+     * @var QualityPackage|MockObject
      */
-    private $qualityPatchesInfo;
+    private $qualityPackage;
 
     /**
      * @inheritDoc
@@ -59,13 +59,13 @@ class QualityCollectorTest extends TestCase
     {
         $this->sourceProvider = $this->createMock(SourceProvider::class);
         $this->package = $this->createMock(Package::class);
-        $this->qualityPatchesInfo = $this->createMock(QualityPatchesInfo::class);
+        $this->qualityPackage = $this->createMock(QualityPackage::class);
         $this->patchBuilder = $this->createMock(PatchBuilder::class);
 
         $this->collector = new QualityCollector(
             $this->sourceProvider,
             $this->package,
-            $this->qualityPatchesInfo,
+            $this->qualityPackage,
             $this->patchBuilder
         );
     }
@@ -79,7 +79,7 @@ class QualityCollectorTest extends TestCase
         $this->sourceProvider->expects($this->once())
             ->method('getQualityPatches')
             ->willReturn($validConfig);
-        $this->qualityPatchesInfo->method('getPatchesDirectory')
+        $this->qualityPackage->method('getPatchesDirectory')
             ->willReturn(self::QUALITY_PATCH_DIR);
 
         $this->package->method('matchConstraint')

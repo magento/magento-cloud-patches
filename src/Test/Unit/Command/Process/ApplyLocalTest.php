@@ -14,6 +14,7 @@ use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
+use Magento\CloudPatches\Patch\RollbackProcessor;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -46,6 +47,11 @@ class ApplyLocalTest extends TestCase
     private $localPool;
 
     /**
+     * @var RollbackProcessor|MockObject
+     */
+    private $rollbackProcessor;
+
+    /**
      * @var Renderer|MockObject
      */
     private $renderer;
@@ -59,12 +65,14 @@ class ApplyLocalTest extends TestCase
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
         $this->localPool = $this->createMock(LocalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
+        $this->rollbackProcessor = $this->createMock(RollbackProcessor::class);
 
         $this->manager = new ApplyLocal(
             $this->applier,
             $this->localPool,
             $this->renderer,
-            $this->logger
+            $this->logger,
+            $this->rollbackProcessor
         );
     }
 
@@ -134,21 +142,38 @@ class ApplyLocalTest extends TestCase
      */
     public function testApplyWithException()
     {
-        $patch = $this->createPatch('/path/patch.patch', '../m2-hotfixes/patch.patch');
+        $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
+        $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
+        $rollbackMessages = ['Patch 1 has been reverted'];
 
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->getMockForAbstractClass(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->localPool->method('getList')
-            ->willReturn([$patch]);
+            ->willReturn([$patch1, $patch2]);
 
         $this->applier->method('apply')
-            ->withConsecutive([$patch->getPath(), $patch->getTitle()])
-            ->willThrowException(new ApplierException('Error'));
+            ->willReturnMap([
+                [$patch1->getPath(), $patch1->getTitle()],
+                [$patch2->getPath(), $patch2->getTitle()]
+            ])->willReturnCallback(
+                function ($path, $title) {
+                    if (strpos($title, 'patch2') !== false) {
+                        throw new ApplierException('Applier error message');
+                    }
+
+                    return "Patch {$path} {$title} has been applied";
+                }
+            );
+
+        $this->rollbackProcessor->expects($this->once())
+            ->method('process')
+            ->withConsecutive([[$patch1]])
+            ->willReturn($rollbackMessages);
         $this->renderer->expects($this->once())
             ->method('formatErrorOutput')
-            ->with('Error');
+            ->with('Applier error message');
 
         $this->expectException(RuntimeException::class);
         $this->manager->run($inputMock, $outputMock);

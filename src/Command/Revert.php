@@ -10,7 +10,6 @@ namespace Magento\CloudPatches\Command;
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Revert as RevertProcess;
 use Magento\CloudPatches\Composer\MagentoVersion;
-use Magento\CloudPatches\Patch\Environment;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -18,7 +17,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * @inheritDoc
+ * Patch revert command (OnPrem).
  */
 class Revert extends AbstractCommand
 {
@@ -28,9 +27,9 @@ class Revert extends AbstractCommand
     const NAME = 'revert';
 
     /**
-     * List of quality patches to revert.
+     * List of patches to revert.
      */
-    const ARG_QUALITY_PATCHES = 'quality-patches';
+    const ARG_LIST_OF_PATCHES = 'list-of-patches';
 
     /**
      * Revert all patches.
@@ -41,11 +40,6 @@ class Revert extends AbstractCommand
      * @var RevertProcess
      */
     private $revert;
-
-    /**
-     * @var Environment
-     */
-    private $environment;
 
     /**
      * @var LoggerInterface
@@ -59,18 +53,15 @@ class Revert extends AbstractCommand
 
     /**
      * @param RevertProcess $revert
-     * @param Environment $environment
      * @param LoggerInterface $logger
      * @param MagentoVersion $magentoVersion
      */
     public function __construct(
         RevertProcess $revert,
-        Environment $environment,
         LoggerInterface $logger,
         MagentoVersion $magentoVersion
     ) {
         $this->revert = $revert;
-        $this->environment = $environment;
         $this->logger = $logger;
         $this->magentoVersion = $magentoVersion;
 
@@ -83,16 +74,18 @@ class Revert extends AbstractCommand
     protected function configure()
     {
         $this->setName(self::NAME)
-            ->setDescription('Revert patches')
-            ->addArgument(
-                self::ARG_QUALITY_PATCHES,
+            ->setDescription(
+                'Reverts patches. The list of patches should pass as a command argument' .
+                ' or use option --all to revert all patches'
+            )->addArgument(
+                self::ARG_LIST_OF_PATCHES,
                 InputArgument::IS_ARRAY,
-                'List of quality patches to revert'
+                'List of patches to revert'
             )->addOption(
                 self::OPT_ALL,
                 'a',
                 InputOption::VALUE_NONE,
-                'Revert all patches'
+                'Reverts all patches'
             );
 
         parent::configure();
@@ -103,12 +96,6 @@ class Revert extends AbstractCommand
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        if ($this->environment->isCloud()) {
-            $output->writeln('<error>Revert command is unavailable on Magento Cloud</error>');
-
-            return self::RETURN_FAILURE;
-        }
-
         $this->logger->notice($this->magentoVersion->get());
 
         try {

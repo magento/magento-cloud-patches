@@ -59,7 +59,7 @@ class Status extends AbstractCommand
     protected function configure()
     {
         $this->setName(self::NAME)
-            ->setDescription('Shows status of patches');
+            ->setDescription('Shows the list of available patches and their statuses');
 
         parent::configure();
     }

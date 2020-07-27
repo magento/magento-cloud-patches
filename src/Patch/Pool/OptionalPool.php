@@ -122,6 +122,24 @@ class OptionalPool
     }
 
     /**
+     * Returns patch dependency ids.
+     *
+     * @param string $patchId
+     * @return string[]
+     */
+    public function getDependencies($patchId)
+    {
+        $result = array_map(
+            function (PatchInterface $patch) {
+                return $patch->getId();
+            },
+            $this->getAdditionalRequiredPatches([$patchId])
+        );
+
+        return array_unique($result);
+    }
+
+    /**
      * Returns required patches which are not included in patch filter.
      *
      * @param string[] $filter
@@ -163,6 +181,31 @@ class OptionalPool
                 $result[] = $patch->getId();
             }
         }
+
+        return array_unique($result);
+    }
+
+    /**
+     * Returns not deprecated patch ids by type.
+     *
+     * @param string $type
+     * @return string[]
+     */
+    public function getIdsByType($type)
+    {
+        $items = array_filter(
+            $this->items,
+            function ($patch) use ($type) {
+                return !$patch->isDeprecated() && $patch->getType() === $type;
+            }
+        );
+
+        $result = array_map(
+            function (PatchInterface $patch) {
+                return $patch->getId();
+            },
+            $items
+        );
 
         return array_unique($result);
     }

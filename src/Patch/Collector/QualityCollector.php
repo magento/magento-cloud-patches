@@ -7,13 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch\Collector;
 
+use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Composer\Package;
 use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
-use Magento\QualityPatches\Info as QualityPatchesInfo;
 
 /**
  * Collects patches.
@@ -59,9 +59,9 @@ class QualityCollector
     private $package;
 
     /**
-     * @var QualityPatchesInfo
+     * @var QualityPackage
      */
-    private $qualityPatchesInfo;
+    private $qualityPackage;
 
     /**
      * @var array|null
@@ -76,18 +76,18 @@ class QualityCollector
     /**
      * @param SourceProvider $sourceProvider
      * @param Package $package
-     * @param QualityPatchesInfo $qualityPatchesInfo
+     * @param QualityPackage $qualityPackage
      * @param PatchBuilder $patchBuilder
      */
     public function __construct(
         SourceProvider $sourceProvider,
         Package $package,
-        QualityPatchesInfo $qualityPatchesInfo,
+        QualityPackage $qualityPackage,
         PatchBuilder $patchBuilder
     ) {
         $this->sourceProvider = $sourceProvider;
         $this->package = $package;
-        $this->qualityPatchesInfo = $qualityPatchesInfo;
+        $this->qualityPackage = $qualityPackage;
         $this->patchBuilder = $patchBuilder;
     }
 
@@ -204,7 +204,7 @@ class QualityCollector
         bool $patchDeprecated
     ): PatchInterface {
         try {
-            $patchPath = $this->qualityPatchesInfo->getPatchesDirectory() . '/' . $patchFile;
+            $patchPath = $this->qualityPackage->getPatchesDirectory() . '/' . $patchFile;
             $this->patchBuilder->setId($patchId);
             $this->patchBuilder->setTitle($patchTitle);
             $this->patchBuilder->setFilename($patchFile);
