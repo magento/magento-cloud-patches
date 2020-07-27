@@ -48,8 +48,9 @@ class LocalCollector
         $files = $this->sourceProvider->getLocalPatches();
         $result = [];
         foreach ($files as $file) {
-            $this->patchBuilder->setId(md5($file));
-            $this->patchBuilder->setTitle('../' . SourceProvider::HOT_FIXES_DIR . '/' . basename($file));
+            $shortPath = '../' . SourceProvider::HOT_FIXES_DIR . '/' . basename($file);
+            $this->patchBuilder->setId($shortPath);
+            $this->patchBuilder->setTitle($shortPath);
             $this->patchBuilder->setFilename(basename($file));
             $this->patchBuilder->setPath($file);
             $this->patchBuilder->setType(PatchInterface::TYPE_CUSTOM);

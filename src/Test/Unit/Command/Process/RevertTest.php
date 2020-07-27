@@ -76,7 +76,7 @@ class RevertTest extends TestCase
 
         $inputMock->expects($this->once())
             ->method('getArgument')
-            ->with(RevertCommand::ARG_QUALITY_PATCHES)
+            ->with(RevertCommand::ARG_LIST_OF_PATCHES)
             ->willReturn($cliPatchArgument);
         $inputMock->expects($this->once())
             ->method('getOption')
@@ -110,7 +110,7 @@ class RevertTest extends TestCase
 
         $inputMock->expects($this->once())
             ->method('getArgument')
-            ->with(RevertCommand::ARG_QUALITY_PATCHES)
+            ->with(RevertCommand::ARG_LIST_OF_PATCHES)
             ->willReturn($cliPatchArgument);
         $inputMock->expects($this->once())
             ->method('getOption')

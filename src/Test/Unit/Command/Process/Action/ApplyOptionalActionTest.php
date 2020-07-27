@@ -12,6 +12,7 @@ use Magento\CloudPatches\Command\Process\Action\ApplyOptionalAction;
 use Magento\CloudPatches\Command\Process\Renderer;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
+use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
@@ -57,6 +58,11 @@ class ApplyOptionalActionTest extends TestCase
     private $optionalPool;
 
     /**
+     * @var ConflictProcessor|MockObject
+     */
+    private $conflictProcessor;
+
+    /**
      * @inheritdoc
      */
     protected function setUp()
@@ -66,13 +72,15 @@ class ApplyOptionalActionTest extends TestCase
         $this->statusPool = $this->createMock(StatusPool::class);
         $this->optionalPool = $this->createMock(OptionalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
+        $this->conflictProcessor = $this->createMock(ConflictProcessor::class);
 
         $this->action = new ApplyOptionalAction(
             $this->applier,
             $this->optionalPool,
             $this->statusPool,
             $this->renderer,
-            $this->logger
+            $this->logger,
+            $this->conflictProcessor
         );
     }
 
@@ -229,22 +237,21 @@ class ApplyOptionalActionTest extends TestCase
             ])->willReturnCallback(
                 function ($path, $id) {
                     if ($id === 'MC-22222') {
-                        throw new ApplierException('Error');
+                        throw new ApplierException('Applier error message');
                     }
 
                     return "Patch {$path} {$id} has been applied";
                 }
             );
 
-        $this->renderer->expects($this->once())
-            ->method('formatErrorOutput')
-            ->with('Error');
-
-        $this->applier->expects($this->once())
-            ->method('revert')
-            ->withConsecutive([$patch1->getPath(), $patch1->getId()]);
+        $this->conflictProcessor->expects($this->once())
+            ->method('process')
+            ->withConsecutive([$outputMock, $patch2, [$patch1], 'Applier error message'])
+            ->willThrowException(new RuntimeException('Error message'));
 
         $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Error message');
+
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
 
