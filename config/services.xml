@@ -9,7 +9,6 @@
         <service id="Psr\Log\LoggerInterface" alias="Magento\CloudPatches\App\Logger" />
         <service id="Magento\CloudPatches\App\Container" autowire="false"/>
         <service id="Magento\CloudPatches\Filesystem\DirectoryList" autowire="false"/>
-        <service id="Magento\QualityPatches\Info"/>
         <service id="Symfony\Component\Console\Helper\QuestionHelper"/>
         <service id="Composer\Composer"/>
         <service id="Magento\CloudPatches\App\GenericException" autowire="false"/>
@@ -28,11 +27,6 @@
         <service id="Magento\CloudPatches\Patch\Pool\RequiredPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Pool\LocalPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Status\StatusPool" autowire="false"/>
-        <service id="statusOptionalPool" class="Magento\CloudPatches\Patch\Status\StatusPool" lazy="true">
-            <argument key="$resolvers" type="collection">
-                <argument type="service" id="Magento\CloudPatches\Patch\Status\OptionalResolver"/>
-            </argument>
-        </service>
         <service id="statusPool" class="Magento\CloudPatches\Patch\Status\StatusPool" lazy="true">
             <argument key="$resolvers" type="collection">
                 <argument type="service" id="Magento\CloudPatches\Patch\Status\LocalResolver"/>
@@ -42,26 +36,29 @@
         <service id="Magento\CloudPatches\Command\Process\ShowStatus">
             <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
+        <service id="Magento\CloudPatches\Command\Process\Ece\Revert">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
         <service id="Magento\CloudPatches\Command\Process\Action\ApplyOptionalAction">
-            <argument key="$statusPool" type="service" id="statusOptionalPool"/>
+            <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
         <service id="Magento\CloudPatches\Command\Process\Action\RevertAction">
-            <argument key="$statusPool" type="service" id="statusOptionalPool"/>
+            <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
         <service id="Magento\CloudPatches\Command\Process\Action\ConfirmRequiredAction">
-            <argument key="$statusPool" type="service" id="statusOptionalPool"/>
+            <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
         <service id="Magento\CloudPatches\Command\Process\Action\ProcessDeprecatedAction">
-            <argument key="$statusPool" type="service" id="statusOptionalPool"/>
+            <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
         <service id="Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction">
-            <argument key="$statusPool" type="service" id="statusOptionalPool"/>
+            <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
         <service id="Magento\CloudPatches\Patch\RevertValidator">
-            <argument key="$statusPool" type="service" id="statusOptionalPool"/>
+            <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
         <service id="Magento\CloudPatches\Command\Process\Renderer">
-            <argument key="$statusPool" type="service" id="statusOptionalPool"/>
+            <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
         <service id="Magento\CloudPatches\Command\Process\Action\ActionPool" autowire="false"/>
         <service id="ApplyOptionalActionPool" class="Magento\CloudPatches\Command\Process\Action\ActionPool">
@@ -73,6 +70,9 @@
             </argument>
         </service>
         <service id="Magento\CloudPatches\Command\Process\ApplyOptional">
+            <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Ece\ApplyOptional">
             <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
         </service>
         <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>

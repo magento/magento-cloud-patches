@@ -8,12 +8,12 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Patch\Collector;
 
 use Magento\CloudPatches\Composer\Package;
+use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Patch\Collector\CloudCollector;
 use Magento\CloudPatches\Patch\Collector\CollectorException;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
-use Magento\CloudPatches\Patch\Environment;
 use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
@@ -49,9 +49,9 @@ class CloudCollectorTest extends TestCase
     private $package;
 
     /**
-     * @var Environment|MockObject
+     * @var Config|MockObject
      */
-    private $environment;
+    private $envConfig;
 
     /**
      * @var DirectoryList|MockObject
@@ -65,7 +65,7 @@ class CloudCollectorTest extends TestCase
     {
         $this->sourceProvider = $this->createMock(SourceProvider::class);
         $this->package = $this->createMock(Package::class);
-        $this->environment = $this->createMock(Environment::class);
+        $this->envConfig = $this->createMock(Config::class);
         $this->directoryList = $this->createMock(DirectoryList::class);
         $this->patchBuilder = $this->createMock(PatchBuilder::class);
 
@@ -73,7 +73,7 @@ class CloudCollectorTest extends TestCase
             $this->sourceProvider,
             $this->package,
             $this->directoryList,
-            $this->environment,
+            $this->envConfig,
             $this->patchBuilder
         );
     }
@@ -93,7 +93,7 @@ class CloudCollectorTest extends TestCase
             ->willReturn($validConfig);
         $this->directoryList->method('getPatches')
             ->willReturn(self::CLOUD_PATCH_DIR);
-        $this->environment->method('isCloud')
+        $this->envConfig->method('isCloud')
             ->willReturn($isCloud);
 
         $this->package->method('matchConstraint')

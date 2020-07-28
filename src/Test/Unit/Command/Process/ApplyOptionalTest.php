@@ -26,7 +26,7 @@ class ApplyOptionalTest extends TestCase
     /**
      * @var ApplyOptional
      */
-    private $manager;
+    private $applyOptional;
 
     /**
      * @var LoggerInterface|MockObject
@@ -52,7 +52,7 @@ class ApplyOptionalTest extends TestCase
         $this->actionPool = $this->createMock(ActionPool::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
 
-        $this->manager = new ApplyOptional(
+        $this->applyOptional = new ApplyOptional(
             $this->filterFactory,
             $this->actionPool,
             $this->logger
@@ -74,7 +74,7 @@ class ApplyOptionalTest extends TestCase
         $cliPatchArgument = ['MC-1111', 'MC-22222'];
         $inputMock->expects($this->once())
             ->method('getArgument')
-            ->with(Apply::ARG_QUALITY_PATCHES)
+            ->with(Apply::ARG_LIST_OF_PATCHES)
             ->willReturn($cliPatchArgument);
         $this->filterFactory->method('createApplyFilter')
             ->with($cliPatchArgument)
@@ -84,7 +84,7 @@ class ApplyOptionalTest extends TestCase
             ->method('execute')
             ->withConsecutive([$inputMock, $outputMock, $cliPatchArgument]);
 
-        $this->manager->run($inputMock, $outputMock);
+        $this->applyOptional->run($inputMock, $outputMock);
     }
 
     /**
@@ -102,7 +102,7 @@ class ApplyOptionalTest extends TestCase
         $cliPatchArgument = [];
         $inputMock->expects($this->once())
             ->method('getArgument')
-            ->with(Apply::ARG_QUALITY_PATCHES)
+            ->with(Apply::ARG_LIST_OF_PATCHES)
             ->willReturn($cliPatchArgument);
         $this->filterFactory->method('createApplyFilter')
             ->with($cliPatchArgument)
@@ -111,6 +111,6 @@ class ApplyOptionalTest extends TestCase
         $this->actionPool->expects($this->never())
             ->method('execute');
 
-        $this->manager->run($inputMock, $outputMock);
+        $this->applyOptional->run($inputMock, $outputMock);
     }
 }

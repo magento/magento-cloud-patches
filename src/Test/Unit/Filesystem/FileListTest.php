@@ -59,12 +59,4 @@ class FileListTest extends TestCase
             $this->fileList->getPatchLog()
         );
     }
-
-    public function testGetInitPatchLog()
-    {
-        $this->assertSame(
-            'magento_root/init/var/log/patch.log',
-            $this->fileList->getInitPatchLog()
-        );
-    }
 }
