@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch;
 
+use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
 use Magento\CloudPatches\Filesystem\FileSystemException;
-use Magento\QualityPatches\Info as QualityPatchesInfo;
 use Magento\CloudPatches\Filesystem\Filesystem;
 
 /**
@@ -39,26 +39,26 @@ class SourceProvider
     private $directoryList;
 
     /**
-     * @var QualityPatchesInfo
+     * @var QualityPackage
      */
-    private $qualityPatchesInfo;
+    private $qualityPackage;
 
     /**
      * @param Filesystem $filesystem
      * @param FileList $fileList
      * @param DirectoryList $directoryList
-     * @param QualityPatchesInfo $qualityPatchesInfo
+     * @param QualityPackage $qualityPackage
      */
     public function __construct(
         Filesystem $filesystem,
         FileList $fileList,
         DirectoryList $directoryList,
-        QualityPatchesInfo $qualityPatchesInfo
+        QualityPackage $qualityPackage
     ) {
         $this->filesystem = $filesystem;
         $this->fileList = $fileList;
         $this->directoryList = $directoryList;
-        $this->qualityPatchesInfo = $qualityPatchesInfo;
+        $this->qualityPackage = $qualityPackage;
     }
 
     /**
@@ -93,9 +93,9 @@ class SourceProvider
      */
     public function getQualityPatches(): array
     {
-        $configSupportPath = $this->qualityPatchesInfo->getPatchesConfig();
+        $configPath = $this->qualityPackage->getPatchesConfig();
 
-        return $this->readConfiguration($configSupportPath);
+        return $configPath ? $this->readConfiguration($configPath) : [];
     }
 
     /**

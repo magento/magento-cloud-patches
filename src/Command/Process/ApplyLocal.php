@@ -11,6 +11,7 @@ use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
+use Magento\CloudPatches\Patch\RollbackProcessor;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -41,21 +42,29 @@ class ApplyLocal implements ProcessInterface
     private $logger;
 
     /**
+     * @var RollbackProcessor
+     */
+    private $rollbackProcessor;
+
+    /**
      * @param Applier $applier
-     * @param LocalPool $localPatchPool
+     * @param LocalPool $localPool
      * @param Renderer $renderer
      * @param LoggerInterface $logger
+     * @param RollbackProcessor $rollbackProcessor
      */
     public function __construct(
         Applier $applier,
-        LocalPool $localPatchPool,
+        LocalPool $localPool,
         Renderer $renderer,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        RollbackProcessor $rollbackProcessor
     ) {
         $this->applier = $applier;
-        $this->localPool = $localPatchPool;
+        $this->localPool = $localPool;
         $this->renderer = $renderer;
         $this->logger = $logger;
+        $this->rollbackProcessor = $rollbackProcessor;
     }
 
     /**
@@ -73,11 +82,16 @@ class ApplyLocal implements ProcessInterface
         $this->logger->notice('Start of applying hot-fixes');
 
         $output->writeln('<info>Applying hot-fixes</info>');
+        $appliedPatches = [];
         foreach ($patches as $patch) {
             try {
                 $message = $this->applier->apply($patch->getPath(), $patch->getTitle());
                 $this->printInfo($output, $message);
+                array_push($appliedPatches, $patch);
             } catch (ApplierException $exception) {
+                $this->printError($output, 'Error: patch conflict happened');
+                $messages = $this->rollbackProcessor->process($appliedPatches);
+                $output->writeln($messages);
                 $errorMessage = sprintf(
                     'Applying patch %s failed.%s',
                     $patch->getPath(),
@@ -101,5 +115,17 @@ class ApplyLocal implements ProcessInterface
     {
         $output->writeln('<info>' . $message . '</info>');
         $this->logger->info($message);
+    }
+
+    /**
+     * Prints and logs error message.
+     *
+     * @param OutputInterface $output
+     * @param string $message
+     */
+    private function printError(OutputInterface $output, string $message)
+    {
+        $output->writeln('<error>' . $message . '</error>');
+        $this->logger->error($message);
     }
 }

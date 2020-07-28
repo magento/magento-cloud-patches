@@ -91,7 +91,6 @@ class RendererTest extends TestCase
                 'patch' => $this->createPatch(false),
                 'prependedMessage' => '',
                 'expectedArray' => [
-                    '<comment>Id:</comment> ' . self::PATCH_ID,
                     '<comment>Title:</comment> ' . self::PATCH_TITLE,
                     '<comment>File:</comment> ' . self::PATCH_FILENAME,
                     '<comment>Affected components:</comment> ' . implode(' ', $this->affectedComponents)
@@ -102,7 +101,6 @@ class RendererTest extends TestCase
                 'prependedMessage' => 'Prepended message',
                 'expectedArray' => [
                     '<info>Prepended message</info>',
-                    '<comment>Id:</comment> ' . self::PATCH_ID,
                     '<comment>Title:</comment> ' . self::PATCH_TITLE,
                     '<comment>File:</comment> ' . self::PATCH_FILENAME,
                     '<comment>Affected components:</comment> ' . implode(' ', $this->affectedComponents),
@@ -114,7 +112,6 @@ class RendererTest extends TestCase
                 'prependedMessage' => 'Prepended message',
                 'expectedArray' => [
                     '<info>Prepended message</info>',
-                    '<comment>Id:</comment> ' . self::PATCH_ID,
                     '<comment>Title:</comment> ' . self::PATCH_TITLE,
                     '<comment>File:</comment> ' . self::PATCH_FILENAME,
                     '<comment>Affected components:</comment> ' . implode(' ', $this->affectedComponents),

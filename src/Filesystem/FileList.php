@@ -44,8 +44,8 @@ class FileList
     /**
      * @return string
      */
-    public function getInitPatchLog(): string
+    public function getEnvConfig(): string
     {
-        return $this->directoryList->getMagentoRoot() . '/init/var/log/patch.log';
+        return $this->directoryList->getMagentoRoot() . '/.magento.env.yaml';
     }
 }

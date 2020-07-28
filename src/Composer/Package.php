@@ -22,12 +22,20 @@ class Package
     private $repository;
 
     /**
+     * @var MagentoVersion
+     */
+    private $magentoVersion;
+
+    /**
      * @param Composer\Composer $composer
+     * @param MagentoVersion $magentoVersion
      */
     public function __construct(
-        Composer\Composer $composer
+        Composer\Composer $composer,
+        MagentoVersion $magentoVersion
     ) {
         $this->repository = $composer->getRepositoryManager()->getLocalRepository();
+        $this->magentoVersion = $magentoVersion;
     }
 
     /**
@@ -39,6 +47,7 @@ class Package
      */
     public function matchConstraint(string $packageName, string $packageConstraint): bool
     {
-        return $this->repository->findPackage($packageName, $packageConstraint) instanceof PackageInterface;
+        return $this->magentoVersion->matchPackageGit($packageName, $packageConstraint) ||
+            $this->repository->findPackage($packageName, $packageConstraint) instanceof PackageInterface;
     }
 }

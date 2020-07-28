@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command\Process;
 
-use Magento\CloudPatches\App\RuntimeException;
+use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Pool\RequiredPool;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
@@ -43,21 +43,29 @@ class ApplyRequired implements ProcessInterface
     private $logger;
 
     /**
+     * @var ConflictProcessor
+     */
+    private $conflictProcessor;
+
+    /**
      * @param Applier $applier
      * @param RequiredPool $requiredPool
      * @param Renderer $renderer
      * @param LoggerInterface $logger
+     * @param ConflictProcessor $conflictProcessor
      */
     public function __construct(
         Applier $applier,
         RequiredPool $requiredPool,
         Renderer $renderer,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ConflictProcessor $conflictProcessor
     ) {
         $this->applier = $applier;
         $this->requiredPool = $requiredPool;
         $this->renderer = $renderer;
         $this->logger = $logger;
+        $this->conflictProcessor = $conflictProcessor;
     }
 
     /**
@@ -67,21 +75,16 @@ class ApplyRequired implements ProcessInterface
     {
         $this->logger->notice('Start of applying required patches');
 
+        $appliedPatches = [];
         $patches = $this->requiredPool->getList();
         foreach ($patches as $patch) {
             try {
                 $message = $this->applier->apply($patch->getPath(), $patch->getId());
                 $this->renderer->printPatchInfo($output, $patch, $message);
                 $this->logger->info($message, ['file' => $patch->getPath()]);
+                array_push($appliedPatches, $patch);
             } catch (ApplierException $exception) {
-                $errorMessage = sprintf(
-                    '<error>Applying patch %s %s failed.%s</error>',
-                    $patch->getId(),
-                    $patch->getPath(),
-                    $this->renderer->formatErrorOutput($exception->getMessage())
-                );
-
-                throw new RuntimeException($errorMessage, $exception->getCode());
+                $this->conflictProcessor->process($output, $patch, $appliedPatches, $exception->getMessage());
             }
         }
 

@@ -12,6 +12,7 @@ use Magento\CloudPatches\Command\Process\ApplyRequired;
 use Magento\CloudPatches\Command\Process\Renderer;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
+use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\RequiredPool;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -51,6 +52,11 @@ class ApplyRequiredTest extends TestCase
     private $renderer;
 
     /**
+     * @var ConflictProcessor|MockObject
+     */
+    private $conflictProcessor;
+
+    /**
      * @inheritdoc
      */
     protected function setUp()
@@ -59,12 +65,14 @@ class ApplyRequiredTest extends TestCase
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
         $this->requiredPool = $this->createMock(RequiredPool::class);
         $this->renderer = $this->createMock(Renderer::class);
+        $this->conflictProcessor = $this->createMock(ConflictProcessor::class);
 
         $this->manager = new ApplyRequired(
             $this->applier,
             $this->requiredPool,
             $this->renderer,
-            $this->logger
+            $this->logger,
+            $this->conflictProcessor
         );
     }
 
@@ -122,12 +130,15 @@ class ApplyRequiredTest extends TestCase
 
         $this->applier->method('apply')
             ->withConsecutive([$patch->getPath(), $patch->getId()])
-            ->willThrowException(new ApplierException('Error'));
-        $this->renderer->expects($this->once())
-            ->method('formatErrorOutput')
-            ->with('Error');
+            ->willThrowException(new ApplierException('Applier error message'));
+        $this->conflictProcessor->expects($this->once())
+            ->method('process')
+            ->withConsecutive([$outputMock, $patch, [], 'Applier error message'])
+            ->willThrowException(new RuntimeException('Error message'));
 
         $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Error message');
+
         $this->manager->run($inputMock, $outputMock);
     }
 

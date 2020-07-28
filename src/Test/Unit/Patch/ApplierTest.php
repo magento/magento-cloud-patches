@@ -7,8 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
+use Magento\CloudPatches\Composer\MagentoVersion;
+use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
+use Magento\CloudPatches\Patch\GitConverter;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -32,13 +35,36 @@ class ApplierTest extends TestCase
     private $processFactory;
 
     /**
+     * @var GitConverter|MockObject
+     */
+    private $gitConverter;
+
+    /**
+     * @var MagentoVersion|MockObject
+     */
+    private $magentoVersion;
+
+    /**
+     * @var Filesystem|MockObject
+     */
+    private $filesystem;
+
+    /**
      * @inheritDoc
      */
     protected function setUp()
     {
         $this->processFactory = $this->createMock(ProcessFactory::class);
+        $this->gitConverter = $this->createMock(GitConverter::class);
+        $this->magentoVersion = $this->createMock(MagentoVersion::class);
+        $this->filesystem = $this->createMock(Filesystem::class);
 
-        $this->applier = new Applier($this->processFactory);
+        $this->applier = new Applier(
+            $this->processFactory,
+            $this->gitConverter,
+            $this->magentoVersion,
+            $this->filesystem
+        );
     }
 
     /**
@@ -51,12 +77,20 @@ class ApplierTest extends TestCase
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
         $expectedMessage = 'Patch ' . $patchId . ' has been applied';
-
+        $this->filesystem->expects($this->once())
+            ->method('get')
+            ->willReturn('patchContent');
+        $this->magentoVersion->expects($this->once())
+            ->method('isGitBased')
+            ->willReturn(true);
+        $this->gitConverter->expects($this->once())
+            ->method('convert')
+            ->willReturn('gitContent');
         $processMock = $this->createMock(Process::class);
 
         $this->processFactory->expects($this->once())
             ->method('create')
-            ->with(['git', 'apply', $path])
+            ->withConsecutive([['git', 'apply'], 'gitContent'])
             ->willReturn($processMock);
         $processMock->expects($this->once())
             ->method('mustRun');
@@ -96,11 +130,20 @@ class ApplierTest extends TestCase
         $patchId = 'MC-11111';
         $expectedMessage = 'Patch ' . $patchId . ' was already applied';
 
+        $this->filesystem->expects($this->once())
+            ->method('get')
+            ->willReturn('patchContent');
+        $this->magentoVersion->expects($this->once())
+            ->method('isGitBased')
+            ->willReturn(false);
+        $this->gitConverter->expects($this->never())
+            ->method('convert');
+
         $this->processFactory->expects($this->exactly(2))
             ->method('create')
             ->willReturnMap([
-                [['git', 'apply', $path]],
-                [['git', 'apply', $path, '--check', '--reverse']]
+                [['git', 'apply'], 'patchContent'],
+                [['git', 'apply', '--check', '--reverse'], 'patchContent']
             ])->willReturnCallback([$this, 'shellApplyRevertCallback']);
 
         $this->assertSame($expectedMessage, $this->applier->apply($path, $patchId));
@@ -148,11 +191,21 @@ class ApplierTest extends TestCase
         $patchId = 'MC-11111';
         $expectedMessage = 'Patch ' . $patchId . ' has been reverted';
 
+        $this->filesystem->expects($this->once())
+            ->method('get')
+            ->willReturn('patchContent');
+        $this->magentoVersion->expects($this->once())
+            ->method('isGitBased')
+            ->willReturn(true);
+        $this->gitConverter->expects($this->once())
+            ->method('convert')
+            ->willReturn('gitContent');
+
         $processMock = $this->createMock(Process::class);
 
         $this->processFactory->expects($this->once())
             ->method('create')
-            ->with(['git', 'apply', '--reverse', $path])
+            ->withConsecutive([['git', 'apply', '--reverse'], 'gitContent'])
             ->willReturn($processMock);
         $processMock->expects($this->once())
             ->method('mustRun');
@@ -190,13 +243,23 @@ class ApplierTest extends TestCase
     {
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
+        $patchContent = 'patch content';
         $expectedMessage = 'Patch ' . $patchId . ' wasn\'t applied';
+
+        $this->filesystem->expects($this->once())
+            ->method('get')
+            ->willReturn($patchContent);
+        $this->magentoVersion->expects($this->once())
+            ->method('isGitBased')
+            ->willReturn(false);
+        $this->gitConverter->expects($this->never())
+            ->method('convert');
 
         $this->processFactory->expects($this->exactly(2))
             ->method('create')
             ->willReturnMap([
-                [['git', 'apply', $path]],
-                [['git', 'apply', $path, '--check']]
+                [['git', 'apply'], $patchContent],
+                [['git', 'apply', '--check'], $patchContent]
             ])->willReturnCallback([$this, 'shellApplyRevertCallback']);
 
         $this->assertSame($expectedMessage, $this->applier->revert($path, $patchId));

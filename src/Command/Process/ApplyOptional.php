@@ -15,7 +15,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Applies optional patches (Cloud & OnPrem).
+ * Applies optional patches (OnPrem).
  */
 class ApplyOptional implements ProcessInterface
 {
@@ -54,7 +54,7 @@ class ApplyOptional implements ProcessInterface
      */
     public function run(InputInterface $input, OutputInterface $output)
     {
-        $argPatches = $input->getArgument(Apply::ARG_QUALITY_PATCHES);
+        $argPatches = $input->getArgument(Apply::ARG_LIST_OF_PATCHES);
         $patchFilter = $this->filterFactory->createApplyFilter($argPatches);
         if ($patchFilter === null) {
             return;

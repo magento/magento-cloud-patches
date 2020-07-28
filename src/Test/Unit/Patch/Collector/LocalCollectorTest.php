@@ -56,6 +56,8 @@ class LocalCollectorTest extends TestCase
     {
         $file1 =  __DIR__ . SourceProvider::HOT_FIXES_DIR . '/patch1.patch';
         $file2 =  __DIR__ . SourceProvider::HOT_FIXES_DIR . '/patch2.patch';
+        $shortPath1 = '../' . SourceProvider::HOT_FIXES_DIR . '/patch1.patch';
+        $shortPath2 = '../' . SourceProvider::HOT_FIXES_DIR . '/patch2.patch';
 
         $this->sourceProvider->expects($this->once())
             ->method('getLocalPatches')
@@ -63,12 +65,12 @@ class LocalCollectorTest extends TestCase
 
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setId')
-            ->withConsecutive([md5($file1)], [md5($file2)]);
+            ->withConsecutive([$shortPath1], [$shortPath2]);
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setTitle')
             ->withConsecutive(
-                ['../' . SourceProvider::HOT_FIXES_DIR . '/patch1.patch'],
-                ['../' . SourceProvider::HOT_FIXES_DIR . '/patch2.patch']
+                [$shortPath1],
+                [$shortPath2]
             );
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setFilename')
