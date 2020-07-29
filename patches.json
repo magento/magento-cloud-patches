@@ -70,7 +70,9 @@
     },
     "Add Zookeeper and flock locks": {
       "2.2.5 - 2.2.8": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.2.5.patch",
-      "2.3.0 - 2.3.1": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.3.0.patch"
+      "2.3.0": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.3.0.patch",
+      "2.3.1": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.3.1.patch",
+      ">=2.3.2 <2.3.5": "MCLOUD_6139__improvement_flock_locks__2.3.2.patch"
     },
     "Reduce memory usage when importing customers and addresses": {
       "2.1.4 - 2.1.10": "SET-36__fix_oom_during_customer_import__2.1.4.patch",
@@ -245,13 +247,17 @@
     "Fix load balancer issue": {
       ">=2.3.4 <2.3.6": "MCLOUD-5837__fix_filesystem_load_balancer_issue__2.3.4.patch"
     },
-    "Cache Locking performance issue": {
-      "2.3.3": "MDVA-27538__fix_performance_issue_in_cache_locking_mechanism__2.3.3.patch",
-      ">=2.3.3-p1 <2.3.4": "MDVA-27538__fix_performance_issue_in_cache_locking_mechanism__2.3.3-p1.patch",
-      ">=2.3.4 <2.3.5": "MDVA-26795__fix_performance_issue_in_cache_locking_mechanism__2.3.4.patch"
-    },
     "Large amount of Keys Block Cache": {
       ">=2.3.1 <2.3.5": "MDVA-22950__large_amount_of_keys_block_cache__2.3.1.patch"
+    },
+    "Redis improvements": {
+      "2.3.0": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.0.patch",
+      "2.3.1": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.1.patch",
+      ">=2.3.2 <2.3.3": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.2.patch",
+      "2.3.3": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3.patch",
+      ">=2.3.3-p1 <2.3.4": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3-p1.patch",
+      ">=2.3.4 <2.3.5": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.4.patch",
+      ">=2.3.5 <2.3.6": "MCLOUD-6211__redis_improvement_patches__2.3.5.patch"
     }
   },
   "magento/module-paypal": {
