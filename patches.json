@@ -319,6 +319,11 @@
       "3.4.1": "BUNDLE-2554__set_payment_info_bug_fix__3.4.1.patch"
     }
   },
+  "paypal/module-braintree-core": {
+    "Fix Braintree Settlement report error": {
+      "4.1.0": "BUNDLE-2683_braintree_settlement_report_fix_4.1.0.patch"
+    }
+  },
   "magento/magento2-ee-base": {
     "Fix pagebuilder module": {
       "2.3.1": "PB-319__fix_pagebuilder_module__2.3.1.patch",
