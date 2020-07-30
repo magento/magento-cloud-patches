@@ -321,7 +321,7 @@
   },
   "paypal/module-braintree-core": {
     "Braintree Virtual Terminal UI bug fix": {
-      "4.1.0": "BUNDLE-2670_braintree_virtual_terminal_ui_fix_4.1.0.patch"
+      "4.1.0": "BUNDLE-2670__braintree_virtual_terminal_ui_fix__4.1.0.patch"
     }
   },
   "magento/magento2-ee-base": {
