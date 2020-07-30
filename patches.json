@@ -321,7 +321,7 @@
   },
   "paypal/module-braintree-core": {
     "Fix Braintree Settlement report error": {
-      "4.1.0": "BUNDLE-2683_braintree_settlement_report_fix_4.1.0.patch"
+      "4.1.0": "BUNDLE-2683__braintree_settlement_report_fix__4.1.0.patch"
     }
   },
   "magento/magento2-ee-base": {
