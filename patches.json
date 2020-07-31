@@ -334,6 +334,11 @@
       "3.4.1": "BUNDLE-2554__set_payment_info_bug_fix__3.4.1.patch"
     }
   },
+  "dotmailer/dotmailer-magento2-extension": {
+    "Fix broken Integration tests": {
+      "4.6.0": "BUNDLE-2684__dotmailer_integration_test_fixes__4.6.0.patch"
+    }
+  },
   "magento/magento2-ee-base": {
     "Fix pagebuilder module": {
       "2.3.1": "PB-319__fix_pagebuilder_module__2.3.1.patch",
