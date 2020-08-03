@@ -4,7 +4,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+define('IS_CLOUD', true);
 $container = require __DIR__ . '/../bootstrap.php';
 
-$application = new Magento\CloudPatches\Application($container);
+$application = new Magento\CloudPatches\ApplicationEce($container);
 $application->run();

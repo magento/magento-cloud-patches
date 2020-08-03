@@ -14,13 +14,10 @@ class AcceptanceCest extends AbstractCest
 {
     /**
      * @param \CliTester $I
-     * @return string
      */
-    protected function getVersionRangeForMagento(\CliTester $I): string
+    public function _before(\CliTester $I): void
     {
-        $composer = json_decode(file_get_contents($I->getWorkDirPath() . '/composer.json'), true);
-
-        return $composer['require']['magento/magento-cloud-metapackage'] ?? '';
+        parent::_before($I);
     }
 
     /**
@@ -31,8 +28,12 @@ class AcceptanceCest extends AbstractCest
      */
     public function testPatches(\CliTester $I, \Codeception\Example $data): void
     {
-        $this->prepareTemplate($I, $data['templateVersion']);
-        $I->assertTrue($I->runEceDockerCommand('build:compose --mode=production'));
+        $this->prepareTemplate($I, $data['templateVersion'], $data['magentoVersion'] ?? null);
+        $I->copyFileToWorkDir('files/patches/.apply_quality_patches.env.yaml', '.magento.env.yaml');
+        $I->runEceDockerCommand(sprintf(
+            'build:compose --mode=production --env-vars="%s"',
+            $this->convertEnvFromArrayToJson(['MAGENTO_CLOUD_PROJECT' => 'travis-testing'])
+        ));
         $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
         $I->assertTrue($I->startEnvironment());
         $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
@@ -48,9 +49,12 @@ class AcceptanceCest extends AbstractCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.3.3'],
-            ['templateVersion' => '2.3.4'],
-            ['templateVersion' => '2.3.5'],
+            ['templateVersion' => '2.3.3', 'magentoVersion' => '2.3.3'],
+            ['templateVersion' => '2.3.3', 'magentoVersion' => '2.3.3-p1'],
+            ['templateVersion' => '2.3.4', 'magentoVersion' => '2.3.4'],
+            ['templateVersion' => '2.3.4', 'magentoVersion' => '2.3.4-p2'],
+            ['templateVersion' => '2.3.5', 'magentoVersion' => '2.3.5'],
+            ['templateVersion' => '2.3.5', 'magentoVersion' => '2.3.5-p1'],
             ['templateVersion' => 'master'],
         ];
     }

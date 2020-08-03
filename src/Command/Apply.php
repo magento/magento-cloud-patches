@@ -7,34 +7,57 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command;
 
-use Magento\CloudPatches\Command\Patch\Manager;
-use Magento\CloudPatches\Command\Patch\ManagerException;
-use Magento\CloudPatches\Patch\ApplierException;
-use Symfony\Component\Console\Command\Command;
+use Magento\CloudPatches\App\RuntimeException;
+use Magento\CloudPatches\Command\Process\ApplyOptional;
+use Magento\CloudPatches\Composer\MagentoVersion;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * @inheritDoc
+ * Patch apply command (OnPrem).
  */
-class Apply extends Command
+class Apply extends AbstractCommand
 {
+    /**
+     * Command name.
+     */
     const NAME = 'apply';
 
-    const OPT_GIT_INSTALLATION = 'git-installation';
+    /**
+     * List of patches to apply.
+     */
+    const ARG_LIST_OF_PATCHES = 'list-of-patches';
 
     /**
-     * @var Manager
+     * @var ApplyOptional
      */
-    private $manager;
+    private $applyOptional;
 
     /**
-     * @param Manager $manager
+     * @var LoggerInterface
      */
-    public function __construct(Manager $manager)
-    {
-        $this->manager = $manager;
+    private $logger;
+
+    /**
+     * @var MagentoVersion
+     */
+    private $magentoVersion;
+
+    /**
+     * @param ApplyOptional $applyOptional
+     * @param LoggerInterface $logger
+     * @param MagentoVersion $magentoVersion
+     */
+    public function __construct(
+        ApplyOptional $applyOptional,
+        LoggerInterface $logger,
+        MagentoVersion $magentoVersion
+    ) {
+        $this->applyOptional = $applyOptional;
+        $this->logger = $logger;
+        $this->magentoVersion = $magentoVersion;
 
         parent::__construct(self::NAME);
     }
@@ -45,27 +68,36 @@ class Apply extends Command
     protected function configure()
     {
         $this->setName(self::NAME)
-            ->setDescription('Apply patches')
-            ->addOption(
-                self::OPT_GIT_INSTALLATION,
-                null,
-                InputOption::VALUE_OPTIONAL,
-                'Is git installation',
-                false
+            ->setDescription('Applies patches. The list of patches should pass as a command argument')
+            ->addArgument(
+                self::ARG_LIST_OF_PATCHES,
+                InputArgument::IS_ARRAY | InputArgument::REQUIRED,
+                'List of patches to apply'
             );
 
         parent::configure();
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @throws ManagerException
-     * @throws ApplierException
+     * @inheritDoc
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->manager->applyComposerPatches($input, $output);
-        $this->manager->applyHotFixes($input, $output);
+        $this->logger->notice($this->magentoVersion->get());
+
+        try {
+            $this->applyOptional->run($input, $output);
+        } catch (RuntimeException $e) {
+            $output->writeln('<error>' . $e->getMessage() . '</error>');
+            $this->logger->error($e->getMessage());
+
+            return self::RETURN_FAILURE;
+        } catch (\Exception $e) {
+            $this->logger->critical($e);
+
+            throw $e;
+        }
+
+        return self::RETURN_SUCCESS;
     }
 }

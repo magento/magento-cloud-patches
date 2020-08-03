@@ -36,6 +36,9 @@ class FileListTest extends TestCase
         $this->directoryListMock->method('getRoot')
             ->willReturn('root');
 
+        $this->directoryListMock->method('getMagentoRoot')
+            ->willReturn('magento_root');
+
         $this->fileList = new FileList(
             $this->directoryListMock
         );
@@ -46,6 +49,14 @@ class FileListTest extends TestCase
         $this->assertSame(
             'root/patches.json',
             $this->fileList->getPatches()
+        );
+    }
+
+    public function testGetPatchLog()
+    {
+        $this->assertSame(
+            'magento_root/var/log/patch.log',
+            $this->fileList->getPatchLog()
         );
     }
 }
