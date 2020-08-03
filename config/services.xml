@@ -6,13 +6,75 @@
 
         <prototype namespace="Magento\CloudPatches\" resource="../src/*" exclude="../src/{Test}"/>
 
+        <service id="Psr\Log\LoggerInterface" alias="Magento\CloudPatches\App\Logger" />
         <service id="Magento\CloudPatches\App\Container" autowire="false"/>
         <service id="Magento\CloudPatches\Filesystem\DirectoryList" autowire="false"/>
+        <service id="Symfony\Component\Console\Helper\QuestionHelper"/>
         <service id="Composer\Composer"/>
         <service id="Magento\CloudPatches\App\GenericException" autowire="false"/>
-        <service id="Magento\CloudPatches\Command\Patch\ManagerException" autowire="false"/>
+        <service id="Magento\CloudPatches\App\RuntimeException" autowire="false"/>
+        <service id="Magento\CloudPatches\Filesystem\FileSystemException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\SourceProviderException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\Collector\CollectorException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\Status\StatusResolverException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchIntegrityException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\Pool\PatchNotFoundException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\ApplierException" autowire="false"/>
-        <service id="Magento\CloudPatches\Filesystem\FileNotFoundException" autowire="false"/>
         <service id="Magento\CloudPatches\Shell\PackageNotFoundException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\Data\Patch" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\Data\AggregatedPatch" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\Pool\OptionalPool" lazy="true" />
+        <service id="Magento\CloudPatches\Patch\Pool\RequiredPool" lazy="true"/>
+        <service id="Magento\CloudPatches\Patch\Pool\LocalPool" lazy="true"/>
+        <service id="Magento\CloudPatches\Patch\Status\StatusPool" autowire="false"/>
+        <service id="statusPool" class="Magento\CloudPatches\Patch\Status\StatusPool" lazy="true">
+            <argument key="$resolvers" type="collection">
+                <argument type="service" id="Magento\CloudPatches\Patch\Status\LocalResolver"/>
+                <argument type="service" id="Magento\CloudPatches\Patch\Status\OptionalResolver"/>
+            </argument>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\ShowStatus">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Ece\Revert">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Action\ApplyOptionalAction">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Action\RevertAction">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Action\ConfirmRequiredAction">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Action\ProcessDeprecatedAction">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Patch\RevertValidator">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Renderer">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Action\ActionPool" autowire="false"/>
+        <service id="ApplyOptionalActionPool" class="Magento\CloudPatches\Command\Process\Action\ActionPool">
+            <argument key="$actions" type="collection">
+                <argument type="service" id="Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction"/>
+                <argument type="service" id="Magento\CloudPatches\Command\Process\Action\ConfirmRequiredAction"/>
+                <argument type="service" id="Magento\CloudPatches\Command\Process\Action\ProcessDeprecatedAction"/>
+                <argument type="service" id="Magento\CloudPatches\Command\Process\Action\ApplyOptionalAction"/>
+            </argument>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\ApplyOptional">
+            <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Command\Process\Ece\ApplyOptional">
+            <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>
     </services>
 </container>

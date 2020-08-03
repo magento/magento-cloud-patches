@@ -7,31 +7,31 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch;
 
-use Composer;
-use Magento\CloudPatches\Filesystem\DirectoryList;
+use Magento\CloudPatches\Composer\MagentoVersion;
 use Magento\CloudPatches\Filesystem\Filesystem;
+use Magento\CloudPatches\Patch\Status\StatusPool;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
- * Provides apply methods for patches.
+ * Applies and reverts patches.
  */
 class Applier
 {
-    /**
-     * @var Composer\Repository\RepositoryInterface
-     */
-    private $repository;
-
     /**
      * @var ProcessFactory
      */
     private $processFactory;
 
     /**
-     * @var DirectoryList
+     * @var GitConverter
      */
-    private $directoryList;
+    private $gitConverter;
+
+    /**
+     * @var MagentoVersion
+     */
+    private $magentoVersion;
 
     /**
      * @var Filesystem
@@ -39,132 +39,151 @@ class Applier
     private $filesystem;
 
     /**
-     * @param Composer\Composer $composer
      * @param ProcessFactory $processFactory
-     * @param DirectoryList $directoryList
+     * @param GitConverter $gitConverter
+     * @param MagentoVersion $magentoVersion
      * @param Filesystem $filesystem
      */
     public function __construct(
-        Composer\Composer $composer,
         ProcessFactory $processFactory,
-        DirectoryList $directoryList,
+        GitConverter $gitConverter,
+        MagentoVersion $magentoVersion,
         Filesystem $filesystem
     ) {
-        $this->repository = $composer->getRepositoryManager()->getLocalRepository();
         $this->processFactory = $processFactory;
-        $this->directoryList = $directoryList;
+        $this->gitConverter = $gitConverter;
+        $this->magentoVersion = $magentoVersion;
         $this->filesystem = $filesystem;
-    }
-
-    /**
-     * @param string $path
-     * @param bool $deployedFromGit
-     * @return string
-     *
-     * @throws ApplierException
-     */
-    public function applyFile(string $path, bool $deployedFromGit): string
-    {
-        return $this->processApply($path, $path, $deployedFromGit);
-    }
-
-    /**
-     * Applies patch, using 'git apply' command.
-     *
-     * If the patch fails to apply, checks if it has already been applied which is considered ok.
-     *
-     * @param string $path Path to patch
-     * @param string $name Name of patch
-     * @param string $packageName Name of package to be patched
-     * @param string $constraint Specific constraint of package to be fixed
-     * @param bool $deployedFromGit
-     * @return string|null
-     *
-     * @throws ApplierException
-     */
-    public function apply(
-        string $path,
-        string $name,
-        string $packageName,
-        string $constraint,
-        bool $deployedFromGit
-    ) {
-        $fullName = sprintf(
-            '%s %s',
-            sprintf('%s (%s)', $name, $path),
-            $constraint
-        );
-
-        if ($packageName && !$this->matchConstraint($packageName, $constraint)) {
-            return null;
-        }
-
-        /**
-         * Support for relative paths.
-         */
-        if (!$this->filesystem->exists($path)) {
-            $path = $this->directoryList->getPatches() . '/' . $path;
-        }
-
-        return $this->processApply($path, $fullName, $deployedFromGit);
     }
 
     /**
      * General apply processing.
      *
      * @param string $path
-     * @param string $fullName
-     * @param bool $deployedFromGit
+     * @param string $id
      * @return string
      *
      * @throws ApplierException
      */
-    private function processApply(string $path, string $fullName, bool $deployedFromGit): string
+    public function apply(string $path, string $id): string
     {
+        $content = $this->readContent($path);
         try {
-            $this->processFactory->create(['git', 'apply', $path])
+            $this->processFactory->create(['git', 'apply'], $content)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            if ($deployedFromGit) {
-                return sprintf(
-                    'Patch "%s" was not applied. (%s)',
-                    $fullName,
-                    $exception->getMessage()
-                );
-            }
-
             try {
-                $this->processFactory->create(['git', 'apply', '--check', '--reverse', $path])
+                $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $content)
                     ->mustRun();
             } catch (ProcessFailedException $reverseException) {
-                throw new ApplierException(
-                    $reverseException->getMessage(),
-                    $reverseException->getCode(),
-                    $reverseException
-                );
+                throw new ApplierException($exception->getMessage(), $exception->getCode());
             }
 
-            return sprintf(
-                'Patch "%s" was already applied',
-                $fullName
-            );
+            return sprintf('Patch %s was already applied', $id);
         }
 
-        return sprintf(
-            'Patch "%s" applied',
-            $fullName
-        );
+        return sprintf('Patch %s has been applied', $id);
     }
 
     /**
-     * Checks whether package with specific constraint exists in the system.
+     * General revert processing.
      *
-     * @param string $packageName
-     * @param string $constraint
-     * @return bool True if patch with provided constraint exists, false otherwise.
+     * @param string $path
+     * @param string $id
+     * @return string
+     *
+     * @throws ApplierException
      */
-    private function matchConstraint(string $packageName, string $constraint): bool
+    public function revert(string $path, string $id): string
     {
-        return $this->repository->findPackage($packageName, $constraint) instanceof Composer\Package\PackageInterface;
+        $content = $this->readContent($path);
+        try {
+            $this->processFactory->create(['git', 'apply', '--reverse'], $content)
+                ->mustRun();
+        } catch (ProcessFailedException $exception) {
+            try {
+                $this->processFactory->create(['git', 'apply', '--check'], $content)
+                    ->mustRun();
+            } catch (ProcessFailedException $applyException) {
+                throw new ApplierException($exception->getMessage(), $exception->getCode());
+            }
+
+            return sprintf('Patch %s wasn\'t applied', $id);
+        }
+
+        return sprintf('Patch %s has been reverted', $id);
+    }
+
+    /**
+     * Checks patch status.
+     *
+     * @param string $patchContent
+     * @return string
+     */
+    public function status(string $patchContent): string
+    {
+        $patchContent = $this->prepareContent($patchContent);
+        try {
+            $this->processFactory->create(['git', 'apply', '--check'], $patchContent)
+                ->mustRun();
+        } catch (ProcessFailedException $exception) {
+            try {
+                $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $patchContent)
+                    ->mustRun();
+            } catch (ProcessFailedException $reverseException) {
+                return StatusPool::NA;
+            }
+
+            return StatusPool::APPLIED;
+        }
+
+        return StatusPool::NOT_APPLIED;
+    }
+
+    /**
+     * Checks if the patch can be applied.
+     *
+     * @param string $patchContent
+     * @return boolean
+     */
+    public function checkApply(string $patchContent): bool
+    {
+        $patchContent = $this->prepareContent($patchContent);
+        try {
+            $this->processFactory->create(['git', 'apply', '--check'], $patchContent)
+                ->mustRun();
+        } catch (ProcessFailedException $exception) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns patch content.
+     *
+     * @param string $path
+     * @return string
+     */
+    private function readContent(string $path): string
+    {
+        $content = $this->filesystem->get($path);
+
+        return $this->prepareContent($content);
+    }
+
+    /**
+     * Prepares patch content.
+     *
+     * @param string $content
+     * @return string
+     */
+    private function prepareContent(string $content): string
+    {
+        if ($this->magentoVersion->isGitBased()) {
+            $content = $this->gitConverter->convert($content);
+        }
+
+        return $content;
     }
 }
