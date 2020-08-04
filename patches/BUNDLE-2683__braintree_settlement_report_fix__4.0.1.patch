@@ -1,4 +1,4 @@
-diff --git a/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php b/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php
+diff -Naur a/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php b/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php
 --- a/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php
 +++ b/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php
 @@ -44,8 +44,6 @@ private function getAvailablePaymentTypes(): array
