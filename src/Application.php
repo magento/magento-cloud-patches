@@ -41,6 +41,8 @@ class Application extends \Symfony\Component\Console\Application
     {
         return array_merge(parent::getDefaultCommands(), [
             $this->container->get(Command\Apply::class),
+            $this->container->get(Command\Revert::class),
+            $this->container->get(Command\Status::class)
         ]);
     }
 }

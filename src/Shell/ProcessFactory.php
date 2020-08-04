@@ -42,19 +42,27 @@ class ProcessFactory
     }
 
     /**
+     * Creates process.
+     *
      * @param array $cmd
+     * @param string|null $input
      * @return Process
+     * @throws PackageNotFoundException
      */
-    public function create(array $cmd): Process
+    public function create(array $cmd, string $input = null): Process
     {
         return new Process(
             $this->processSupportsArrayParam() ? $cmd : implode(' ', $cmd),
-            $this->directoryList->getMagentoRoot()
+            $this->directoryList->getMagentoRoot(),
+            null,
+            $input
         );
     }
 
     /**
      * Test if symfony/process is current enough to support an array for its first parameter.
+     *
+     * @throws PackageNotFoundException
      */
     private function processSupportsArrayParam(): bool
     {
