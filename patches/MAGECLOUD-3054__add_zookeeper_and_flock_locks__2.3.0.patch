@@ -10,10 +10,11 @@ diff -Naur a/app/etc/di.xml b/app/etc/di.xml
      <preference for="Magento\Framework\Api\AttributeTypeResolverInterface" type="Magento\Framework\Reflection\AttributeTypeResolver" />
      <preference for="Magento\Framework\Api\Search\SearchResultInterface" type="Magento\Framework\Api\Search\SearchResult" />
      <preference for="Magento\Framework\Api\Search\SearchCriteriaInterface" type="Magento\Framework\Api\Search\SearchCriteria"/>
-diff -Naur a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento/framework/Lock/Backend/FileLock.php
+diff --git a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento/framework/Lock/Backend/FileLock.php
+new file mode 100644
 --- /dev/null
 +++ b/vendor/magento/framework/Lock/Backend/FileLock.php
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,196 @@
 +<?php
 +/**
 + * Copyright © Magento, Inc. All rights reserved.
@@ -107,6 +108,7 @@ diff -Naur a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento
 +
 +            while (!$this->tryToLock($fileResource)) {
 +                if (!$skipDeadline && $deadline <= microtime(true)) {
++                    $this->tryToUnlock($fileResource);
 +                    $this->fileDriver->fileClose($fileResource);
 +                    return false;
 +                }
@@ -140,6 +142,7 @@ diff -Naur a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento
 +                } else {
 +                    $result = true;
 +                }
++                $this->tryToUnlock($fileResource);
 +                $this->fileDriver->fileClose($fileResource);
 +            }
 +        } catch (FileSystemException $exception) {
@@ -208,6 +211,7 @@ diff -Naur a/vendor/magento/framework/Lock/Backend/FileLock.php b/vendor/magento
 +        }
 +    }
 +}
+
 diff -Naur a/vendor/magento/framework/Lock/Backend/Zookeeper.php b/vendor/magento/framework/Lock/Backend/Zookeeper.php
 --- /dev/null
 +++ b/vendor/magento/framework/Lock/Backend/Zookeeper.php
@@ -1051,5 +1055,144 @@ diff -Naur a/setup/src/Magento/Setup/Model/ConfigOptionsList/Lock.php b/setup/sr
 +        } else {
 +            return null;
 +        }
++    }
++}
+diff -Nuar a/vendor/magento/framework/Lock/Backend/Cache.php b/vendor/magento/framework/Lock/Backend/Cache.php
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/framework/Lock/Backend/Cache.php
+@@ -0,0 +1,134 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\Framework\Lock\Backend;
++
++use Magento\Framework\Cache\FrontendInterface;
++
++/**
++ * Implementation of the lock manager on the basis of the caching system.
++ */
++class Cache implements \Magento\Framework\Lock\LockManagerInterface
++{
++    /**
++     * Prefix for marking that key is locked or not.
++     */
++    const LOCK_PREFIX = 'LOCKED_RECORD_INFO_';
++
++    /**
++     * @var FrontendInterface
++     */
++    private $cache;
++
++    /**
++     * Sign for locks, helps to avoid removing a lock that was created by another client
++     *
++     * @string
++     */
++    private $lockSign;
++
++    /**
++     * @param FrontendInterface $cache
++     */
++    public function __construct(FrontendInterface $cache)
++    {
++        $this->cache = $cache;
++        $this->lockSign = $this->generateLockSign();
++    }
++
++    /**
++     * @inheritdoc
++     */
++    public function lock(string $name, int $timeout = -1): bool
++    {
++        if (empty($this->lockSign)) {
++            $this->lockSign = $this->generateLockSign();
++        }
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if (false !== $data) {
++             return false;
++        }
++
++        $timeout = $timeout <= 0 ? null : $timeout;
++        $this->cache->save($this->lockSign, $this->getIdentifier($name), [], $timeout);
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if ($data === $this->lockSign) {
++            return true;
++        }
++
++        return false;
++    }
++
++    /**
++     * @inheritdoc
++     */
++    public function unlock(string $name): bool
++    {
++        if (empty($this->lockSign)) {
++            return false;
++        }
++
++        $data = $this->cache->load($this->getIdentifier($name));
++
++        if (false === $data) {
++            return false;
++        }
++
++        $removeResult = false;
++        if ($data === $this->lockSign) {
++            $removeResult = (bool)$this->cache->remove($this->getIdentifier($name));
++        }
++
++        return $removeResult;
++    }
++
++    /**
++     * @inheritdoc
++     */
++    public function isLocked(string $name): bool
++    {
++        return (bool)$this->cache->test($this->getIdentifier($name));
++    }
++
++    /**
++     * Get cache locked identifier based on cache identifier.
++     *
++     * @param string $cacheIdentifier
++     * @return string
++     */
++    private function getIdentifier(string $cacheIdentifier): string
++    {
++        return self::LOCK_PREFIX . $cacheIdentifier;
++    }
++
++    /**
++     * Function that generates lock sign that helps to avoid removing a lock that was created by another client.
++     *
++     * @return string
++     */
++    private function generateLockSign()
++    {
++        $sign = implode(
++            '-',
++            [
++                \getmypid(), \crc32(\gethostname())
++            ]
++        );
++
++        try {
++            $sign .= '-' . \bin2hex(\random_bytes(4));
++        } catch (\Exception $e) {
++            $sign .= '-' . \uniqid('-uniqid-');
++        }
++
++        return $sign;
 +    }
 +}

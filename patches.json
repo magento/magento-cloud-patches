@@ -70,7 +70,9 @@
     },
     "Add Zookeeper and flock locks": {
       "2.2.5 - 2.2.8": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.2.5.patch",
-      "2.3.0 - 2.3.1": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.3.0.patch"
+      "2.3.0": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.3.0.patch",
+      "2.3.1": "MAGECLOUD-3054__add_zookeeper_and_flock_locks__2.3.1.patch",
+      ">=2.3.2 <2.3.5": "MCLOUD_6139__improvement_flock_locks__2.3.2.patch"
     },
     "Reduce memory usage when importing customers and addresses": {
       "2.1.4 - 2.1.10": "SET-36__fix_oom_during_customer_import__2.1.4.patch",
@@ -116,7 +118,7 @@
       ">=2.3.1 <2.3.3": "MAGECLOUD-3913__fix_problems_with_consumer_runners_on_cloud_clusters__2.3.1.patch"
     },
     "Resolve Issues with Cron Schedule": {
-      "2.1.10 - 2.1.14 || 2.2.2 - 2.2.5": "MAGECLOUD-2427__resolve_issues_with_cron_schedule.patch"
+      "2.1.10 - 2.1.14 || 2.2.2 - 2.2.5": "MAGECLOUD-2427__resolve_issues_with_cron_schedule__2.1.10.patch"
     },
     "Fix timezone parsing for Cron": {
       "2.1.4": "MAGECLOUD-2602__fix_timezone_parsing_for_cron__2.1.4.patch",
@@ -135,7 +137,7 @@
       "2.1.4 - 2.2.5": "MAGECLOUD-2445__do_not_run_cron_when_it_is_disabled__2.1.4.patch"
     },
     "Zendframework1 should use TLS 1.2": {
-      ">=2.1.4 <2.3": "MAGECLOUD-2521__zendframework1_use_TLS_1.2.patch"
+      ">=2.1.4 <2.3": "MAGECLOUD-2521__zendframework1_use_TLS_1.2__2.1.4.patch"
     },
     "The recursion detected error during deployment": {
       "2.2.0 - 2.2.6": "MAGECLOUD-2173__the_recursion_error_during_deployment__2.2.0.patch"
@@ -144,16 +146,13 @@
       "2.2.0 - 2.2.5": "MAGECLOUD-2509__remove_permission_check_for_console_application__2.2.0.patch",
       "2.2.6": "MAGECLOUD-2509__remove_permission_check_for_console_application__2.2.6.patch"
     },
-    "Fix for DI compilation with Amazon_Payment module": {
-      "2.2.6": "MAGECLOUD-2850_fix_amazon_payment_module__2.2.6.patch"
-    },
     "Add the possibility to install Magento without admin creation" : {
       "2.1.4 - 2.2.1": "MAGECLOUD-2573__installation_without_admin_creation__2.1.4.patch",
       "2.2.2 - 2.2.7": "MAGECLOUD-2573__installation_without_admin_creation__2.2.2.patch"
     },
     "Add the possibility to configure max execution time during static content deployment": {
-      "2.2.0 - 2.2.8 || 2.3.0": "MAGECLOUD-2822__configure_max_execution_time.patch",
-      "2.3.1": "MAGECLOUD-2822__configure_max_execution_time_2.3.1.patch"
+      "2.2.0 - 2.2.8 || 2.3.0": "MAGECLOUD-2822__configure_max_execution_time__2.2.0.patch",
+      "2.3.1": "MAGECLOUD-2822__configure_max_execution_time__2.3.1.patch"
     },
     "Suppress PDO warnings to work around PHP bugs #63812, #74401": {
       "2.1.4": "MAGECLOUD-2820__implement_isolated_connections_mechanism__2.1.4.patch",
@@ -232,7 +231,7 @@
       ">=2.3.5 <2.4.0": "MAGECLOUD-5069__fpc_is_getting_disabled_during_deployments__2.3.5.patch"
     },
     "Hold deployment config after reading from file": {
-      ">=2.3.3 <2.3.6": "MCLOUD-5650__hold_deployment_config_after_reading_from_file.patch"
+      ">=2.3.3 <2.3.6": "MCLOUD-5650__hold_deployment_config_after_reading_from_file__2.3.3.patch"
     },
     "Pagination Not working - product_list_limit=all": {
       ">=2.3.2 <2.3.4": "MCLOUD-5684__pagination_not_working_product_list_limit_all__2.3.2.patch",
@@ -244,6 +243,18 @@
     },
     "Fix load balancer issue": {
       ">=2.3.4 <2.3.6": "MCLOUD-5837__fix_filesystem_load_balancer_issue__2.3.4.patch"
+    },
+    "Large amount of Keys Block Cache": {
+      ">=2.3.1 <2.3.5": "MDVA-22950__large_amount_of_keys_block_cache__2.3.1.patch"
+    },
+    "Redis improvements": {
+      "2.3.0": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.0.patch",
+      "2.3.1": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.1.patch",
+      ">=2.3.2 <2.3.3": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.2.patch",
+      "2.3.3": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3.patch",
+      ">=2.3.3-p1 <2.3.4": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3-p1.patch",
+      ">=2.3.4 <2.3.5": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.4.patch",
+      ">=2.3.5 <2.3.6": "MCLOUD-6211__redis_improvement_patches__2.3.5.patch"
     }
   },
   "magento/module-paypal": {
@@ -266,7 +277,8 @@
   },
   "monolog/monolog": {
     "Fix monolog Slack Handler bug for magento 2.1.x": {
-      "1.16.0": "MAGECLOUD-2793__fix_monolog_slack_handler_2.1.x.patch"
+      "1.16.0": "MAGECLOUD-2793__fix_monolog_slack_handler__2.1.x.patch",
+      ">=1.16.0 <1.24.0": "MAGECLOUD-6029__add_processor_interface__2.1.x.patch"
     }
   },
   "colinmollenhour/cache-backend-redis": {
@@ -314,7 +326,10 @@
       "3.2.0": "MAGECLOUD-4407__fix_namespace_vertex_tax__3.2.0.patch"
     }
   },
-  "amzn/amazon-pay-and-login-magento-2-module": {
+  "amzn/amazon-pay-module": {
+    "Fix for DI compilation with Amazon_Payment module": {
+      "2.1.0": "MAGECLOUD-2850__fix_amazon_payment_module__2.2.6.patch"
+    },
     "Set Payment info bug": {
       "3.4.1": "BUNDLE-2554__set_payment_info_bug_fix__3.4.1.patch"
     }
