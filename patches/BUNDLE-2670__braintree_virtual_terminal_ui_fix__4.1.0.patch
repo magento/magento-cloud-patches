@@ -1,6 +1,5 @@
 diff --git a/vendor/paypal/module-braintree-core/view/adminhtml/web/css/source/_module.less b/vendor/paypal/module-braintree-core/view/adminhtml/web/css/source/_module.less
 new file mode 100755
-index 0000000..efb2e66
 --- /dev/null
 +++ b/vendor/paypal/module-braintree-core/view/adminhtml/web/css/source/_module.less
 @@ -0,0 +1,110 @@
@@ -117,7 +116,6 @@ index 0000000..efb2e66
 
 
 diff --git a/vendor/paypal/module-braintree-core/view/adminhtml/web/js/virtual.js b/vendor/paypal/module-braintree-core/view/adminhtml/web/js/virtual.js
-index 2095942..69b5d9d 100755
 --- a/vendor/paypal/module-braintree-core/view/adminhtml/web/js/virtual.js
 +++ b/vendor/paypal/module-braintree-core/view/adminhtml/web/js/virtual.js
 @@ -61,6 +61,9 @@ define([
