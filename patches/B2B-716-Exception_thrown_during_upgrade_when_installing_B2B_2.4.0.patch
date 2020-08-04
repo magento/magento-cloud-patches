@@ -1,0 +1,21 @@
+diff --git a/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php b/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
+index c8acaa346..6579e8812 100644
+--- a/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
++++ b/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
+@@ -8,6 +8,7 @@ declare(strict_types=1);
+ namespace Magento\PurchaseOrder\Setup\Patch\Data;
+ 
+ use Magento\Framework\Setup\Patch\DataPatchInterface;
++use Magento\Framework\Setup\Patch\NonTransactionableInterface;
+ use Magento\SalesSequence\Model\Builder as SequenceBuilder;
+ use Magento\SalesSequence\Model\Config as SequenceConfig;
+ use Magento\Store\Api\StoreRepositoryInterface;
+@@ -15,7 +16,7 @@ use Magento\Store\Api\StoreRepositoryInterface;
+ /**
+  * Initializes purchase order sales sequence.
+  */
+-class InitPurchaseOrderSalesSequence implements DataPatchInterface
++class InitPurchaseOrderSalesSequence implements DataPatchInterface, NonTransactionableInterface
+ {
+     /**
+      * @var SequenceBuilder
