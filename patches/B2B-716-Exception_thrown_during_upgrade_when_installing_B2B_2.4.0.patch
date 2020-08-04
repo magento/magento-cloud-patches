@@ -1,7 +1,7 @@
-diff --git a/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php b/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
+diff --git a/vendor/magento/module-purchase-order/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php b/vendor/magento/module-purchase-order/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
 index c8acaa346..6579e8812 100644
---- a/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
-+++ b/app/code/Magento/PurchaseOrder/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
+--- a/vendor/magento/module-purchase-order/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
++++ b/vendor/magento/module-purchase-order/Setup/Patch/Data/InitPurchaseOrderSalesSequence.php
 @@ -8,6 +8,7 @@ declare(strict_types=1);
  namespace Magento\PurchaseOrder\Setup\Patch\Data;
  
