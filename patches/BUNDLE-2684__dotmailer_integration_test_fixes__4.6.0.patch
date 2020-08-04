@@ -1,5 +1,4 @@
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php
-index 137d4e8364..98ec36d2b8 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php
 @@ -36,7 +36,7 @@ class CustomerGuestAbandonedTest extends \PHPUnit\Framework\TestCase
@@ -21,7 +20,6 @@ index 137d4e8364..98ec36d2b8 100755
          $abandonedCollection = $this->objectManager->create(
              \Dotdigitalgroup\Email\Model\ResourceModel\Abandoned\Collection::class
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/EmailTemplatesSyncTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/EmailTemplatesSyncTest.php
-index 07db7d2c9b..cb58195ee1 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/EmailTemplatesSyncTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/EmailTemplatesSyncTest.php
 @@ -22,7 +22,7 @@ class EmailTemplatesSyncTest extends \Magento\TestFramework\TestCase\AbstractBac
@@ -34,7 +32,6 @@ index 07db7d2c9b..cb58195ee1 100755
          parent::setUp();
          $this->resource = 'Dotdigitalgroup_Email::config';
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalCatalogDataRefreshTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalCatalogDataRefreshTest.php
-index f7df49dcda..7d4272821d 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalCatalogDataRefreshTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalCatalogDataRefreshTest.php
 @@ -30,7 +30,7 @@ class HistoricalCatalogDataRefreshTest extends \Magento\TestFramework\TestCase\A
@@ -47,7 +44,6 @@ index f7df49dcda..7d4272821d 100644
          parent::setUp();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalReviewDataRefreshTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalReviewDataRefreshTest.php
-index 24457fa127..fe543894a6 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalReviewDataRefreshTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalReviewDataRefreshTest.php
 @@ -25,7 +25,7 @@ class HistoricalReviewDataRefreshTest extends \Magento\TestFramework\TestCase\Ab
@@ -68,7 +64,6 @@ index 24457fa127..fe543894a6 100755
      }
  }
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalWishlistDataRefreshTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalWishlistDataRefreshTest.php
-index b4ee1ffce2..bbabac6d69 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalWishlistDataRefreshTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Adminhtml/Developer/HistoricalWishlistDataRefreshTest.php
 @@ -24,7 +24,7 @@ class HistoricalWishlistDataRefreshTest extends \Magento\TestFramework\TestCase\
@@ -81,7 +76,6 @@ index b4ee1ffce2..bbabac6d69 100755
          parent::setUp();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Automation/FirstOrderTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Automation/FirstOrderTest.php
-index cfc9b322e1..340abaccbf 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Automation/FirstOrderTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Automation/FirstOrderTest.php
 @@ -22,7 +22,7 @@ class FirstOrderTest extends \PHPUnit\Framework\TestCase
@@ -94,7 +88,6 @@ index cfc9b322e1..340abaccbf 100755
          $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
          $this->orderIncrementId = '100000001';
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Block/Adminhtml/StudioTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Block/Adminhtml/StudioTest.php
-index c8f6accdd2..b2987279d5 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Block/Adminhtml/StudioTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Block/Adminhtml/StudioTest.php
 @@ -62,7 +62,7 @@ class StudioTest extends \PHPUnit\Framework\TestCase
@@ -125,7 +118,6 @@ index c8f6accdd2..b2987279d5 100755
              parse_url($url, PHP_URL_QUERY)
          );
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Contact/TablePrefixTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Contact/TablePrefixTest.php
-index 98762eeade..dbbb893070 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Contact/TablePrefixTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Contact/TablePrefixTest.php
 @@ -25,7 +25,7 @@ class TablePrefixTest extends \PHPUnit\Framework\TestCase
@@ -138,7 +130,6 @@ index 98762eeade..dbbb893070 100755
          $this->objectManager = ObjectManager::getInstance();
          $this->contactResource = $this->objectManager->get(\Dotdigitalgroup\Email\Model\ResourceModel\Contact::class);
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Ajax/EmailcaptureTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Ajax/EmailcaptureTest.php
-index 3dfb9b9225..a9178b7d4f 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Ajax/EmailcaptureTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Ajax/EmailcaptureTest.php
 @@ -30,7 +30,7 @@ class EmailcaptureTest extends AbstractController
@@ -151,7 +142,6 @@ index 3dfb9b9225..a9178b7d4f 100755
          parent::setUp();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/AccountcallbackTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/AccountcallbackTest.php
-index d2933d810c..668dbeef6d 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/AccountcallbackTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/AccountcallbackTest.php
 @@ -27,7 +27,7 @@ class AccountcallbackTest extends AbstractController
@@ -164,7 +154,6 @@ index d2933d810c..668dbeef6d 100644
          parent::setUp();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/CouponTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/CouponTest.php
-index 0acd23feb4..0f30f132c6 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/CouponTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Controller/Email/CouponTest.php
 @@ -31,7 +31,7 @@ class CouponTest extends AbstractController
@@ -177,7 +166,6 @@ index 0acd23feb4..0f30f132c6 100644
          parent::setUp();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/LogViewer/LoggerTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/LogViewer/LoggerTest.php
-index 80ad1eae47..fabd291377 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/LogViewer/LoggerTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/LogViewer/LoggerTest.php
 @@ -27,7 +27,7 @@ class LoggerTest extends \PHPUnit\Framework\TestCase
@@ -190,7 +178,6 @@ index 80ad1eae47..fabd291377 100755
          $objectManager = ObjectManager::getInstance();
          $this->testHandler = new TestHandler;
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php
-index 0047f2ef6d..ff427fa874 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php
 @@ -5,15 +5,15 @@
@@ -270,7 +257,6 @@ index 0047f2ef6d..ff427fa874 100644
 
      /**
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/SalesRule/DotdigitalCouponGeneratorTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/SalesRule/DotdigitalCouponGeneratorTest.php
-index b4fcd15bbc..b688c1ca4d 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/SalesRule/DotdigitalCouponGeneratorTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/SalesRule/DotdigitalCouponGeneratorTest.php
 @@ -47,7 +47,7 @@ class DotdigitalCouponGeneratorTest extends \PHPUnit\Framework\TestCase
@@ -292,7 +278,6 @@ index b4fcd15bbc..b688c1ca4d 100644
 
      public function testCouponPrefix()
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportedSuccessTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportedSuccessTest.php
-index 54a57fe47e..36d2fc3704 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportedSuccessTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportedSuccessTest.php
 @@ -34,7 +34,7 @@ class BulkRecordsImportedSuccessTest extends \PHPUnit\Framework\TestCase
@@ -305,7 +290,6 @@ index 54a57fe47e..36d2fc3704 100644
          $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportingSuccessTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportingSuccessTest.php
-index e4fb6b5e98..58f69e8073 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportingSuccessTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/BulkRecordsImportingSuccessTest.php
 @@ -34,7 +34,7 @@ class BulkRecordsImportingSuccessTest extends \PHPUnit\Framework\TestCase
@@ -318,7 +302,6 @@ index e4fb6b5e98..58f69e8073 100644
          $this->mockClientFactory();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterFailedTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterFailedTest.php
-index 19a4b5ba75..f1b32562e2 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterFailedTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterFailedTest.php
 @@ -33,7 +33,7 @@ class ImporterFailedTest extends \PHPUnit\Framework\TestCase
@@ -331,7 +314,6 @@ index 19a4b5ba75..f1b32562e2 100644
          $this->mockClientFactory();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterTest.php
-index 65d3a8c402..0a896a5f4e 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Importer/ImporterTest.php
 @@ -33,7 +33,7 @@ class ImporterTest extends \PHPUnit\Framework\TestCase
@@ -344,7 +326,6 @@ index 65d3a8c402..0a896a5f4e 100644
          $this->mockClientFactory();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php
-index e8f2eadf9a..3de9ffea80 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php
 @@ -87,7 +87,7 @@ class ReviewTest extends \PHPUnit\Framework\TestCase
@@ -357,7 +338,6 @@ index e8f2eadf9a..3de9ffea80 100644
          $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Trial/TrialSetupTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Trial/TrialSetupTest.php
-index 41c8256576..2894f9606a 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Trial/TrialSetupTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Trial/TrialSetupTest.php
 @@ -27,7 +27,7 @@ class TrialSetupTest extends \PHPUnit\Framework\TestCase
@@ -370,7 +350,6 @@ index 41c8256576..2894f9606a 100755
          $this->objectManager = ObjectManager::getInstance();
          $this->configWriter = $this->objectManager->create(WriterInterface::class);
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Observer/CreateUpdateContactTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Observer/CreateUpdateContactTest.php
-index b89473ab33..c5c31f1245 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Observer/CreateUpdateContactTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Observer/CreateUpdateContactTest.php
 @@ -50,7 +50,7 @@ class CreateUpdateContactTest extends \PHPUnit\Framework\TestCase
@@ -383,7 +362,6 @@ index b89473ab33..c5c31f1245 100755
          $this->objectManager = \Magento\TestFramework\ObjectManager::getInstance();
          $this->customerFactory = $this->objectManager->create(\Magento\Customer\Model\CustomerFactory::class);
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php
-index acf0fec7da..c9fb83f382 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php
 @@ -51,7 +51,7 @@ private function assertCollectionContains(Campaign $campaign, CampaignCollection
@@ -396,7 +374,6 @@ index acf0fec7da..c9fb83f382 100755
          /** @var CampaignCollection $collection */
          $collection = ObjectManager::getInstance()->create(CampaignCollection::class);
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Rules/RulesTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Rules/RulesTest.php
-index 93add750fe..9b75b08e82 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Rules/RulesTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Rules/RulesTest.php
 @@ -42,7 +42,7 @@ class RulesTest extends \PHPUnit\Framework\TestCase
@@ -409,7 +386,6 @@ index 93add750fe..9b75b08e82 100755
          include __DIR__ . '/../_files/products.php';
          $this->quoteCollection = ObjectManager::getInstance()->create(QuoteCollection::class);
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/ContactSyncTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/ContactSyncTest.php
-index b032b4fbdf..7355273634 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/ContactSyncTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/ContactSyncTest.php
 @@ -33,7 +33,7 @@ class ContactSyncTest extends \PHPUnit\Framework\TestCase
@@ -422,7 +398,6 @@ index b032b4fbdf..7355273634 100755
          $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
          $this->importerCollection = $this->objectManager->create(
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/IntegrationInsightsTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/IntegrationInsightsTest.php
-index 141afcdc3c..ea5b6ce566 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/IntegrationInsightsTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/IntegrationInsightsTest.php
 @@ -20,7 +20,7 @@ class IntegrationInsightsTest extends \PHPUnit\Framework\TestCase
@@ -435,7 +410,6 @@ index 141afcdc3c..ea5b6ce566 100755
          $this->mutableScopeConfig = ObjectManager::getInstance()->get(MutableScopeConfigInterface::class);
          $this->mockClientFactory()->instantiateDataHelper();
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/OrderSyncTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/OrderSyncTest.php
-index 632812d620..cc5b195746 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/OrderSyncTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/OrderSyncTest.php
 @@ -84,7 +84,7 @@ class OrderSyncTest extends \Magento\TestFramework\TestCase\AbstractController
@@ -448,7 +422,6 @@ index 632812d620..cc5b195746 100755
          parent::setUp();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php
-index 0e374e24c1..396d19ca67 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php
 @@ -35,7 +35,7 @@ class SingleOrderSyncTest extends \PHPUnit\Framework\TestCase
@@ -461,7 +434,6 @@ index 0e374e24c1..396d19ca67 100755
          $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_review_with_rating_second_website.php b/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_review_with_rating_second_website.php
-index 202669a6fd..49d45a8f7a 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_review_with_rating_second_website.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_review_with_rating_second_website.php
 @@ -4,14 +4,27 @@
@@ -506,7 +478,6 @@ index 202669a6fd..49d45a8f7a 100644
      ->setEntityId($review->getEntityIdByCode(\Magento\Review\Model\Review::ENTITY_PRODUCT_CODE))
      ->setEntityPkValue($product->getId())
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_second_website.php b/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_second_website.php
-index 51fe62f9fc..078ff13f9e 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_second_website.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/_files/customer_second_website.php
 @@ -1,6 +1,10 @@
@@ -538,7 +509,6 @@ index 51fe62f9fc..078ff13f9e 100644
      ->setStoreId($storeId)
      ->setEmail('customer_sec_website@example.com')
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php b/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php
-index 46368fe2d5..01eac4390d 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php
 @@ -8,6 +8,7 @@
@@ -566,7 +536,6 @@ index 46368fe2d5..01eac4390d 100755
      ->setMetaKeyword('meta keyword')
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php
-index 98ec36d2b8..a67dccbfa3 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/AbandonedCarts/CustomerGuestAbandonedTest.php
 @@ -10,6 +10,7 @@
@@ -610,7 +579,6 @@ index 98ec36d2b8..a67dccbfa3 100755
      }
  }
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php
-index ff427fa874..612bc11b88 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Apiconnector/ContactTest.php
 @@ -67,6 +67,7 @@ class ContactTest extends \PHPUnit\Framework\TestCase
@@ -640,7 +608,6 @@ index ff427fa874..612bc11b88 100644
      }
 
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php
-index 3de9ffea80..885012891e 100644
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Model/Sync/Review/ReviewTest.php
 @@ -12,6 +12,7 @@
@@ -717,7 +684,6 @@ index 3de9ffea80..885012891e 100644
       * @magentoDbIsolation enabled
       */
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php
-index c9fb83f382..31eb0f0d26 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Rules/CampaignORMTest.php
 @@ -45,7 +45,7 @@ private function createCampaign($customerId, $email)
@@ -730,7 +696,6 @@ index c9fb83f382..31eb0f0d26 100755
 
      /**
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php
-index 396d19ca67..614bb41f40 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/Sync/SingleOrderSyncTest.php
 @@ -99,10 +99,11 @@ public function testSingleOrderIsTypeOrderAndModeSingle()
@@ -747,7 +712,6 @@ index 396d19ca67..614bb41f40 100755
 
      /**
 diff --git a/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php b/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php
-index 01eac4390d..1b356bcd10 100755
 --- a/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php
 +++ b/vendor/dotmailer-magento2-extension/Test/Integration/_files/product_simple.php
 @@ -21,7 +21,7 @@
@@ -760,7 +724,6 @@ index 01eac4390d..1b356bcd10 100755
      ->setMetaTitle('meta title')
      ->setMetaKeyword('meta keyword')
 diff --git a/vendor/dotmailer-magento2-extension/composer.json b/vendor/dotmailer-magento2-extension/composer.json
-index e5ff88efe9..6b11a77295 100644
 --- a/vendor/dotmailer-magento2-extension/composer.json
 +++ b/vendor/dotmailer-magento2-extension/composer.json
 @@ -15,7 +15,7 @@
@@ -782,7 +745,6 @@ index e5ff88efe9..6b11a77295 100644
      "magento/module-url-rewrite": ">=100 <103"
    },
 diff --git a/vendor/dotmailer-magento2-extension/etc/module.xml b/vendor/dotmailer-magento2-extension/etc/module.xml
-index 1a1926f2d0..76b79e5181 100644
 --- a/vendor/dotmailer-magento2-extension/etc/module.xml
 +++ b/vendor/dotmailer-magento2-extension/etc/module.xml
 @@ -1,6 +1,6 @@
@@ -796,7 +758,6 @@ index 1a1926f2d0..76b79e5181 100644
 
 
 diff --git a/vendor/dotmailer-magento2-extension/composer.json b/vendor/dotmailer-magento2-extension/composer.json
-index 6b11a77295..e5ff88efe9 100644
 --- a/vendor/dotmailer-magento2-extension/composer.json
 +++ b/vendor/dotmailer-magento2-extension/composer.json
 @@ -15,7 +15,7 @@
@@ -818,7 +779,6 @@ index 6b11a77295..e5ff88efe9 100644
      "magento/module-url-rewrite": ">=100 <103"
    },
 diff --git a/vendor/dotmailer-magento2-extension/etc/module.xml b/vendor/dotmailer-magento2-extension/etc/module.xml
-index 76b79e5181..1a1926f2d0 100644
 --- a/vendor/dotmailer-magento2-extension/etc/module.xml
 +++ b/vendor/dotmailer-magento2-extension/etc/module.xml
 @@ -1,6 +1,6 @@
