@@ -10,58 +10,14 @@ namespace Magento\CloudPatches\Test\Functional\Acceptance;
 /**
  * @group php73
  */
-class AcceptanceCest
+class AcceptanceCest extends AbstractCest
 {
-    /**
-     * @var string
-     */
-    protected $edition = 'EE';
-
     /**
      * @param \CliTester $I
      */
     public function _before(\CliTester $I): void
     {
-        $I->cleanupWorkDir();
-    }
-
-    /**
-     * @param \CliTester $I
-     * @param string $templateVersion
-     */
-    protected function prepareTemplate(\CliTester $I, string $templateVersion): void
-    {
-        $I->cloneTemplateToWorkDir($templateVersion);
-        $I->createAuthJson();
-        $I->createArtifactsDir();
-        $I->createArtifactCurrentTestedCode('patches', '1.0.99');
-        $I->addArtifactsRepoToComposer();
-        $I->addEceDockerGitRepoToComposer();
-        $I->addDependencyToComposer('magento/magento-cloud-patches', '1.0.99');
-        $I->addDependencyToComposer(
-            'magento/magento-cloud-docker',
-            $I->getDependencyVersion('magento/magento-cloud-docker')
-        );
-
-        if ($this->edition === 'CE') {
-            $version = $this->getVersionRangeForMagento($I);
-            $I->removeDependencyFromComposer('magento/magento-cloud-metapackage');
-            $I->addDependencyToComposer('magento/ece-tools', '^2002.1.0');
-            $I->addDependencyToComposer('magento/product-community-edition', $version);
-        }
-
-        $I->composerUpdate();
-    }
-
-    /**
-     * @param \CliTester $I
-     * @return string
-     */
-    protected function getVersionRangeForMagento(\CliTester $I): string
-    {
-        $composer = json_decode(file_get_contents($I->getWorkDirPath() . '/composer.json'), true);
-
-        return $composer['require']['magento/magento-cloud-metapackage'] ?? '';
+        parent::_before($I);
     }
 
     /**
@@ -72,8 +28,12 @@ class AcceptanceCest
      */
     public function testPatches(\CliTester $I, \Codeception\Example $data): void
     {
-        $this->prepareTemplate($I, $data['templateVersion']);
-        $I->assertTrue($I->runEceDockerCommand('build:compose --mode=production'));
+        $this->prepareTemplate($I, $data['templateVersion'], $data['magentoVersion'] ?? null);
+        $I->copyFileToWorkDir('files/patches/.apply_quality_patches.env.yaml', '.magento.env.yaml');
+        $I->runEceDockerCommand(sprintf(
+            'build:compose --mode=production --env-vars="%s"',
+            $this->convertEnvFromArrayToJson(['MAGENTO_CLOUD_PROJECT' => 'travis-testing'])
+        ));
         $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
         $I->assertTrue($I->startEnvironment());
         $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
@@ -89,18 +49,13 @@ class AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.3.3'],
-            ['templateVersion' => '2.3.4'],
+            ['templateVersion' => '2.3.3', 'magentoVersion' => '2.3.3'],
+            ['templateVersion' => '2.3.3', 'magentoVersion' => '2.3.3-p1'],
+            ['templateVersion' => '2.3.4', 'magentoVersion' => '2.3.4'],
+            ['templateVersion' => '2.3.4', 'magentoVersion' => '2.3.4-p2'],
+            ['templateVersion' => '2.3.5', 'magentoVersion' => '2.3.5'],
+            ['templateVersion' => '2.3.5', 'magentoVersion' => '2.3.5-p1'],
             ['templateVersion' => 'master'],
         ];
-    }
-
-    /**
-     * @param \CliTester $I
-     */
-    public function _after(\CliTester $I): void
-    {
-        $I->stopEnvironment();
-        $I->removeWorkDir();
     }
 }

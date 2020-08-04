@@ -41,16 +41,17 @@ class Filesystem
      *
      * @param string $path
      * @return string
-     *
-     * @throws FileNotFoundException
+     * @throws FileSystemException
      */
     public function get(string $path): string
     {
-        if ($this->isFile($path)) {
-            return file_get_contents($path);
+        clearstatcache();
+        $result = @file_get_contents($path);
+        if (false === $result) {
+            throw new FileSystemException('Cannot read contents from file "' . $path . '"');
         }
 
-        throw new FileNotFoundException("File does not exist at path {$path}");
+        return $result;
     }
 
     /**
@@ -62,5 +63,52 @@ class Filesystem
     public function isFile(string $file): bool
     {
         return is_file($file);
+    }
+
+    /**
+     * Determine if directory is writable.
+     *
+     * @param string $directory
+     * @return bool
+     */
+    public function isWritable(string $directory): bool
+    {
+        return is_writable($directory);
+    }
+
+    /**
+     * Returns directory component of path.
+     *
+     * @param string $path
+     * @return string
+     */
+    public function getDirectory(string $path): string
+    {
+        return dirname($path);
+    }
+
+    /**
+     * Creates directory.
+     *
+     * @param string $path
+     * @param int $mode
+     * @param bool $recursive
+     * @return bool
+     */
+    public function createDirectory($path, $mode = 0755, $recursive = true): bool
+    {
+        return @mkdir($path, $mode, $recursive);
+    }
+
+    /**
+     * Copy source into destination.
+     *
+     * @param string $source
+     * @param string $destination
+     * @return bool
+     */
+    public function copy(string $source, string $destination): bool
+    {
+        return copy($source, $destination);
     }
 }

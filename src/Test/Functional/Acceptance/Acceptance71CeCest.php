@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
 /**
- * @group php71ce
+ * @group php71cePart1
  */
 class Acceptance71CeCest extends Acceptance71Cest
 {
