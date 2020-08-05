@@ -5,12 +5,12 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CloudPatches\Test\Functional\Acceptance;
+namespace Magento\QualityPatches\Test\Functional\Acceptance;
 
 /**
- * @group php74ce
+ * @group php73ce
  */
-class AcceptanceCeCest extends AcceptanceCest
+class Acceptance73CeCest extends Acceptance73Cest
 {
     /**
      * @var string
