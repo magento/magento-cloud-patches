@@ -354,6 +354,9 @@
     },
     "Re-work consumers to terminate as soon as there is nothing left to process": {
       ">=2.2.0 <2.3.2": "MAGECLOUD-4071__terminate_consumers_if_the_queue_is_empty__2.2.0.patch"
+    },
+    "Fix of upgrade issue for b2b instances with more than 1 store": {
+      "2.4.0": "B2B-716-Exception_thrown_during_upgrade_when_installing_B2B_2.4.0.patch"
     }
   }
 }
