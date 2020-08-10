@@ -380,3 +380,15 @@ diff -Nuar a/setup/src/Magento/Setup/Model/ConfigOptionsList/PageCache.php b/set
 +        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
      }
  }
+diff -Nuar a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php b/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php
+--- a/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php
++++ b/vendor/magento/framework/Cache/Backend/RemoteSynchronizedCache.php
+@@ -205,7 +205,7 @@ class RemoteSynchronizedCache extends \Zend_Cache_Backend implements \Zend_Cache
+         $dataToSave = $data;
+         $remHash = $this->loadRemoteDataVersion($id);
+
+-        if ($remHash !== false) {
++        if ($remHash !== false && $this->getDataVersion($data) === $remHash) {
+             $dataToSave = $this->remote->load($id);
+         } else {
+             $this->remote->save($data, $id, $tags, $specificLifetime);
