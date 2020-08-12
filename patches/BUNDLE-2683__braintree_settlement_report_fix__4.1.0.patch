@@ -1,0 +1,12 @@
+diff -Naur a/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php b/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php
+--- a/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php
++++ b/vendor/paypal/module-braintree-core/Ui/Component/Report/Listing/Column/PaymentType.php
+@@ -44,8 +44,6 @@ private function getAvailablePaymentTypes(): array
+         // @codingStandardsIgnoreStart
+         return [
+             PaymentInstrumentType::PAYPAL_ACCOUNT => __(PaymentInstrumentType::PAYPAL_ACCOUNT),
+-            PaymentInstrumentType::COINBASE_ACCOUNT => __(PaymentInstrumentType::COINBASE_ACCOUNT),
+-            PaymentInstrumentType::EUROPE_BANK_ACCOUNT => __(PaymentInstrumentType::EUROPE_BANK_ACCOUNT),
+             PaymentInstrumentType::CREDIT_CARD => __(PaymentInstrumentType::CREDIT_CARD),
+             PaymentInstrumentType::APPLE_PAY_CARD => __(PaymentInstrumentType::APPLE_PAY_CARD),
+             PaymentInstrumentType::ANDROID_PAY_CARD => __(PaymentInstrumentType::ANDROID_PAY_CARD)
