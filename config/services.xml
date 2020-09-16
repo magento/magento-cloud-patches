@@ -19,6 +19,7 @@
         <service id="Magento\CloudPatches\Patch\Status\StatusResolverException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\PatchIntegrityException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\Pool\PatchNotFoundException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommandNotFound" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\ApplierException" autowire="false"/>
         <service id="Magento\CloudPatches\Shell\PackageNotFoundException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\Data\Patch" autowire="false"/>
@@ -76,5 +77,14 @@
             <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
         </service>
         <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>
+        <service id="patchCommandSelector" class="Magento\CloudPatches\Patch\PatchCommandSelector">
+            <argument key="$commands" type="collection">
+                <argument type="service" id="Magento\CloudPatches\Patch\GitPatchCommand"/>
+                <argument type="service" id="Magento\CloudPatches\Patch\PatchCommand"/>
+            </argument>
+        </service>
+        <service id="Magento\CloudPatches\Patch\Applier">
+            <argument key="$patchCommand" type="service" id="patchCommandSelector"/>
+        </service>
     </services>
 </container>
