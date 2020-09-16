@@ -10,7 +10,6 @@ namespace Magento\CloudPatches\Patch;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Status\StatusPool;
-use Magento\CloudPatches\Shell\ProcessFactory;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
@@ -18,11 +17,6 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
  */
 class Applier
 {
-    /**
-     * @var ProcessFactory
-     */
-    private $processFactory;
-
     /**
      * @var GitConverter
      */
@@ -37,23 +31,27 @@ class Applier
      * @var Filesystem
      */
     private $filesystem;
+    /**
+     * @var PatchCommandInterface
+     */
+    private $patchCommand;
 
     /**
-     * @param ProcessFactory $processFactory
      * @param GitConverter $gitConverter
      * @param MagentoVersion $magentoVersion
      * @param Filesystem $filesystem
+     * @param PatchCommandInterface $patchCommand
      */
     public function __construct(
-        ProcessFactory $processFactory,
         GitConverter $gitConverter,
         MagentoVersion $magentoVersion,
-        Filesystem $filesystem
+        Filesystem $filesystem,
+        PatchCommandInterface $patchCommand
     ) {
-        $this->processFactory = $processFactory;
         $this->gitConverter = $gitConverter;
         $this->magentoVersion = $magentoVersion;
         $this->filesystem = $filesystem;
+        $this->patchCommand = $patchCommand;
     }
 
     /**
@@ -69,20 +67,12 @@ class Applier
     {
         $content = $this->readContent($path);
         try {
-            $this->processFactory->create(['git', 'apply'], $content)
-                ->mustRun();
+            $result = $this->patchCommand->apply($content);
         } catch (ProcessFailedException $exception) {
-            try {
-                $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $content)
-                    ->mustRun();
-            } catch (ProcessFailedException $reverseException) {
-                throw new ApplierException($exception->getMessage(), $exception->getCode());
-            }
-
-            return sprintf('Patch %s was already applied', $id);
+            throw new ApplierException($exception->getMessage(), $exception->getCode());
         }
 
-        return sprintf('Patch %s has been applied', $id);
+        return $result ? sprintf('Patch %s has been applied', $id) : sprintf('Patch %s was already applied', $id);
     }
 
     /**
@@ -98,20 +88,12 @@ class Applier
     {
         $content = $this->readContent($path);
         try {
-            $this->processFactory->create(['git', 'apply', '--reverse'], $content)
-                ->mustRun();
+            $result = $this->patchCommand->revert($content);
         } catch (ProcessFailedException $exception) {
-            try {
-                $this->processFactory->create(['git', 'apply', '--check'], $content)
-                    ->mustRun();
-            } catch (ProcessFailedException $applyException) {
-                throw new ApplierException($exception->getMessage(), $exception->getCode());
-            }
-
-            return sprintf('Patch %s wasn\'t applied', $id);
+            throw new ApplierException($exception->getMessage(), $exception->getCode());
         }
 
-        return sprintf('Patch %s has been reverted', $id);
+        return $result ? sprintf('Patch %s has been reverted', $id) : sprintf('Patch %s wasn\'t applied', $id);
     }
 
     /**
@@ -124,20 +106,12 @@ class Applier
     {
         $patchContent = $this->prepareContent($patchContent);
         try {
-            $this->processFactory->create(['git', 'apply', '--check'], $patchContent)
-                ->mustRun();
+            $result = $this->patchCommand->status($patchContent);
         } catch (ProcessFailedException $exception) {
-            try {
-                $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $patchContent)
-                    ->mustRun();
-            } catch (ProcessFailedException $reverseException) {
-                return StatusPool::NA;
-            }
-
-            return StatusPool::APPLIED;
+            return StatusPool::NA;
         }
 
-        return StatusPool::NOT_APPLIED;
+        return $result ? StatusPool::NOT_APPLIED : StatusPool::APPLIED;
     }
 
     /**
@@ -149,14 +123,8 @@ class Applier
     public function checkApply(string $patchContent): bool
     {
         $patchContent = $this->prepareContent($patchContent);
-        try {
-            $this->processFactory->create(['git', 'apply', '--check'], $patchContent)
-                ->mustRun();
-        } catch (ProcessFailedException $exception) {
-            return false;
-        }
 
-        return true;
+        return $this->patchCommand->check($patchContent);
     }
 
     /**
