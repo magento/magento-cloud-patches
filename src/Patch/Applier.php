@@ -18,6 +18,11 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 class Applier
 {
     /**
+     * @var PatchCommandInterface
+     */
+    private $patchCommand;
+
+    /**
      * @var GitConverter
      */
     private $gitConverter;
@@ -31,27 +36,23 @@ class Applier
      * @var Filesystem
      */
     private $filesystem;
-    /**
-     * @var PatchCommandInterface
-     */
-    private $patchCommand;
 
     /**
+     * @param PatchCommandInterface $patchCommand
      * @param GitConverter $gitConverter
      * @param MagentoVersion $magentoVersion
      * @param Filesystem $filesystem
-     * @param PatchCommandInterface $patchCommand
      */
     public function __construct(
+        PatchCommandInterface $patchCommand,
         GitConverter $gitConverter,
         MagentoVersion $magentoVersion,
-        Filesystem $filesystem,
-        PatchCommandInterface $patchCommand
+        Filesystem $filesystem
     ) {
+        $this->patchCommand = $patchCommand;
         $this->gitConverter = $gitConverter;
         $this->magentoVersion = $magentoVersion;
         $this->filesystem = $filesystem;
-        $this->patchCommand = $patchCommand;
     }
 
     /**
@@ -67,12 +68,18 @@ class Applier
     {
         $content = $this->readContent($path);
         try {
-            $result = $this->patchCommand->apply($content);
+            $this->patchCommand->applyCheck($content);
         } catch (ProcessFailedException $exception) {
-            throw new ApplierException($exception->getMessage(), $exception->getCode());
+            try {
+                $this->patchCommand->reverseCheck($content);
+            } catch (ProcessFailedException $reverseException) {
+                throw new ApplierException($exception->getMessage(), $exception->getCode());
+            }
+
+            return sprintf('Patch %s was already applied', $id);
         }
 
-        return $result ? sprintf('Patch %s has been applied', $id) : sprintf('Patch %s was already applied', $id);
+        return sprintf('Patch %s has been applied', $id);
     }
 
     /**
@@ -88,12 +95,18 @@ class Applier
     {
         $content = $this->readContent($path);
         try {
-            $result = $this->patchCommand->revert($content);
+            $this->patchCommand->revert($content);
         } catch (ProcessFailedException $exception) {
-            throw new ApplierException($exception->getMessage(), $exception->getCode());
+            try {
+                $this->patchCommand->applyCheck($content);
+            } catch (ProcessFailedException $applyException) {
+                throw new ApplierException($exception->getMessage(), $exception->getCode());
+            }
+
+            return sprintf('Patch %s wasn\'t applied', $id);
         }
 
-        return $result ? sprintf('Patch %s has been reverted', $id) : sprintf('Patch %s wasn\'t applied', $id);
+        return sprintf('Patch %s has been reverted', $id);
     }
 
     /**
@@ -106,12 +119,18 @@ class Applier
     {
         $patchContent = $this->prepareContent($patchContent);
         try {
-            $result = $this->patchCommand->status($patchContent);
+            $this->patchCommand->applyCheck($patchContent);
         } catch (ProcessFailedException $exception) {
-            return StatusPool::NA;
+            try {
+                $this->patchCommand->reverseCheck($patchContent);
+            } catch (ProcessFailedException $reverseException) {
+                return StatusPool::NA;
+            }
+
+            return StatusPool::APPLIED;
         }
 
-        return $result ? StatusPool::NOT_APPLIED : StatusPool::APPLIED;
+        return StatusPool::NOT_APPLIED;
     }
 
     /**
@@ -123,8 +142,13 @@ class Applier
     public function checkApply(string $patchContent): bool
     {
         $patchContent = $this->prepareContent($patchContent);
+        try {
+            $this->patchCommand->applyCheck($patchContent);
+        } catch (ProcessFailedException $exception) {
+            return false;
+        }
 
-        return $this->patchCommand->check($patchContent);
+        return true;
     }
 
     /**

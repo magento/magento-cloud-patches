@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch;
 
+/**
+ * Patch command selector
+ */
 class PatchCommandSelector implements PatchCommandInterface
 {
     /**
@@ -15,7 +18,6 @@ class PatchCommandSelector implements PatchCommandInterface
     private $commands;
 
     /**
-     * PatchCommandSelector constructor.
      * @param PatchCommandInterface[] $commands
      */
     public function __construct(
@@ -27,33 +29,33 @@ class PatchCommandSelector implements PatchCommandInterface
     /**
      * @inheritDoc
      */
-    public function apply(string $patch): bool
+    public function apply(string $patch)
     {
-        return $this->getCommand()->apply($patch);
+        $this->getCommand()->apply($patch);
     }
 
     /**
      * @inheritDoc
      */
-    public function revert(string $patch): bool
+    public function revert(string $patch)
     {
-        return $this->getCommand()->revert($patch);
+        $this->getCommand()->revert($patch);
     }
 
     /**
      * @inheritDoc
      */
-    public function check(string $patch): bool
+    public function applyCheck(string $patch)
     {
-        return $this->getCommand()->check($patch);
+        $this->getCommand()->applyCheck($patch);
     }
 
     /**
      * @inheritDoc
      */
-    public function status(string $patch): bool
+    public function reverseCheck(string $patch)
     {
-        return $this->getCommand()->status($patch);
+        $this->getCommand()->reverseCheck($patch);
     }
 
     /**

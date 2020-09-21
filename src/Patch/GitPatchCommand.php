@@ -10,6 +10,9 @@ namespace Magento\CloudPatches\Patch;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
+/**
+ * Patch command for GIT
+ */
 class GitPatchCommand implements PatchCommandInterface
 {
     /**
@@ -26,69 +29,37 @@ class GitPatchCommand implements PatchCommandInterface
     /**
      * @inheritDoc
      */
-    public function apply(string $patch): bool
+    public function apply(string $patch)
     {
-        try {
-            $this->processFactory->create(['git', 'apply'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $patch)
-                ->mustRun();
-            $result = false;
-        }
-        return $result;
+        $this->processFactory->create(['git', 'apply'], $patch)
+            ->mustRun();
     }
 
     /**
      * @inheritDoc
      */
-    public function revert(string $patch): bool
+    public function revert(string $patch)
     {
-        try {
-            $this->processFactory->create(['git', 'apply', '--reverse'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $this->processFactory->create(['git', 'apply', '--check'], $patch)
-                ->mustRun();
-            $result = false;
-        }
-        return $result;
+        $this->processFactory->create(['git', 'apply', '--reverse'], $patch)
+            ->mustRun();
     }
 
     /**
      * @inheritDoc
      */
-    public function check(string $patch): bool
+    public function applyCheck(string $patch)
     {
-        try {
-            $this->processFactory->create(['git', 'apply', '--check'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $result = false;
-        }
-
-        return $result;
+        $this->processFactory->create(['git', 'apply', '--check'], $patch)
+            ->mustRun();
     }
 
     /**
      * @inheritDoc
      */
-    public function status(string $patch): bool
+    public function reverseCheck(string $patch)
     {
-        try {
-            $this->processFactory->create(['git', 'apply', '--check'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $patch)
-                ->mustRun();
-            $result = false;
-        }
-
-        return $result;
+        $this->processFactory->create(['git', 'apply', '--reverse', '--check'], $patch)
+            ->mustRun();
     }
 
     /**
