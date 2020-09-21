@@ -42,7 +42,7 @@ interface PatchCommandInterface
      * @param string $patch
      * @return void
      */
-    public function reverseCheck(string $patch);
+    public function revertCheck(string $patch);
 
     /**
      * Checks if the command is installed

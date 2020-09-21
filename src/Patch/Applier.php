@@ -68,10 +68,10 @@ class Applier
     {
         $content = $this->readContent($path);
         try {
-            $this->patchCommand->applyCheck($content);
+            $this->patchCommand->apply($content);
         } catch (ProcessFailedException $exception) {
             try {
-                $this->patchCommand->reverseCheck($content);
+                $this->patchCommand->revertCheck($content);
             } catch (ProcessFailedException $reverseException) {
                 throw new ApplierException($exception->getMessage(), $exception->getCode());
             }
@@ -122,7 +122,7 @@ class Applier
             $this->patchCommand->applyCheck($patchContent);
         } catch (ProcessFailedException $exception) {
             try {
-                $this->patchCommand->reverseCheck($patchContent);
+                $this->patchCommand->revertCheck($patchContent);
             } catch (ProcessFailedException $reverseException) {
                 return StatusPool::NA;
             }

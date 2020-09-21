@@ -12,8 +12,8 @@ use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use Magento\CloudPatches\Patch\GitConverter;
+use Magento\CloudPatches\Patch\PatchCommandInterface;
 use Magento\CloudPatches\Patch\Status\StatusPool;
-use Magento\CloudPatches\Shell\ProcessFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -30,9 +30,9 @@ class ApplierTest extends TestCase
     private $applier;
 
     /**
-     * @var ProcessFactory|MockObject
+     * @var PatchCommandInterface|MockObject
      */
-    private $processFactory;
+    private $patchCommand;
 
     /**
      * @var GitConverter|MockObject
@@ -54,13 +54,13 @@ class ApplierTest extends TestCase
      */
     protected function setUp()
     {
-        $this->processFactory = $this->createMock(ProcessFactory::class);
+        $this->patchCommand = $this->createMock(PatchCommandInterface::class);
         $this->gitConverter = $this->createMock(GitConverter::class);
         $this->magentoVersion = $this->createMock(MagentoVersion::class);
         $this->filesystem = $this->createMock(Filesystem::class);
 
         $this->applier = new Applier(
-            $this->processFactory,
+            $this->patchCommand,
             $this->gitConverter,
             $this->magentoVersion,
             $this->filesystem
@@ -86,14 +86,10 @@ class ApplierTest extends TestCase
         $this->gitConverter->expects($this->once())
             ->method('convert')
             ->willReturn('gitContent');
-        $processMock = $this->createMock(Process::class);
 
-        $this->processFactory->expects($this->once())
-            ->method('create')
-            ->withConsecutive([['git', 'apply'], 'gitContent'])
-            ->willReturn($processMock);
-        $processMock->expects($this->once())
-            ->method('mustRun');
+        $this->patchCommand->expects($this->once())
+            ->method('apply')
+            ->with('gitContent');
 
         $this->assertSame($expectedMessage, $this->applier->apply($path, $patchId));
     }
@@ -106,14 +102,13 @@ class ApplierTest extends TestCase
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
 
-        /** @var Process|MockObject $result */
-        $processMock = $this->createMock(Process::class);
-        $processMock->method('mustRun')
-            ->willThrowException(new ProcessFailedException($processMock));
+        $this->patchCommand->expects($this->once())
+            ->method('apply')
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
 
-        $this->processFactory->expects($this->exactly(2))
-            ->method('create')
-            ->willReturn($processMock);
+        $this->patchCommand->expects($this->once())
+            ->method('revertCheck')
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
 
         $this->expectException(ApplierException::class);
         $this->applier->apply($path, $patchId);
@@ -139,45 +134,16 @@ class ApplierTest extends TestCase
         $this->gitConverter->expects($this->never())
             ->method('convert');
 
-        $this->processFactory->expects($this->exactly(2))
-            ->method('create')
-            ->willReturnMap([
-                [['git', 'apply'], 'patchContent'],
-                [['git', 'apply', '--check', '--reverse'], 'patchContent']
-            ])->willReturnCallback([$this, 'shellApplyRevertCallback']);
+        $this->patchCommand->expects($this->once())
+            ->method('apply')
+            ->with('patchContent')
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+
+        $this->patchCommand->expects($this->once())
+            ->method('revertCheck')
+            ->with('patchContent');
 
         $this->assertSame($expectedMessage, $this->applier->apply($path, $patchId));
-    }
-
-    /**
-     * Callback for 'apply' and 'revert' operations.
-     *
-     * @param array $command
-     * @return Process
-     *
-     * @throws ProcessFailedException when the command isn't a reverse
-     */
-    public function shellApplyRevertCallback(array $command): Process
-    {
-        if (in_array('--reverse', $command, true) && in_array('--check', $command, true) ||
-            !in_array('--reverse', $command, true) && in_array('--check', $command, true)
-        ) {
-            // Command was the reverse check, it's all good.
-            /** @var Process|MockObject $result */
-            $result = $this->createMock(Process::class);
-            $result->expects($this->once())
-                ->method('mustRun');
-
-            return $result;
-        }
-
-        /** @var Process|MockObject $result */
-        $result = $this->createMock(Process::class);
-        $result->expects($this->once())
-            ->method('mustRun')
-            ->willThrowException(new ProcessFailedException($result));
-
-        return $result;
     }
 
     /**
@@ -201,14 +167,9 @@ class ApplierTest extends TestCase
             ->method('convert')
             ->willReturn('gitContent');
 
-        $processMock = $this->createMock(Process::class);
-
-        $this->processFactory->expects($this->once())
-            ->method('create')
-            ->withConsecutive([['git', 'apply', '--reverse'], 'gitContent'])
-            ->willReturn($processMock);
-        $processMock->expects($this->once())
-            ->method('mustRun');
+        $this->patchCommand->expects($this->once())
+            ->method('revert')
+            ->with('gitContent');
 
         $this->assertSame($expectedMessage, $this->applier->revert($path, $patchId));
     }
@@ -221,14 +182,13 @@ class ApplierTest extends TestCase
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
 
-        /** @var Process|MockObject $result */
-        $processMock = $this->createMock(Process::class);
-        $processMock->method('mustRun')
-            ->willThrowException(new ProcessFailedException($processMock));
+        $this->patchCommand->expects($this->once())
+            ->method('revert')
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
 
-        $this->processFactory->expects($this->exactly(2))
-            ->method('create')
-            ->willReturn($processMock);
+        $this->patchCommand->expects($this->once())
+            ->method('applyCheck')
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
 
         $this->expectException(ApplierException::class);
         $this->applier->revert($path, $patchId);
@@ -255,12 +215,14 @@ class ApplierTest extends TestCase
         $this->gitConverter->expects($this->never())
             ->method('convert');
 
-        $this->processFactory->expects($this->exactly(2))
-            ->method('create')
-            ->willReturnMap([
-                [['git', 'apply'], $patchContent],
-                [['git', 'apply', '--check'], $patchContent]
-            ])->willReturnCallback([$this, 'shellApplyRevertCallback']);
+        $this->patchCommand->expects($this->once())
+            ->method('revert')
+            ->with($patchContent)
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+
+        $this->patchCommand->expects($this->once())
+            ->method('applyCheck')
+            ->with($patchContent);
 
         $this->assertSame($expectedMessage, $this->applier->revert($path, $patchId));
     }
@@ -271,14 +233,10 @@ class ApplierTest extends TestCase
     public function testStatusNotApplied()
     {
         $patchContent = 'patch content';
-        $processMock = $this->createMock(Process::class);
 
-        $this->processFactory->expects($this->once())
-            ->method('create')
-            ->withConsecutive([['git', 'apply', '--check'], $patchContent])
-            ->willReturn($processMock);
-        $processMock->expects($this->once())
-            ->method('mustRun');
+        $this->patchCommand->expects($this->once())
+            ->method('applyCheck')
+            ->with($patchContent);
 
         $this->assertSame(StatusPool::NOT_APPLIED, $this->applier->status($patchContent));
     }
@@ -290,14 +248,15 @@ class ApplierTest extends TestCase
     {
         $patchContent = 'patch content';
 
-        /** @var Process|MockObject $result */
-        $processMock = $this->createMock(Process::class);
-        $processMock->method('mustRun')
-            ->willThrowException(new ProcessFailedException($processMock));
+        $this->patchCommand->expects($this->once())
+            ->method('applyCheck')
+            ->with($patchContent)
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
 
-        $this->processFactory->expects($this->exactly(2))
-            ->method('create')
-            ->willReturn($processMock);
+        $this->patchCommand->expects($this->once())
+            ->method('revertCheck')
+            ->with($patchContent)
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
 
         $this->assertSame(StatusPool::NA, $this->applier->status($patchContent));
     }
@@ -309,42 +268,15 @@ class ApplierTest extends TestCase
     {
         $patchContent = 'patch content';
 
-        $this->processFactory->expects($this->exactly(2))
-            ->method('create')
-            ->willReturnMap([
-                [['git', 'apply', '--check']],
-                [['git', 'apply', '--check', '--reverse']]
-            ])->willReturnCallback([$this, 'shellStatusCallback']);
+        $this->patchCommand->expects($this->once())
+            ->method('applyCheck')
+            ->with($patchContent)
+            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+
+        $this->patchCommand->expects($this->once())
+            ->method('revertCheck')
+            ->with($patchContent);
 
         $this->assertSame(StatusPool::APPLIED, $this->applier->status($patchContent));
-    }
-
-    /**
-     * Callback for 'status' operations.
-     *
-     * @param array $command
-     * @return Process
-     *
-     * @throws ProcessFailedException when the command isn't a reverse
-     */
-    public function shellStatusCallback(array $command): Process
-    {
-        if (in_array('--reverse', $command, true) && in_array('--check', $command, true)) {
-            // Command was the reverse check, it's all good.
-            /** @var Process|MockObject $result */
-            $result = $this->createMock(Process::class);
-            $result->expects($this->once())
-                ->method('mustRun');
-
-            return $result;
-        }
-
-        /** @var Process|MockObject $result */
-        $result = $this->createMock(Process::class);
-        $result->expects($this->once())
-            ->method('mustRun')
-            ->willThrowException(new ProcessFailedException($result));
-
-        return $result;
     }
 }

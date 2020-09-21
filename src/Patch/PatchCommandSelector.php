@@ -53,9 +53,9 @@ class PatchCommandSelector implements PatchCommandInterface
     /**
      * @inheritDoc
      */
-    public function reverseCheck(string $patch)
+    public function revertCheck(string $patch)
     {
-        $this->getCommand()->reverseCheck($patch);
+        $this->getCommand()->revertCheck($patch);
     }
 
     /**
