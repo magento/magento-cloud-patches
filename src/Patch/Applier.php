@@ -10,7 +10,6 @@ namespace Magento\CloudPatches\Patch;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Status\StatusPool;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
  * Applies and reverts patches.
@@ -69,10 +68,10 @@ class Applier
         $content = $this->readContent($path);
         try {
             $this->patchCommand->apply($content);
-        } catch (ProcessFailedException $exception) {
+        } catch (PatchCommandException $exception) {
             try {
                 $this->patchCommand->revertCheck($content);
-            } catch (ProcessFailedException $reverseException) {
+            } catch (PatchCommandException $reverseException) {
                 throw new ApplierException($exception->getMessage(), $exception->getCode());
             }
 
@@ -96,10 +95,10 @@ class Applier
         $content = $this->readContent($path);
         try {
             $this->patchCommand->revert($content);
-        } catch (ProcessFailedException $exception) {
+        } catch (PatchCommandException $exception) {
             try {
                 $this->patchCommand->applyCheck($content);
-            } catch (ProcessFailedException $applyException) {
+            } catch (PatchCommandException $applyException) {
                 throw new ApplierException($exception->getMessage(), $exception->getCode());
             }
 
@@ -120,10 +119,10 @@ class Applier
         $patchContent = $this->prepareContent($patchContent);
         try {
             $this->patchCommand->applyCheck($patchContent);
-        } catch (ProcessFailedException $exception) {
+        } catch (PatchCommandException $exception) {
             try {
                 $this->patchCommand->revertCheck($patchContent);
-            } catch (ProcessFailedException $reverseException) {
+            } catch (PatchCommandException $reverseException) {
                 return StatusPool::NA;
             }
 
@@ -144,7 +143,7 @@ class Applier
         $patchContent = $this->prepareContent($patchContent);
         try {
             $this->patchCommand->applyCheck($patchContent);
-        } catch (ProcessFailedException $exception) {
+        } catch (PatchCommandException $exception) {
             return false;
         }
 

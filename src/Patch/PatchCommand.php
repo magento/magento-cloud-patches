@@ -7,23 +7,28 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch;
 
-use Magento\CloudPatches\Shell\ProcessFactory;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-
 /**
- * Patch command for unix patch
+ * Patch command selector
  */
 class PatchCommand implements PatchCommandInterface
 {
     /**
-     * @var ProcessFactory
+     * @var PatchCommandInterface[]
      */
-    private $processFactory;
+    private $commands;
 
+    /**
+     * @var PatchCommandInterface
+     */
+    private $command;
+
+    /**
+     * @param PatchCommandInterface[] $commands
+     */
     public function __construct(
-        ProcessFactory $processFactory
+        array $commands
     ) {
-        $this->processFactory = $processFactory;
+        $this->commands = $commands;
     }
 
     /**
@@ -31,9 +36,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function apply(string $patch)
     {
-        $this->applyCheck($patch);
-        $this->processFactory->create(['patch', '--silent', '-f', '-p1'], $patch)
-            ->mustRun();
+        $this->getCommand()->apply($patch);
     }
 
     /**
@@ -41,9 +44,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function revert(string $patch)
     {
-        $this->revertCheck($patch);
-        $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse'], $patch)
-            ->mustRun();
+        $this->getCommand()->revert($patch);
     }
 
     /**
@@ -51,8 +52,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function applyCheck(string $patch)
     {
-        $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--dry-run'], $patch)
-            ->mustRun();
+        $this->getCommand()->applyCheck($patch);
     }
 
     /**
@@ -60,8 +60,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function revertCheck(string $patch)
     {
-        $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse', '--dry-run'], $patch)
-            ->mustRun();
+        $this->getCommand()->revertCheck($patch);
     }
 
     /**
@@ -69,13 +68,28 @@ class PatchCommand implements PatchCommandInterface
      */
     public function isInstalled(): bool
     {
-        try {
-            $this->processFactory->create(['patch', '--version'])->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $result = false;
-        }
+        return $this->getCommand()->isInstalled();
+    }
 
-        return $result;
+    /**
+     * Return first available command
+     *
+     * @return PatchCommandInterface
+     * @throws PatchCommandNotFound
+     */
+    private function getCommand(): PatchCommandInterface
+    {
+        if ($this->command === null) {
+            foreach ($this->commands as $command) {
+                if ($command->isInstalled()) {
+                    $this->command = $command;
+                    break;
+                }
+            }
+            if ($this->command === null) {
+                throw new PatchCommandNotFound();
+            }
+        }
+        return $this->command;
     }
 }
