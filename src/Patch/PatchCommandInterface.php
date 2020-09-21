@@ -17,6 +17,7 @@ interface PatchCommandInterface
      *
      * @param string $patch
      * @return void
+     * @throws PatchCommandException
      */
     public function apply(string $patch);
 
@@ -25,6 +26,7 @@ interface PatchCommandInterface
      *
      * @param string $patch
      * @return void
+     * @throws PatchCommandException
      */
     public function revert(string $patch);
 
@@ -33,6 +35,7 @@ interface PatchCommandInterface
      *
      * @param string $patch
      * @return void
+     * @throws PatchCommandException
      */
     public function applyCheck(string $patch);
 
@@ -41,13 +44,7 @@ interface PatchCommandInterface
      *
      * @param string $patch
      * @return void
+     * @throws PatchCommandException
      */
     public function revertCheck(string $patch);
-
-    /**
-     * Checks if the command is installed
-     *
-     * @return bool
-     */
-    public function isInstalled(): bool;
 }

@@ -9,10 +9,9 @@ namespace Magento\CloudPatches\Patch;
 
 use Magento\CloudPatches\App\GenericException;
 
-class PatchCommandNotFound extends GenericException
+/**
+ * Generic patch command exception
+ */
+class PatchCommandException extends GenericException
 {
-    public function __construct()
-    {
-        parent::__construct('GIT or PATCH is required to perform this operation.');
-    }
 }

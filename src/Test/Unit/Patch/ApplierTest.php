@@ -12,12 +12,11 @@ use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\ApplierException;
 use Magento\CloudPatches\Patch\GitConverter;
+use Magento\CloudPatches\Patch\PatchCommandException;
 use Magento\CloudPatches\Patch\PatchCommandInterface;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
 
 /**
  * @inheritDoc
@@ -104,11 +103,11 @@ class ApplierTest extends TestCase
 
         $this->patchCommand->expects($this->once())
             ->method('apply')
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be applied'));
 
         $this->patchCommand->expects($this->once())
             ->method('revertCheck')
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be reverted'));
 
         $this->expectException(ApplierException::class);
         $this->applier->apply($path, $patchId);
@@ -137,7 +136,7 @@ class ApplierTest extends TestCase
         $this->patchCommand->expects($this->once())
             ->method('apply')
             ->with('patchContent')
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be applied'));
 
         $this->patchCommand->expects($this->once())
             ->method('revertCheck')
@@ -184,11 +183,11 @@ class ApplierTest extends TestCase
 
         $this->patchCommand->expects($this->once())
             ->method('revert')
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be reverted'));
 
         $this->patchCommand->expects($this->once())
             ->method('applyCheck')
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be applied'));
 
         $this->expectException(ApplierException::class);
         $this->applier->revert($path, $patchId);
@@ -218,7 +217,7 @@ class ApplierTest extends TestCase
         $this->patchCommand->expects($this->once())
             ->method('revert')
             ->with($patchContent)
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be reverted'));
 
         $this->patchCommand->expects($this->once())
             ->method('applyCheck')
@@ -251,12 +250,12 @@ class ApplierTest extends TestCase
         $this->patchCommand->expects($this->once())
             ->method('applyCheck')
             ->with($patchContent)
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be applied'));
 
         $this->patchCommand->expects($this->once())
             ->method('revertCheck')
             ->with($patchContent)
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be reverted'));
 
         $this->assertSame(StatusPool::NA, $this->applier->status($patchContent));
     }
@@ -271,7 +270,7 @@ class ApplierTest extends TestCase
         $this->patchCommand->expects($this->once())
             ->method('applyCheck')
             ->with($patchContent)
-            ->willThrowException(new ProcessFailedException($this->createMock(Process::class)));
+            ->willThrowException(new PatchCommandException('Patch cannot be applied'));
 
         $this->patchCommand->expects($this->once())
             ->method('revertCheck')

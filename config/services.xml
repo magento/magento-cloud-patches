@@ -77,14 +77,14 @@
             <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
         </service>
         <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>
-        <service id="patchCommandSelector" class="Magento\CloudPatches\Patch\PatchCommandSelector">
+        <service id="patchCommand" class="Magento\CloudPatches\Patch\PatchCommand">
             <argument key="$commands" type="collection">
-                <argument type="service" id="Magento\CloudPatches\Patch\GitPatchCommand"/>
-                <argument type="service" id="Magento\CloudPatches\Patch\PatchCommand"/>
+                <argument type="service" id="Magento\CloudPatches\Shell\Command\GitDriver"/>
+                <argument type="service" id="Magento\CloudPatches\Shell\Command\PatchDriver"/>
             </argument>
         </service>
         <service id="Magento\CloudPatches\Patch\Applier">
-            <argument key="$patchCommand" type="service" id="patchCommandSelector"/>
+            <argument key="$patchCommand" type="service" id="patchCommand"/>
         </service>
     </services>
 </container>
