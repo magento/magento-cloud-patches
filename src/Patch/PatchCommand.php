@@ -64,14 +64,6 @@ class PatchCommand implements PatchCommandInterface
     }
 
     /**
-     * @inheritDoc
-     */
-    public function isInstalled(): bool
-    {
-        return $this->getCommand()->isInstalled();
-    }
-
-    /**
      * Return first available command
      *
      * @return PatchCommandInterface
