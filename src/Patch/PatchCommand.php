@@ -10,6 +10,9 @@ namespace Magento\CloudPatches\Patch;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
+/**
+ * Patch command for unix patch
+ */
 class PatchCommand implements PatchCommandInterface
 {
     /**
@@ -26,69 +29,39 @@ class PatchCommand implements PatchCommandInterface
     /**
      * @inheritDoc
      */
-    public function apply(string $patch): bool
+    public function apply(string $patch)
     {
-        try {
-            $this->processFactory->create(['patch', '--silent', '-p1'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $this->processFactory->create(['patch', '--dry-run', '--silent', '-R', '-p1'], $patch)
-                ->mustRun();
-            $result = false;
-        }
-        return $result;
+        $this->applyCheck($patch);
+        $this->processFactory->create(['patch', '--silent', '-f', '-p1'], $patch)
+            ->mustRun();
     }
 
     /**
      * @inheritDoc
      */
-    public function revert(string $patch): bool
+    public function revert(string $patch)
     {
-        try {
-            $this->processFactory->create(['patch', '--silent', '-R', '-p1'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $this->processFactory->create(['patch', '--dry-run', '--silent', '-p1'], $patch)
-                ->mustRun();
-            $result = false;
-        }
-        return $result;
+        $this->reverseCheck($patch);
+        $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse'], $patch)
+            ->mustRun();
     }
 
     /**
      * @inheritDoc
      */
-    public function check(string $patch): bool
+    public function applyCheck(string $patch)
     {
-        try {
-            $this->processFactory->create(['patch', '--dry-run', '--silent', '-p1'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $result = false;
-        }
-
-        return $result;
+        $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--dry-run'], $patch)
+            ->mustRun();
     }
 
     /**
      * @inheritDoc
      */
-    public function status(string $patch): bool
+    public function reverseCheck(string $patch)
     {
-        try {
-            $this->processFactory->create(['patch', '--dry-run', '--silent', '-p1'], $patch)
-                ->mustRun();
-            $result = true;
-        } catch (ProcessFailedException $exception) {
-            $this->processFactory->create(['patch', '--dry-run', '--silent', '-R', '-p1'], $patch)
-                ->mustRun();
-            $result = false;
-        }
-
-        return $result;
+        $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse', '--dry-run'], $patch)
+            ->mustRun();
     }
 
     /**
