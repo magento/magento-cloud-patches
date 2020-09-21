@@ -41,7 +41,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function revert(string $patch)
     {
-        $this->reverseCheck($patch);
+        $this->revertCheck($patch);
         $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse'], $patch)
             ->mustRun();
     }
@@ -58,7 +58,7 @@ class PatchCommand implements PatchCommandInterface
     /**
      * @inheritDoc
      */
-    public function reverseCheck(string $patch)
+    public function revertCheck(string $patch)
     {
         $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse', '--dry-run'], $patch)
             ->mustRun();

@@ -56,7 +56,7 @@ class GitPatchCommand implements PatchCommandInterface
     /**
      * @inheritDoc
      */
-    public function reverseCheck(string $patch)
+    public function revertCheck(string $patch)
     {
         $this->processFactory->create(['git', 'apply', '--reverse', '--check'], $patch)
             ->mustRun();
