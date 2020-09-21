@@ -31,7 +31,7 @@ interface PatchCommandInterface
     public function revert(string $patch);
 
     /**
-     * Checks if the patch can be applied.
+     * Checks if patch can be applied.
      *
      * @param string $patch
      * @return void
@@ -40,7 +40,7 @@ interface PatchCommandInterface
     public function applyCheck(string $patch);
 
     /**
-     * Checks if the patch can be reversed
+     * Checks if patch can be reverted
      *
      * @param string $patch
      * @return void

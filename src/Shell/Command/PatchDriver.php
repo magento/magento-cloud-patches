@@ -21,6 +21,9 @@ class PatchDriver implements DriverInterface
      */
     private $processFactory;
 
+    /**
+     * @param ProcessFactory $processFactory
+     */
     public function __construct(
         ProcessFactory $processFactory
     ) {
