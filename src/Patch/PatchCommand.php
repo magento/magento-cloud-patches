@@ -7,23 +7,25 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch;
 
+use Magento\CloudPatches\Shell\Command\DriverInterface;
+
 /**
  * Patch command selector
  */
 class PatchCommand implements PatchCommandInterface
 {
     /**
-     * @var PatchCommandInterface[]
+     * @var DriverInterface[]
      */
     private $commands;
 
     /**
-     * @var PatchCommandInterface
+     * @var DriverInterface
      */
     private $command;
 
     /**
-     * @param PatchCommandInterface[] $commands
+     * @param DriverInterface[] $commands
      */
     public function __construct(
         array $commands
@@ -66,10 +68,10 @@ class PatchCommand implements PatchCommandInterface
     /**
      * Return first available command
      *
-     * @return PatchCommandInterface
+     * @return DriverInterface
      * @throws PatchCommandNotFound
      */
-    private function getCommand(): PatchCommandInterface
+    private function getCommand(): DriverInterface
     {
         if ($this->command === null) {
             foreach ($this->commands as $command) {
