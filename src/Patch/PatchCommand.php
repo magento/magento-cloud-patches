@@ -17,20 +17,20 @@ class PatchCommand implements PatchCommandInterface
     /**
      * @var DriverInterface[]
      */
-    private $commands;
+    private $drivers;
 
     /**
      * @var DriverInterface
      */
-    private $command;
+    private $driver;
 
     /**
-     * @param DriverInterface[] $commands
+     * @param DriverInterface[] $drivers
      */
     public function __construct(
-        array $commands
+        array $drivers
     ) {
-        $this->commands = $commands;
+        $this->drivers = $drivers;
     }
 
     /**
@@ -38,7 +38,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function apply(string $patch)
     {
-        $this->getCommand()->apply($patch);
+        $this->getDriver()->apply($patch);
     }
 
     /**
@@ -46,7 +46,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function revert(string $patch)
     {
-        $this->getCommand()->revert($patch);
+        $this->getDriver()->revert($patch);
     }
 
     /**
@@ -54,7 +54,7 @@ class PatchCommand implements PatchCommandInterface
      */
     public function applyCheck(string $patch)
     {
-        $this->getCommand()->applyCheck($patch);
+        $this->getDriver()->applyCheck($patch);
     }
 
     /**
@@ -62,28 +62,28 @@ class PatchCommand implements PatchCommandInterface
      */
     public function revertCheck(string $patch)
     {
-        $this->getCommand()->revertCheck($patch);
+        $this->getDriver()->revertCheck($patch);
     }
 
     /**
-     * Return first available command
+     * Returns first available driver
      *
      * @return DriverInterface
      * @throws PatchCommandNotFound
      */
-    private function getCommand(): DriverInterface
+    private function getDriver(): DriverInterface
     {
-        if ($this->command === null) {
-            foreach ($this->commands as $command) {
-                if ($command->isInstalled()) {
-                    $this->command = $command;
+        if ($this->driver === null) {
+            foreach ($this->drivers as $driver) {
+                if ($driver->isInstalled()) {
+                    $this->driver = $driver;
                     break;
                 }
             }
-            if ($this->command === null) {
+            if ($this->driver === null) {
                 throw new PatchCommandNotFound();
             }
         }
-        return $this->command;
+        return $this->driver;
     }
 }

@@ -9,6 +9,9 @@ namespace Magento\CloudPatches\Patch;
 
 use Magento\CloudPatches\App\GenericException;
 
+/**
+ * Exception thrown if none of defined patch drivers is available
+ */
 class PatchCommandNotFound extends GenericException
 {
     public function __construct()

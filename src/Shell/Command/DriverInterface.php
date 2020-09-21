@@ -10,7 +10,7 @@ namespace Magento\CloudPatches\Shell\Command;
 use Magento\CloudPatches\Patch\PatchCommandInterface;
 
 /**
- * Patch driver interface
+ * Patch command driver interface
  */
 interface DriverInterface extends PatchCommandInterface
 {
