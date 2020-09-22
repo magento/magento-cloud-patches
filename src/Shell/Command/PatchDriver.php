@@ -37,7 +37,7 @@ class PatchDriver implements DriverInterface
     {
         try {
             $this->applyCheck($patch);
-            $this->processFactory->create(['patch', '--silent', '-f', '-p1'], $patch)
+            $this->processFactory->create(['patch', '--silent', '-p1', '--no-backup-if-mismatch'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
             throw new PatchCommandException('Failed to apply patch', $exception->getCode(), $exception);
@@ -51,7 +51,7 @@ class PatchDriver implements DriverInterface
     {
         try {
             $this->revertCheck($patch);
-            $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse'], $patch)
+            $this->processFactory->create(['patch', '--silent', '-p1', '--no-backup-if-mismatch', '--reverse'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
             throw new PatchCommandException('Failed to revert patch', $exception->getCode(), $exception);
@@ -64,7 +64,7 @@ class PatchDriver implements DriverInterface
     public function applyCheck(string $patch)
     {
         try {
-            $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--dry-run'], $patch)
+            $this->processFactory->create(['patch', '--silent', '-p1', '--dry-run'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
             throw new PatchCommandException('Patch cannot be applied', $exception->getCode(), $exception);
@@ -77,7 +77,7 @@ class PatchDriver implements DriverInterface
     public function revertCheck(string $patch)
     {
         try {
-            $this->processFactory->create(['patch', '--silent', '-f', '-p1', '--reverse', '--dry-run'], $patch)
+            $this->processFactory->create(['patch', '--silent', '-p1', '--reverse', '--dry-run'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
             throw new PatchCommandException('Patch cannot be reverted', $exception->getCode(), $exception);
