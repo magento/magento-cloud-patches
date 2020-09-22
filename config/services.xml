@@ -29,6 +29,8 @@
         <service id="Magento\CloudPatches\Patch\Pool\RequiredPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Pool\LocalPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Status\StatusPool" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommand" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommandInterface" alias="Magento\CloudPatches\Patch\PatchCommand"/>
         <service id="statusPool" class="Magento\CloudPatches\Patch\Status\StatusPool" lazy="true">
             <argument key="$resolvers" type="collection">
                 <argument type="service" id="Magento\CloudPatches\Patch\Status\LocalResolver"/>
@@ -83,9 +85,6 @@
                 <argument type="service" id="Magento\CloudPatches\Shell\Command\GitDriver"/>
                 <argument type="service" id="Magento\CloudPatches\Shell\Command\PatchDriver"/>
             </argument>
-        </service>
-        <service id="Magento\CloudPatches\Patch\Applier">
-            <argument key="$patchCommand" type="service" id="patchCommand"/>
         </service>
     </services>
 </container>
