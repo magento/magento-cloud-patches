@@ -80,7 +80,7 @@
             <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
         </service>
         <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>
-        <service id="patchCommand" class="Magento\CloudPatches\Patch\PatchCommand">
+        <service id="Magento\CloudPatches\Patch\PatchCommand">
             <argument key="$drivers" type="collection">
                 <argument type="service" id="Magento\CloudPatches\Shell\Command\GitDriver"/>
                 <argument type="service" id="Magento\CloudPatches\Shell\Command\PatchDriver"/>
