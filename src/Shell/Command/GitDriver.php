@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Shell\Command;
 
-use Magento\CloudPatches\Patch\PatchCommandException;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
@@ -39,7 +38,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Failed to apply patch', $exception->getCode(), $exception);
+            throw new GitDriverException($exception);
         }
     }
 
@@ -52,7 +51,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply', '--reverse'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Failed to revert patch', $exception->getCode(), $exception);
+            throw new GitDriverException($exception);
         }
     }
 
@@ -65,7 +64,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply', '--check'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Patch cannot be applied', $exception->getCode(), $exception);
+            throw new GitDriverException($exception);
         }
     }
 
@@ -78,7 +77,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply', '--reverse', '--check'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Patch cannot be reverted', $exception->getCode(), $exception);
+            throw new GitDriverException($exception);
         }
     }
 

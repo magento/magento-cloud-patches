@@ -19,8 +19,6 @@
         <service id="Magento\CloudPatches\Patch\Status\StatusResolverException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\PatchIntegrityException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\Pool\PatchNotFoundException" autowire="false"/>
-        <service id="Magento\CloudPatches\Patch\PatchCommandNotFound" autowire="false"/>
-        <service id="Magento\CloudPatches\Patch\PatchCommandException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\ApplierException" autowire="false"/>
         <service id="Magento\CloudPatches\Shell\PackageNotFoundException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\Data\Patch" autowire="false"/>
@@ -29,6 +27,11 @@
         <service id="Magento\CloudPatches\Patch\Pool\RequiredPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Pool\LocalPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Status\StatusPool" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommandNotFound" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommandException" autowire="false"/>
+        <service id="Magento\CloudPatches\Shell\Command\DriverException" autowire="false"/>
+        <service id="Magento\CloudPatches\Shell\Command\GitDriverException" autowire="false"/>
+        <service id="Magento\CloudPatches\Shell\Command\PatchDriverException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\PatchCommand" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\PatchCommandInterface" alias="Magento\CloudPatches\Patch\PatchCommand"/>
         <service id="statusPool" class="Magento\CloudPatches\Patch\Status\StatusPool" lazy="true">
