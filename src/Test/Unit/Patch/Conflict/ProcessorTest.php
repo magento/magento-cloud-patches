@@ -92,7 +92,7 @@ class ProcessorTest extends TestCase
         $outputMock->expects($this->exactly(2))
             ->method('writeln')
             ->withConsecutive(
-                [$this->stringContains('Error: patch conflict happened')],
+                [$this->stringContains('Error: patch can\'t be applied')],
                 [$rollbackMessages]
             );
 
