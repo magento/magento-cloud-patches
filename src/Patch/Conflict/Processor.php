@@ -84,7 +84,7 @@ class Processor
             'Applying patch %s (%s) failed.%s%s',
             $patch->getId(),
             $patch->getPath(),
-            $this->renderer->formatErrorOutput($exceptionMessage),
+            PHP_EOL. $exceptionMessage,
             $conflictDetails ? PHP_EOL . $conflictDetails : ''
         );
 

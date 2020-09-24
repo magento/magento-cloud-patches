@@ -123,53 +123,6 @@ class RendererTest extends TestCase
     }
 
     /**
-     * Tests error output formatting.
-     *
-     * @param string $errorOutput
-     * @param string $expectedOutput
-     * @dataProvider formatErrorOutputDataProvider
-     */
-    public function testFormatErrorOutput(string $errorOutput, string $expectedOutput)
-    {
-        $this->assertEquals($expectedOutput, $this->renderer->formatErrorOutput($errorOutput));
-    }
-
-    /**
-     * @return array
-     */
-    public function formatErrorOutputDataProvider(): array
-    {
-        return [
-            [
-                'error' => 'The command "\'git\' \'apply\' \'/path/to/patch/MC-1111_test_patch_1.1.1_ce.patch\'" failed.
-
-Exit Code: 1(General error)
-
-Working directory: /path/to/patch
-
-Output:
-================
-
-
-Error Output:
-================
-error: patch failed: vendor/magento/module-admin-analytics/Controller/Adminhtml/Config/DisableAdminUsage.php:23
-error: vendor/magento/module-admin-analytics/Controller/Adminhtml/Config/DisableAdminUsage.php: patch does not apply',
-
-                'expectedOutput' => '
-Error Output:
-================
-error: patch failed: vendor/magento/module-admin-analytics/Controller/Adminhtml/Config/DisableAdminUsage.php:23
-error: vendor/magento/module-admin-analytics/Controller/Adminhtml/Config/DisableAdminUsage.php: patch does not apply'
-            ],
-            [
-                'error' => 'Some other output',
-                'expectedOutput' => 'Some other output'
-            ],
-        ];
-    }
-
-    /**
      * Creates patch mock.
      *
      * @param bool $isDeprecated

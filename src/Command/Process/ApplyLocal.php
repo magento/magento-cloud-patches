@@ -95,7 +95,7 @@ class ApplyLocal implements ProcessInterface
                 $errorMessage = sprintf(
                     'Applying patch %s failed.%s',
                     $patch->getPath(),
-                    $this->renderer->formatErrorOutput($exception->getMessage())
+                    PHP_EOL . $exception->getMessage()
                 );
 
                 throw new RuntimeException($errorMessage, $exception->getCode());

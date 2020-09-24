@@ -47,8 +47,7 @@ Error Output:
 error: patch failed: path/to/path/file2.php b/path/to/path/file2.php:23
 error: path/to/path/file2.php b/path/to/path/file2.php: patch does not apply',
 
-                'expectedOutput' => '
-Error Output:
+                'expectedOutput' => 'Error Output:
 ================
 error: patch failed: path/to/path/file2.php b/path/to/path/file2.php:23
 error: path/to/path/file2.php b/path/to/path/file2.php: patch does not apply'
@@ -96,8 +95,7 @@ Error Output:
 
 ',
 
-                'expectedOutput' => '
-Output:
+                'expectedOutput' => 'Output:
 ================
 Hmm...  Looks like a unified diff to me...
 The text leading up to this was:
@@ -126,6 +124,7 @@ Hunk #2 FAILED at 136.
 Hunk #3 succeeded at 154.
 1 out of 3 hunks FAILED -- saving rejects to file path/to/path/file2.php.rej
 done
+
 
 '
             ],

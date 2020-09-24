@@ -37,14 +37,14 @@ class DriverException extends PatchCommandException
         $errorMsg = null;
         $generalMsg = null;
         if (preg_match('#^.*?Error Output:(?<errors>.*?)$#is', $result, $matches)) {
-            $errorMsg = PHP_EOL .'Error Output:' . $matches['errors'];
+            $errorMsg = 'Error Output:' . $matches['errors'];
             $result = str_replace($errorMsg, '', $result);
             if (!trim(str_replace('=', '', $matches['errors']))) {
                 $errorMsg = null;
             }
         }
         if (empty($errorMsg) && preg_match('#^.*?Output:(?<errors>.*?)$#is', $result, $matches)) {
-            $generalMsg = PHP_EOL .'Output:' . $matches['errors'];
+            $generalMsg = 'Output:' . $matches['errors'];
             if (!trim(str_replace('=', '', $matches['errors']))) {
                 $generalMsg = null;
             }
