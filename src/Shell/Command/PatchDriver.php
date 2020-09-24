@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Shell\Command;
 
-use Magento\CloudPatches\Patch\PatchCommandException;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
@@ -40,7 +39,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--no-backup-if-mismatch'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Failed to apply patch', $exception->getCode(), $exception);
+            throw new PatchDriverException($exception);
         }
     }
 
@@ -54,7 +53,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--no-backup-if-mismatch', '--reverse'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Failed to revert patch', $exception->getCode(), $exception);
+            throw new PatchDriverException($exception);
         }
     }
 
@@ -67,7 +66,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--dry-run'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Patch cannot be applied', $exception->getCode(), $exception);
+            throw new PatchDriverException($exception);
         }
     }
 
@@ -80,7 +79,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--reverse', '--dry-run'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchCommandException('Patch cannot be reverted', $exception->getCode(), $exception);
+            throw new PatchDriverException($exception);
         }
     }
 
