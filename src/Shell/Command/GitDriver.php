@@ -38,7 +38,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new GitDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
@@ -51,7 +51,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply', '--reverse'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new GitDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
@@ -64,7 +64,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply', '--check'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new GitDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
@@ -77,7 +77,7 @@ class GitDriver implements DriverInterface
             $this->processFactory->create(['git', 'apply', '--reverse', '--check'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new GitDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
