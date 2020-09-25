@@ -30,8 +30,6 @@
         <service id="Magento\CloudPatches\Patch\PatchCommandNotFound" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\PatchCommandException" autowire="false"/>
         <service id="Magento\CloudPatches\Shell\Command\DriverException" autowire="false"/>
-        <service id="Magento\CloudPatches\Shell\Command\GitDriverException" autowire="false"/>
-        <service id="Magento\CloudPatches\Shell\Command\PatchDriverException" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\PatchCommand" autowire="false"/>
         <service id="Magento\CloudPatches\Patch\PatchCommandInterface" alias="Magento\CloudPatches\Patch\PatchCommand"/>
         <service id="statusPool" class="Magento\CloudPatches\Patch\Status\StatusPool" lazy="true">

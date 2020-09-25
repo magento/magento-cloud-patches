@@ -39,7 +39,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--no-backup-if-mismatch'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
@@ -53,7 +53,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--no-backup-if-mismatch', '--reverse'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
@@ -66,7 +66,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--dry-run'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
@@ -79,7 +79,7 @@ class PatchDriver implements DriverInterface
             $this->processFactory->create(['patch', '--silent', '-p1', '--reverse', '--dry-run'], $patch)
                 ->mustRun();
         } catch (ProcessFailedException $exception) {
-            throw new PatchDriverException($exception);
+            throw new DriverException($exception);
         }
     }
 
