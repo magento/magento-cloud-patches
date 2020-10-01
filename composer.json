@@ -14,7 +14,7 @@
         "symfony/dependency-injection": "^3.3||^4.3||^5.1",
         "symfony/process": "^2.1||^4.1",
         "symfony/proxy-manager-bridge": "^3.3||^4.3||^5.1",
-        "symfony/yaml": "^3.3||^4.0",
+        "symfony/yaml": "^3.3||^4.0||^5.1",
         "monolog/monolog": "^1.16"
     },
     "require-dev": {
