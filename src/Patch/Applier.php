@@ -10,8 +10,6 @@ namespace Magento\CloudPatches\Patch;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Patch\Status\StatusPool;
-use Magento\CloudPatches\Shell\ProcessFactory;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
  * Applies and reverts patches.
@@ -19,9 +17,9 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 class Applier
 {
     /**
-     * @var ProcessFactory
+     * @var PatchCommandInterface
      */
-    private $processFactory;
+    private $patchCommand;
 
     /**
      * @var GitConverter
@@ -39,18 +37,18 @@ class Applier
     private $filesystem;
 
     /**
-     * @param ProcessFactory $processFactory
+     * @param PatchCommandInterface $patchCommand
      * @param GitConverter $gitConverter
      * @param MagentoVersion $magentoVersion
      * @param Filesystem $filesystem
      */
     public function __construct(
-        ProcessFactory $processFactory,
+        PatchCommandInterface $patchCommand,
         GitConverter $gitConverter,
         MagentoVersion $magentoVersion,
         Filesystem $filesystem
     ) {
-        $this->processFactory = $processFactory;
+        $this->patchCommand = $patchCommand;
         $this->gitConverter = $gitConverter;
         $this->magentoVersion = $magentoVersion;
         $this->filesystem = $filesystem;
@@ -69,13 +67,11 @@ class Applier
     {
         $content = $this->readContent($path);
         try {
-            $this->processFactory->create(['git', 'apply'], $content)
-                ->mustRun();
-        } catch (ProcessFailedException $exception) {
+            $this->patchCommand->apply($content);
+        } catch (PatchCommandException $exception) {
             try {
-                $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $content)
-                    ->mustRun();
-            } catch (ProcessFailedException $reverseException) {
+                $this->patchCommand->revertCheck($content);
+            } catch (PatchCommandException $reverseException) {
                 throw new ApplierException($exception->getMessage(), $exception->getCode());
             }
 
@@ -98,13 +94,11 @@ class Applier
     {
         $content = $this->readContent($path);
         try {
-            $this->processFactory->create(['git', 'apply', '--reverse'], $content)
-                ->mustRun();
-        } catch (ProcessFailedException $exception) {
+            $this->patchCommand->revert($content);
+        } catch (PatchCommandException $exception) {
             try {
-                $this->processFactory->create(['git', 'apply', '--check'], $content)
-                    ->mustRun();
-            } catch (ProcessFailedException $applyException) {
+                $this->patchCommand->applyCheck($content);
+            } catch (PatchCommandException $applyException) {
                 throw new ApplierException($exception->getMessage(), $exception->getCode());
             }
 
@@ -124,13 +118,11 @@ class Applier
     {
         $patchContent = $this->prepareContent($patchContent);
         try {
-            $this->processFactory->create(['git', 'apply', '--check'], $patchContent)
-                ->mustRun();
-        } catch (ProcessFailedException $exception) {
+            $this->patchCommand->applyCheck($patchContent);
+        } catch (PatchCommandException $exception) {
             try {
-                $this->processFactory->create(['git', 'apply', '--check', '--reverse'], $patchContent)
-                    ->mustRun();
-            } catch (ProcessFailedException $reverseException) {
+                $this->patchCommand->revertCheck($patchContent);
+            } catch (PatchCommandException $reverseException) {
                 return StatusPool::NA;
             }
 
@@ -150,9 +142,8 @@ class Applier
     {
         $patchContent = $this->prepareContent($patchContent);
         try {
-            $this->processFactory->create(['git', 'apply', '--check'], $patchContent)
-                ->mustRun();
-        } catch (ProcessFailedException $exception) {
+            $this->patchCommand->applyCheck($patchContent);
+        } catch (PatchCommandException $exception) {
             return false;
         }
 

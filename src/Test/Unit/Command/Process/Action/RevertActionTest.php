@@ -184,9 +184,6 @@ class RevertActionTest extends TestCase
         $this->applier->method('revert')
             ->willThrowException(new ApplierException('Error'));
 
-        $this->renderer->expects($this->once())
-            ->method('formatErrorOutput')
-            ->with('Error');
         $outputMock->expects($this->once())
             ->method('writeln')
             ->withConsecutive(
