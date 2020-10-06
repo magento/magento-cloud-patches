@@ -121,7 +121,7 @@ class Revert implements ProcessInterface
                 $errorMessage = sprintf(
                     'Reverting patch %s failed.%s',
                     $patch->getPath(),
-                    $this->renderer->formatErrorOutput($exception->getMessage())
+                    PHP_EOL . $exception->getMessage()
                 );
                 $this->printError($output, $errorMessage);
             }
