@@ -76,7 +76,6 @@ class ProcessorTest extends TestCase
         $failedPatch = $this->createPatch('MC-3', 'path3');
         $exceptionMessage = 'exceptionMessage';
         $conflictDetails = 'Conflict details';
-        $formattedOutput = 'formattedOutput';
         $rollbackMessages = ['Patch 1 has been reverted', 'Patch 2 has been reverted'];
 
         /** @var OutputInterface|MockObject $outputMock */
@@ -90,14 +89,10 @@ class ProcessorTest extends TestCase
             ->method('analyze')
             ->withConsecutive([$failedPatch])
             ->willReturn($conflictDetails);
-        $this->renderer->expects($this->once())
-            ->method('formatErrorOutput')
-            ->withConsecutive([$exceptionMessage])
-            ->willReturn($formattedOutput);
         $outputMock->expects($this->exactly(2))
             ->method('writeln')
             ->withConsecutive(
-                [$this->stringContains('Error: patch conflict happened')],
+                [$this->stringContains('Error: patch can\'t be applied')],
                 [$rollbackMessages]
             );
 
@@ -105,7 +100,7 @@ class ProcessorTest extends TestCase
             'Applying patch %s (%s) failed.%s%s',
             $failedPatch->getId(),
             $failedPatch->getPath(),
-            $formattedOutput,
+            PHP_EOL .$exceptionMessage,
             PHP_EOL . $conflictDetails
         );
 

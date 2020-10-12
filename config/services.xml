@@ -27,6 +27,11 @@
         <service id="Magento\CloudPatches\Patch\Pool\RequiredPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Pool\LocalPool" lazy="true"/>
         <service id="Magento\CloudPatches\Patch\Status\StatusPool" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommandNotFound" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommandException" autowire="false"/>
+        <service id="Magento\CloudPatches\Shell\Command\DriverException" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommand" autowire="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommandInterface" alias="Magento\CloudPatches\Patch\PatchCommand"/>
         <service id="statusPool" class="Magento\CloudPatches\Patch\Status\StatusPool" lazy="true">
             <argument key="$resolvers" type="collection">
                 <argument type="service" id="Magento\CloudPatches\Patch\Status\LocalResolver"/>
@@ -76,5 +81,11 @@
             <argument key="$actionPool" type="service" id="ApplyOptionalActionPool"/>
         </service>
         <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>
+        <service id="Magento\CloudPatches\Patch\PatchCommand">
+            <argument key="$drivers" type="collection">
+                <argument type="service" id="Magento\CloudPatches\Shell\Command\GitDriver"/>
+                <argument type="service" id="Magento\CloudPatches\Shell\Command\PatchDriver"/>
+            </argument>
+        </service>
     </services>
 </container>

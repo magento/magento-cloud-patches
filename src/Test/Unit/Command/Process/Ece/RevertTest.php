@@ -165,10 +165,6 @@ class RevertTest extends TestCase
                 }
             );
 
-        $this->renderer->expects($this->once())
-            ->method('formatErrorOutput')
-            ->with('Applier error message');
-
         $this->revertAction->expects($this->once())
             ->method('execute')
             ->withConsecutive([$inputMock, $outputMock, []]);

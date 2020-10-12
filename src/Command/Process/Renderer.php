@@ -141,21 +141,6 @@ class Renderer
     }
 
     /**
-     * Format error output.
-     *
-     * @param string $errorOutput
-     * @return string
-     */
-    public function formatErrorOutput(string $errorOutput): string
-    {
-        if (preg_match('#^.*?Error Output:(?<errors>.*?)$#is', $errorOutput, $matches)) {
-            $errorOutput = PHP_EOL . 'Error Output:' . $matches['errors'];
-        }
-
-        return $errorOutput;
-    }
-
-    /**
      * Asks a confirmation question to the user.
      *
      * @param InputInterface $input
