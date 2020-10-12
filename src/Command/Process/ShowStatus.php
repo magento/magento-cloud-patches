@@ -111,9 +111,14 @@ class ShowStatus implements ProcessInterface
      */
     private function printDetailsInfo(OutputInterface $output)
     {
+        $supportUrl = 'https://support.magento.com';
+        $releaseNotesUrl = 'https://devdocs.magento.com/quality-patches/release-notes.html';
+
         $output->writeln(
-            '<info>More detailed information about patches you can find on </info>' .
-            '<href=https://support.magento.com>https://support.magento.com</>'
+            '<info>Patch details you can find on </info>' .
+            sprintf('<href=%1$s>%1$s</> <info>(search for patch id, ex. MDVA-30265)</info>', $supportUrl) .
+            PHP_EOL .
+            sprintf('<info>Release notes</info> <href=%1$s>%1$s</>', $releaseNotesUrl)
         );
     }
 

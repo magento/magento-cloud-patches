@@ -254,7 +254,8 @@
       "2.3.3": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3.patch",
       ">=2.3.3-p1 <2.3.4": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.3-p1.patch",
       ">=2.3.4 <2.3.5": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.4.patch",
-      ">=2.3.5 <2.3.6": "MCLOUD-6211__redis_improvement_patches__2.3.5.patch"
+      ">=2.3.5 <2.3.6": "MCLOUD-6211__redis_improvement_patches__2.3.5.patch",
+      ">=2.4.0 <2.4.1": "MCLOUD-6659__fix_L2_redis_cache__2.4.0.patch"
     }
   },
   "magento/module-paypal": {
@@ -332,6 +333,11 @@
     },
     "Set Payment info bug": {
       "3.4.1": "BUNDLE-2554__set_payment_info_bug_fix__3.4.1.patch"
+    }
+  },
+  "paypal/module-braintree-core": {
+    "Fix Braintree Settlement report error": {
+      "4.1.0": "BUNDLE-2683__braintree_settlement_report_fix__4.1.0.patch"
     }
   },
   "magento/magento2-ee-base": {

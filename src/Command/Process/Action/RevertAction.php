@@ -179,7 +179,7 @@ class RevertAction implements ActionInterface
             'Reverting patch %s (%s) failed.%s',
             $patch->getId(),
             $patch->getPath(),
-            $this->renderer->formatErrorOutput($errorOutput)
+            PHP_EOL . $errorOutput
         );
 
         $this->logger->error($errorMessage);

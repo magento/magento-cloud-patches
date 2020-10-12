@@ -171,9 +171,6 @@ class ApplyLocalTest extends TestCase
             ->method('process')
             ->withConsecutive([[$patch1]])
             ->willReturn($rollbackMessages);
-        $this->renderer->expects($this->once())
-            ->method('formatErrorOutput')
-            ->with('Applier error message');
 
         $this->expectException(RuntimeException::class);
         $this->manager->run($inputMock, $outputMock);
