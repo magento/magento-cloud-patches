@@ -231,7 +231,7 @@ class OptionalPool
         $diff = array_diff($filter, $resultIds);
         if (count($diff) > 0) {
             throw new PatchNotFoundException(
-                'Next patches weren\'t found: ' . implode($diff, ' ')  . '. ' .
+                'Next patches weren\'t found: ' . implode(' ', $diff)  . '. ' .
                 'Please, check with "status" command availability of these patches for the current Magento version.'
             );
         }
