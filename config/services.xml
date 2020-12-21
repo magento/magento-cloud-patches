@@ -83,8 +83,8 @@
         <service id="Magento\CloudPatches\Patch\PatchBuilder" shared="false"/>
         <service id="Magento\CloudPatches\Patch\PatchCommand">
             <argument key="$drivers" type="collection">
-                <argument type="service" id="Magento\CloudPatches\Shell\Command\GitDriver"/>
                 <argument type="service" id="Magento\CloudPatches\Shell\Command\PatchDriver"/>
+                <argument type="service" id="Magento\CloudPatches\Shell\Command\GitDriver"/>
             </argument>
         </service>
     </services>
