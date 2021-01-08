@@ -1,0 +1,58 @@
+diff -Nuar a/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php b/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php
+--- a/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php
++++ b/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php
+@@ -103,18 +103,16 @@ public function __construct(
+      *
+      * @param BucketInterface $bucket
+      * @param array $dimensions
+-     * @param array $documentIds
+      * @return array
+      * @throws \Magento\Framework\Exception\LocalizedException
+      * @throws \Zend_Db_Statement_Exception
+      */
+     public function getAggregation(
+         BucketInterface $bucket,
+-        array $dimensions,
+-        array $documentIds
++        array $dimensions
+     ) {
+         $result = [];
+-        $select = $this->getSelect($bucket, $dimensions, $documentIds);
++        $select = $this->getSelect($bucket, $dimensions);
+         $query  = $this->connection->query($select);
+ 
+         while ($row = $query->fetch()) {
+@@ -134,11 +132,10 @@ public function getAggregation(
+      *
+      * @param BucketInterface $bucket
+      * @param array $dimensions
+-     * @param array $documentIds
+      * @return Select
+      * @throws \Magento\Framework\Exception\LocalizedException
+      */
+-    private function getSelect(BucketInterface $bucket, array $dimensions, array $documentIds)
++    private function getSelect(BucketInterface $bucket, array $dimensions)
+     {
+         $attribute = $this->eavConfig->getAttribute(Product::ENTITY, $bucket->getField());
+         $currentScope = $this->scopeResolver->getScope($dimensions['scope']->getValue());
+@@ -161,7 +158,6 @@ private function getSelect(BucketInterface $bucket, array $dimensions, array $do
+             'source_entity.sku  = shared_catalog_item.sku',
+             []
+         )
+-        ->where('eav.entity_id IN (?)', $documentIds)
+         ->where('eav.attribute_id = ?', $attribute->getId())
+         ->where('eav.store_id = ? ', $currentScope->getId())
+         ->where('source_entity.type_id <> ?', 'configurable')
+diff -Nuar a/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php b/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php
+--- a/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php
++++ b/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php
+@@ -65,8 +65,7 @@ public function afterBuild(
+         $shouldAggregate = ($bucket->getField() !== 'category_ids');
+ 
+         if ($sharedCatalogIsEnabled && $shouldAggregate) {
+-            $documentIds = array_column($queryResult['hits']['hits'], '_id');
+-            $values = $this->dataProvider->getAggregation($bucket, $dimensions, $documentIds);
++            $values = $this->dataProvider->getAggregation($bucket, $dimensions);
+         }
+ 
+         return $values;
