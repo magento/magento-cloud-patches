@@ -31,7 +31,7 @@ class PatchApplierCest extends AbstractCest
      */
     public function testApplyingPatch(\CliTester $I): void
     {
-        $I->runEceDockerCommand('build:compose --mode=production');
+        $I->generateDockerCompose('--mode=production');
         $I->copyFileToWorkDir('files/patches/target_file.md', 'target_file.md');
         $I->copyFileToWorkDir('files/patches/patch.patch', 'm2-hotfixes/patch.patch');
 
@@ -52,7 +52,7 @@ class PatchApplierCest extends AbstractCest
      */
     public function testApplyingExistingPatch(\CliTester $I): void
     {
-        $I->runEceDockerCommand('build:compose --mode=production');
+        $I->generateDockerCompose('--mode=production');
         $I->copyFileToWorkDir('files/patches/target_file_applied_patch.md', 'target_file.md');
         $I->copyFileToWorkDir('files/patches/patch.patch', 'm2-hotfixes/patch.patch');
 
