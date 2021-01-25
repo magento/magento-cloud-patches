@@ -175,6 +175,23 @@ class Applier
             $content = $this->gitConverter->convert($content);
         }
 
+        $content = $this->replaceDiffGit($content);
+
         return $content;
+    }
+
+    /**
+     * Replace `diff --git`
+     *
+     * In some environments 'git apply' command skips applying a patch
+     * while execution inside the git working tree. To prevent this issue
+     * we need to replace `diff --git` with `diff -Nuar` in the patch source.
+     *
+     * @param string $content
+     * @return string
+     */
+    private function replaceDiffGit(string $content): string
+    {
+        return preg_replace(['/^diff --git/', '/\ndiff --git/'], ['diff -Nuar', "\ndiff -Nuar"], $content);
     }
 }
