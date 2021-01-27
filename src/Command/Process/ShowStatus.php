@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command\Process;
 
-use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction;
 use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
@@ -89,7 +88,7 @@ class ShowStatus implements ProcessInterface
             array_merge($this->optionalPool->getList(), $this->localPool->getList())
         );
         foreach ($patches as $patch) {
-            if ($patch->isDeprecated() && $this->statusPool->isApplied($patch->getId())) {
+            if ($patch->isDeprecated() && $this->isPatchVisible($patch)) {
                 $this->printDeprecatedWarning($output, $patch);
             }
         }
@@ -97,10 +96,10 @@ class ShowStatus implements ProcessInterface
         $patches = array_filter(
             $patches,
             function ($patch) {
-                return !$patch->isDeprecated() || $this->statusPool->isApplied($patch->getId());
+                return !$patch->isDeprecated() || $this->isPatchVisible($patch);
             }
         );
-        $this->renderer->printTable($output, $patches);
+        $this->renderer->printTable($output, array_values($patches));
     }
 
     /**
@@ -137,5 +136,18 @@ class ShowStatus implements ProcessInterface
             $patch->getReplacedWith() ? ' and replace with ' . $patch->getReplacedWith() : '.'
         );
         $output->writeln($message);
+    }
+
+    /**
+     * Defines if the patch should be visible in the status table.
+     *
+     * @param AggregatedPatchInterface $patch
+     * @return bool
+     */
+    private function isPatchVisible(AggregatedPatchInterface $patch): bool
+    {
+        return $patch->getReplacedWith() ?
+            $this->statusPool->isApplied($patch->getId()) && !$this->statusPool->isApplied($patch->getReplacedWith()) :
+            $this->statusPool->isApplied($patch->getId());
     }
 }
