@@ -83,12 +83,13 @@ class Apply extends AbstractCommand
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->logger->notice($this->magentoVersion->get());
+        $this->logger->info($this->magentoVersion->get());
 
         try {
             $this->applyOptional->run($input, $output);
         } catch (RuntimeException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
+            $this->logger->info($this->magentoVersion->get());
             $this->logger->error($e->getMessage());
 
             return self::RETURN_FAILURE;
