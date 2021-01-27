@@ -278,4 +278,43 @@ class ApplierTest extends TestCase
 
         $this->assertSame(StatusPool::APPLIED, $this->applier->status($patchContent));
     }
+
+    /**
+     * Tests checkApply operation.
+     *
+     * Verifies that 'diff --git' is replaced with 'diff -Nuar'
+     */
+    public function testCheckApply()
+    {
+        $patchContent = 'diff --git a/vendor/module-deploy/Queue.php b/vendor/module-deploy/Queue.php
+--- a/vendor/magento/module-deploy/Process/Queue.php
++++ b/vendor/magento/module-deploy/Process/Queue.php
+diff --git a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
+--- a/vendor/magento/module-email/Model/Transport.php
++++ b/vendor/magento/module-email/Model/Transport.php
+-        echo "diff --git";
++        echo "diff --Nuar";
+diff -Nuar a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
+';
+        $expectedPatchContent = 'diff -Nuar a/vendor/module-deploy/Queue.php b/vendor/module-deploy/Queue.php
+--- a/vendor/magento/module-deploy/Process/Queue.php
++++ b/vendor/magento/module-deploy/Process/Queue.php
+diff -Nuar a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
+--- a/vendor/magento/module-email/Model/Transport.php
++++ b/vendor/magento/module-email/Model/Transport.php
+-        echo "diff --git";
++        echo "diff --Nuar";
+diff -Nuar a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
+';
+
+        $this->magentoVersion->expects($this->once())
+            ->method('isGitBased')
+            ->willReturn(false);
+
+        $this->patchCommand->expects($this->once())
+            ->method('applyCheck')
+            ->with($expectedPatchContent);
+
+        $this->assertTrue($this->applier->checkApply($patchContent));
+    }
 }
