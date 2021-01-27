@@ -11,6 +11,7 @@ use Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction;
 use Magento\CloudPatches\Command\Process\Renderer;
 use Magento\CloudPatches\Command\Process\ShowStatus;
 use Magento\CloudPatches\Patch\Aggregator;
+use Magento\CloudPatches\Patch\Data\AggregatedPatch;
 use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
@@ -89,17 +90,25 @@ class ShowStatusTest extends TestCase
      * Patch 1 - deprecated, applied - show warning message, show patch in the table;
      * Patch 2 - not deprecated, not applied - no warning message, show patch in the table;
      * Patch 3 - deprecated, not applied - no warning message, don't show patch in the table;
+     * Patch 4 - deprecated, applied and replaced with applied patch4-v2 - don't show patch in the table;
+     * Patch 5 - deprecated, applied and replaced with not applied patch5-v2 - show patch in the table;
      */
     public function testShowStatus()
     {
         $patch1 = $this->createPatch('patch1', true);
         $patch2 = $this->createPatch('patch2', false);
         $patch3 = $this->createPatch('patch3', true);
+        $patch4 = $this->createPatch('patch4', true, 'patch4-v2');
+        $patch5 = $this->createPatch('patch5', true, 'patch5-v2');
         $this->statusPool->method('isApplied')
             ->willReturnMap([
                 ['patch1', true],
                 ['patch2', false],
                 ['patch3', false],
+                ['patch4', true],
+                ['patch4-v2', true],
+                ['patch5', true],
+                ['patch5-v2', false],
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
@@ -118,10 +127,10 @@ class ShowStatusTest extends TestCase
 
         $this->aggregator->expects($this->once())
             ->method('aggregate')
-            ->willReturn([$patch1, $patch2, $patch3]);
+            ->willReturn([$patch1, $patch2, $patch3, $patch4, $patch5]);
 
         // Show warning message about patch deprecation
-        $outputMock->expects($this->exactly(2))
+        $outputMock->expects($this->exactly(3))
             ->method('writeln')
             ->withConsecutive(
                 [$this->anything()],
@@ -131,7 +140,7 @@ class ShowStatusTest extends TestCase
         // Show patches in the table
         $this->renderer->expects($this->once())
             ->method('printTable')
-            ->withConsecutive([$outputMock, [$patch1, $patch2]]);
+            ->withConsecutive([$outputMock, [$patch1, $patch2, $patch5]]);
 
         $this->manager->run($inputMock, $outputMock);
     }
@@ -141,14 +150,18 @@ class ShowStatusTest extends TestCase
      *
      * @param string $id
      * @param bool $isDeprecated
-     *
+     * @param string $replacedWith
      * @return AggregatedPatchInterface|MockObject
      */
-    private function createPatch(string $id, bool $isDeprecated)
+    private function createPatch(string $id, bool $isDeprecated, string $replacedWith = '')
     {
-        $patch = $this->getMockForAbstractClass(AggregatedPatchInterface::class);
+        $patch = $this->createMock(AggregatedPatch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('isDeprecated')->willReturn($isDeprecated);
+        $patch->method('getReplacedWith')->willReturn($replacedWith);
+
+        // To make mock object unique for assertions and array operations.
+        $patch->id = microtime();
 
         return $patch;
     }
