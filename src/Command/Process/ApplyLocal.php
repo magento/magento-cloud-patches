@@ -89,7 +89,7 @@ class ApplyLocal implements ProcessInterface
                 $this->printInfo($output, $message);
                 array_push($appliedPatches, $patch);
             } catch (ApplierException $exception) {
-                $this->printError($output, 'Error: patch can\'t be applied');
+                $this->printError($output, 'Error: patch ' . $patch->getPath() . ' can\'t be applied');
                 $messages = $this->rollbackProcessor->process($appliedPatches);
                 $output->writeln($messages);
                 $errorMessage = sprintf(
