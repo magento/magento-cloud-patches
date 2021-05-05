@@ -98,6 +98,7 @@ class Apply extends AbstractCommand
             $this->applyOptional->run($input, $output);
             $this->applyLocal->run($input, $output);
         } catch (RuntimeException $e) {
+            $output->writeln($this->magentoVersion->get());
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             $this->logger->info($this->magentoVersion->get());
             $this->logger->error($e->getMessage());

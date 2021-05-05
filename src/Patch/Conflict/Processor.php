@@ -73,7 +73,7 @@ class Processor
         array $appliedPatches,
         string $exceptionMessage
     ) {
-        $errorMessage = 'Error: patch can\'t be applied';
+        $errorMessage = 'Error: patch ' . $patch->getId() . ' can\'t be applied';
         $this->logger->error($errorMessage);
         $output->writeln('<error>' . $errorMessage . '</error>');
 
