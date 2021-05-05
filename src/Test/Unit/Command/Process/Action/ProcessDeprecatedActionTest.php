@@ -209,6 +209,40 @@ class ProcessDeprecatedActionTest extends TestCase
     }
 
     /**
+     * Tests successful skipping of replacement check when patch is already applied.
+     */
+    public function testSkippingReplacementProcessForAppliedPatch()
+    {
+        $patch1 = $this->createPatch('MC-11111', false);
+        $this->statusPool->method('isApplied')
+            ->willReturnMap([
+                ['MC-11111', true]
+            ]);
+        $patchFilter = [$patch1->getId()];
+
+        /** @var InputInterface|MockObject $inputMock */
+        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        /** @var OutputInterface|MockObject $outputMock */
+        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+
+        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+
+        $this->optionalPool->expects($this->once())
+            ->method('getList')
+            ->withConsecutive([$patchFilter])
+            ->willReturn([$patchMock]);
+
+        $this->aggregator->expects($this->once())
+            ->method('aggregate')
+            ->willReturn([$patch1]);
+
+        $this->renderer->expects($this->never())
+            ->method('printQuestion');
+
+        $this->action->execute($inputMock, $outputMock, $patchFilter);
+    }
+
+    /**
      * Tests a case when user rejected to revert deprecated patches before applying a new one.
      */
     public function testProcessReplacementException()

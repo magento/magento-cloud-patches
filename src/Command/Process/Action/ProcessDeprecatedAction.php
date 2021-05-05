@@ -9,7 +9,6 @@ namespace Magento\CloudPatches\Command\Process\Action;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Renderer;
-use Magento\CloudPatches\Patch\Data\AggregatedPatch;
 use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Aggregator;
@@ -93,6 +92,13 @@ class ProcessDeprecatedAction implements ActionInterface
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
 
+        $patches = array_filter(
+            $patches,
+            function ($patch) {
+                return !$this->statusPool->isApplied($patch->getId());
+            }
+        );
+
         foreach ($patches as $patch) {
             $this->processDeprecation($patch, $output, $input);
             $this->processReplacement($patch, $output, $input);
@@ -144,21 +150,23 @@ class ProcessDeprecatedAction implements ActionInterface
             }
         );
 
-        if ($requireRevertAndReplace) {
-            $ids = implode(' ', $requireRevertAndReplace);
-            $warning = sprintf('%s should be reverted and replaced with %s', $ids, $patch->getId());
-            $output->writeln('<info>' . $warning . '</info>');
-            $this->logger->warning($warning);
-
-            $question = 'Do you want to proceed with reverting?';
-            if (!$this->renderer->printQuestion($input, $output, $question)) {
-                $errorMessage = sprintf('%s can\'t be applied without reverting %s', $patch->getId(), $ids);
-
-                throw new RuntimeException($errorMessage);
-            }
-
-            $this->revert->execute($input, $output, $requireRevertAndReplace);
+        if (empty($requireRevertAndReplace)) {
+            return;
         }
+
+        $ids = implode(' ', $requireRevertAndReplace);
+        $warning = sprintf('%s should be reverted and replaced with %s', $ids, $patch->getId());
+        $output->writeln('<info>' . $warning . '</info>');
+        $this->logger->warning($warning);
+
+        $question = 'Do you want to proceed with reverting?';
+        if (!$this->renderer->printQuestion($input, $output, $question)) {
+            $errorMessage = sprintf('%s can\'t be applied without reverting %s', $patch->getId(), $ids);
+
+            throw new RuntimeException($errorMessage);
+        }
+
+        $this->revert->execute($input, $output, $requireRevertAndReplace);
     }
 
     /**

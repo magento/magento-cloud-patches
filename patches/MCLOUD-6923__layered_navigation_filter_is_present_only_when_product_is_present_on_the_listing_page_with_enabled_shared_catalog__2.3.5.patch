@@ -1,7 +1,64 @@
 diff -Nuar a/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php b/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php
+index 86f4fd48e9..a6061fca6f 100644
 --- a/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php
 +++ b/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregation/Builder/DataProvider.php
-@@ -103,18 +103,16 @@ public function __construct(
+@@ -7,6 +7,8 @@ declare(strict_types=1);
+
+ namespace Magento\SharedCatalog\Model\SearchAdapter\Aggregation\Builder;
+
++use Magento\Catalog\Model\Layer;
++use Magento\Catalog\Model\Layer\Resolver;
+ use Magento\Catalog\Model\Product;
+ use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
+ use Magento\CatalogInventory\Model\Configuration;
+@@ -14,6 +16,7 @@ use Magento\CatalogInventory\Model\Stock;
+ use Magento\Customer\Model\Session;
+ use Magento\Eav\Model\Config as EavConfig;
+ use Magento\Framework\App\Config\ScopeConfigInterface;
++use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\App\ResourceConnection;
+ use Magento\Framework\App\ScopeResolverInterface;
+ use Magento\Framework\DB\Adapter\AdapterInterface;
+@@ -70,6 +73,11 @@ class DataProvider
+      */
+     private $productItem;
+
++    /**
++     * @var Layer
++     */
++    private $searchLayer;
++
+     /**
+      * @param ResourceConnection $resource
+      * @param Session $session
+@@ -78,6 +86,7 @@ class DataProvider
+      * @param EavConfig $eavConfig
+      * @param ProductResource $product
+      * @param ProductItemResource $productItem
++     * @param Resolver|null $layerResolver
+      */
+     public function __construct(
+         ResourceConnection $resource,
+@@ -86,7 +95,8 @@ class DataProvider
+         ScopeConfigInterface $scopeConfig,
+         EavConfig $eavConfig,
+         ProductResource $product,
+-        ProductItemResource $productItem
++        ProductItemResource $productItem,
++        ?Resolver $layerResolver = null
+     ) {
+         $this->resource = $resource;
+         $this->connection = $resource->getConnection();
+@@ -96,6 +106,8 @@ class DataProvider
+         $this->eavConfig = $eavConfig;
+         $this->product = $product;
+         $this->productItem = $productItem;
++        $layerResolver = $layerResolver ?? ObjectManager::getInstance()->get(Resolver::class);
++        $this->searchLayer = $layerResolver->get();
+     }
+
+     /**
+@@ -103,18 +115,16 @@ class DataProvider
       *
       * @param BucketInterface $bucket
       * @param array $dimensions
@@ -20,9 +77,9 @@ diff -Nuar a/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregatio
 -        $select = $this->getSelect($bucket, $dimensions, $documentIds);
 +        $select = $this->getSelect($bucket, $dimensions);
          $query  = $this->connection->query($select);
- 
+
          while ($row = $query->fetch()) {
-@@ -134,11 +132,10 @@ public function getAggregation(
+@@ -134,15 +144,15 @@ class DataProvider
       *
       * @param BucketInterface $bucket
       * @param array $dimensions
@@ -35,24 +92,39 @@ diff -Nuar a/vendor/magento/module-shared-catalog/Model/SearchAdapter/Aggregatio
      {
          $attribute = $this->eavConfig->getAttribute(Product::ENTITY, $bucket->getField());
          $currentScope = $this->scopeResolver->getScope($dimensions['scope']->getValue());
-@@ -161,7 +158,6 @@ private function getSelect(BucketInterface $bucket, array $dimensions, array $do
+         $customerGroupId = $this->session->getCustomerGroupId();
++        $categoryId = $this->searchLayer->getCurrentCategory()->getId();
+
+         $eavIndexTable = $this->resource->getTableName(
+             'catalog_product_index_eav' . ($attribute->getBackendType() === 'decimal' ? '_decimal' : '')
+@@ -160,11 +170,14 @@ class DataProvider
+             ['shared_catalog_item' => $this->productItem->getMainTable()],
              'source_entity.sku  = shared_catalog_item.sku',
              []
++        )->joinInner(
++            ['catalog_category_product' => $this->resource->getTableName('catalog_category_product')],
++            'eav.entity_id  = catalog_category_product.product_id',
++            []
          )
 -        ->where('eav.entity_id IN (?)', $documentIds)
          ->where('eav.attribute_id = ?', $attribute->getId())
          ->where('eav.store_id = ? ', $currentScope->getId())
-         ->where('source_entity.type_id <> ?', 'configurable')
-diff -Nuar a/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php b/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php
+-        ->where('source_entity.type_id <> ?', 'configurable')
++        ->where('catalog_category_product.category_id = ?', $categoryId)
+         ->where('shared_catalog_item.customer_group_id = ?', $customerGroupId);
+
+         $this->addStockFilterToSelect($subSelect);
+diff --git a/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php b/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php
+index fdc811dbeb..28b1cd4ee4 100644
 --- a/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php
 +++ b/vendor/magento/module-shared-catalog/Plugin/Elasticsearch/SearchAdapter/Aggregation/Builder/UpdateTermBucketBuilderPlugin.php
-@@ -65,8 +65,7 @@ public function afterBuild(
+@@ -65,8 +65,7 @@ class UpdateTermBucketBuilderPlugin
          $shouldAggregate = ($bucket->getField() !== 'category_ids');
- 
+
          if ($sharedCatalogIsEnabled && $shouldAggregate) {
 -            $documentIds = array_column($queryResult['hits']['hits'], '_id');
 -            $values = $this->dataProvider->getAggregation($bucket, $dimensions, $documentIds);
 +            $values = $this->dataProvider->getAggregation($bucket, $dimensions);
          }
- 
+
          return $values;
