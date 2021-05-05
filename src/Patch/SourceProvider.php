@@ -93,8 +93,19 @@ class SourceProvider
      */
     public function getQualityPatches(): array
     {
-        $configPath = $this->qualityPackage->getPatchesConfig();
+        $configPath = $this->qualityPackage->getQualityPatchesConfig();
+        return $configPath ? $this->readConfiguration($configPath) : [];
+    }
 
+    /**
+     * Returns configuration of Quality patches.
+     *
+     * @return array
+     * @throws SourceProviderException
+     */
+    public function getCommunityPatches(): array
+    {
+        $configPath = $this->qualityPackage->getCommunityPatchesConfig();
         return $configPath ? $this->readConfiguration($configPath) : [];
     }
 

@@ -96,7 +96,7 @@ class SourceProviderTest extends TestCase
         $jsonConfig = json_encode($configSource);
 
         $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
+            ->method('getQualityPatchesConfig')
             ->willReturn($configPath);
 
         $this->filesystem->expects($this->once())
@@ -115,7 +115,7 @@ class SourceProviderTest extends TestCase
     public function testGetQualityPatchesWithNullConfigPath()
     {
         $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
+            ->method('getQualityPatchesConfig')
             ->willReturn(null);
 
         $this->filesystem->expects($this->never())
@@ -148,7 +148,7 @@ class SourceProviderTest extends TestCase
         $configPath = '/quality/patches.json';
 
         $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
+            ->method('getQualityPatchesConfig')
             ->willReturn($configPath);
 
         $this->filesystem->expects($this->once())
@@ -167,7 +167,7 @@ class SourceProviderTest extends TestCase
         $configPath = '/quality/patches.json';
 
         $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
+            ->method('getQualityPatchesConfig')
             ->willReturn($configPath);
 
         $this->filesystem->expects($this->once())

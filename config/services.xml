@@ -87,5 +87,11 @@
                 <argument type="service" id="Magento\CloudPatches\Shell\Command\PatchDriver"/>
             </argument>
         </service>
+        <service id="Magento\CloudPatches\Patch\Collector\QualityCollector">
+            <argument key="$getQualityPatchesConfig" type="service" id="Magento\CloudPatches\Patch\Collector\GetQualityPatchesConfig"/>
+        </service>
+        <service id="Magento\CloudPatches\Patch\Collector\CommunityCollector">
+            <argument key="$getQualityPatchesConfig" type="service" id="Magento\CloudPatches\Patch\Collector\GetCommunityPatchesConfig"/>
+        </service>
     </services>
 </container>

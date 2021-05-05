@@ -20,7 +20,12 @@ class QualityPackage
     /**
      * @var string|null
      */
-    private $patchesConfig;
+    private $qualityPatchesConfig;
+
+    /**
+     * @var string|null
+     */
+    private $communityPatchesConfig;
 
     /**
      * QualityPackage constructor
@@ -30,7 +35,8 @@ class QualityPackage
         if (class_exists(\Magento\QualityPatches\Info::class)) {
             $info = new \Magento\QualityPatches\Info();
             $this->patchesDirectory = $info->getPatchesDirectory();
-            $this->patchesConfig = $info->getPatchesConfig();
+            $this->qualityPatchesConfig = $info->getQualityPatchesConfig();
+            $this->communityPatchesConfig = $info->getCommunityPatchesConfig();
         }
     }
 
@@ -49,8 +55,18 @@ class QualityPackage
      *
      * @return string|null
      */
-    public function getPatchesConfig()
+    public function getQualityPatchesConfig()
     {
-        return $this->patchesConfig;
+        return $this->qualityPatchesConfig;
+    }
+
+    /**
+     * Returns path to patches configuration file.
+     *
+     * @return string|null
+     */
+    public function getCommunityPatchesConfig()
+    {
+        return $this->communityPatchesConfig;
     }
 }

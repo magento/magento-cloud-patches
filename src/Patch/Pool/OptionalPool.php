@@ -11,6 +11,7 @@ use Magento\CloudPatches\Patch\Collector\CollectorException;
 use Magento\CloudPatches\Patch\Collector\QualityCollector;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
+use Magento\CloudPatches\Patch\Collector\CommunityCollector;
 
 /**
  * Contains all optional patches.
@@ -25,15 +26,18 @@ class OptionalPool
     /**
      * @param RequiredPool $requiredPool
      * @param QualityCollector $qualityCollector
+     * @param CommunityCollector $communityCollector
      * @throws CollectorException
      */
     public function __construct(
         RequiredPool $requiredPool,
-        QualityCollector $qualityCollector
+        QualityCollector $qualityCollector,
+        CommunityCollector $communityCollector
     ) {
         $this->items = array_merge(
             $requiredPool->getList(),
-            $qualityCollector->collect()
+            $qualityCollector->collect(),
+            $communityCollector->collect()
         );
     }
 

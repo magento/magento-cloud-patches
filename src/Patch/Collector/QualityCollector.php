@@ -12,8 +12,6 @@ use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Composer\Package;
 use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
-use Magento\CloudPatches\Patch\SourceProvider;
-use Magento\CloudPatches\Patch\SourceProviderException;
 
 /**
  * Collects patches.
@@ -49,11 +47,6 @@ class QualityCollector
     const PROP_DEPRECATED = 'deprecated';
 
     /**
-     * @var SourceProvider
-     */
-    private $sourceProvider;
-
-    /**
      * @var Package
      */
     private $package;
@@ -64,44 +57,43 @@ class QualityCollector
     private $qualityPackage;
 
     /**
-     * @var array|null
-     */
-    private $config = null;
-
-    /**
      * @var PatchBuilder
      */
     private $patchBuilder;
 
     /**
-     * @param SourceProvider $sourceProvider
+     * @var GetPatchesConfigInterface
+     */
+    private $getPatchesConfig;
+
+    /**
      * @param Package $package
      * @param QualityPackage $qualityPackage
      * @param PatchBuilder $patchBuilder
+     * @param GetPatchesConfigInterface $getPatchesConfig
      */
     public function __construct(
-        SourceProvider $sourceProvider,
         Package $package,
         QualityPackage $qualityPackage,
-        PatchBuilder $patchBuilder
+        PatchBuilder $patchBuilder,
+        GetPatchesConfigInterface $getPatchesConfig
     ) {
-        $this->sourceProvider = $sourceProvider;
         $this->package = $package;
         $this->qualityPackage = $qualityPackage;
         $this->patchBuilder = $patchBuilder;
+        $this->getPatchesConfig = $getPatchesConfig;
     }
 
     /**
      * Collects quality patches.
      *
-     * @return PatchInterface[]
-     *
      * @throws CollectorException
+     * @return PatchInterface[]
      */
     public function collect()
     {
         $result = [];
-        foreach ($this->getConfig() as $patchId => $patchGeneralConfig) {
+        foreach ($this->getPatchesConfig->execute() as $patchId => $patchGeneralConfig) {
             foreach ($patchGeneralConfig as $packageName => $packageConfiguration) {
                 foreach ($packageConfiguration as $patchTitle => $patchInfo) {
                     foreach ($patchInfo as $packageConstraint => $patchData) {
@@ -128,54 +120,6 @@ class QualityCollector
         }
 
         return $result;
-    }
-
-    /**
-     * Validates patch configuration.
-     *
-     * @param array $config
-     *
-     * @return void
-     * @throws CollectorException
-     */
-    private function validateConfiguration(array $config)
-    {
-        foreach ($config as $patchId => $patchGeneralConfig) {
-            $errors = [];
-            foreach ($patchGeneralConfig as $packageConfiguration) {
-                foreach ($packageConfiguration as $patchInfo) {
-                    foreach ($patchInfo as $packageConstraint => $patchData) {
-                        $errors = $this->validateProperties($patchData, $packageConstraint, $errors);
-                    }
-                }
-            }
-
-            if (!empty($errors)) {
-                array_unshift($errors, "Patch {$patchId} has invalid configuration:");
-
-                throw new CollectorException(implode(PHP_EOL . ' - ', $errors));
-            }
-        }
-    }
-
-    /**
-     * Returns patches config.
-     *
-     * @return array
-     * @throws CollectorException
-     */
-    private function getConfig(): array
-    {
-        if ($this->config === null) {
-            try {
-                $this->config = $this->sourceProvider->getQualityPatches();
-            } catch (SourceProviderException $e) {
-                throw new CollectorException($e->getMessage(), $e->getCode(), $e);
-            }
-            $this->validateConfiguration($this->config);
-        }
-
-        return $this->config;
     }
 
     /**
@@ -221,59 +165,5 @@ class QualityCollector
         }
 
         return $patch;
-    }
-
-    /**
-     * Validates properties.
-     *
-     * @param array $patchData
-     * @param string $packageConstraint
-     * @param string[] $errors
-     * @return array
-     */
-    private function validateProperties(
-        array $patchData,
-        string $packageConstraint,
-        array $errors
-    ): array {
-        if (!isset($patchData[static::PROP_FILE])) {
-            $errors[] = sprintf(
-                "Property '%s' is not found in '%s'",
-                static::PROP_FILE,
-                $packageConstraint
-            );
-        }
-
-        if (isset($patchData[static::PROP_REQUIRE]) &&
-            !is_array($patchData[static::PROP_REQUIRE])
-        ) {
-            $errors[] = sprintf(
-                "Property '%s' from '%s' should have an array type",
-                static::PROP_REQUIRE,
-                $packageConstraint
-            );
-        }
-
-        if (isset($patchData[static::PROP_REPLACED_WITH]) &&
-            !is_string($patchData[static::PROP_REPLACED_WITH])
-        ) {
-            $errors[] = sprintf(
-                "Property '%s' from '%s' should have a string type",
-                static::PROP_REPLACED_WITH,
-                $packageConstraint
-            );
-        }
-
-        if (isset($patchData[static::PROP_DEPRECATED]) &&
-            !is_bool($patchData[static::PROP_DEPRECATED])
-        ) {
-            $errors[] = sprintf(
-                "Property '%s' from '%s' should have a boolean type",
-                static::PROP_DEPRECATED,
-                $packageConstraint
-            );
-        }
-
-        return $errors;
     }
 }
