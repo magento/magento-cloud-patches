@@ -7,8 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Unit\Patch\Pool;
 
+use Magento\CloudPatches\Patch\Collector\CloudCollector;
 use Magento\CloudPatches\Patch\Collector\CollectorException;
-use Magento\CloudPatches\Patch\Collector\QualityCollector;
+use Magento\CloudPatches\Patch\Collector\SupportCollector;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
@@ -24,22 +25,22 @@ use PHPUnit\Framework\TestCase;
 class OptionalPoolTest extends TestCase
 {
     /**
-     * @var RequiredPool|MockObject
-     */
-    private $requiredPool;
-
-    /**
-     * @var QualityCollector|MockObject
+     * @var SupportCollector|MockObject
      */
     private $qualityCollector;
+
+    /**
+     * @var \Magento\CloudPatches\Patch\Collector\CloudCollector|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private $cloudCollector;
 
     /**
      * @inheritDoc
      */
     protected function setUp()
     {
-        $this->requiredPool = $this->createMock(RequiredPool::class);
-        $this->qualityCollector = $this->createMock(QualityCollector::class);
+        $this->cloudCollector = $this->createMock(CloudCollector::class);
+        $this->qualityCollector = $this->createMock(SupportCollector::class);
     }
 
     /**
@@ -322,6 +323,7 @@ class OptionalPoolTest extends TestCase
         $patch->method('getId')->willReturn($id);
         $patch->method('getRequire')->willReturn($require);
         $patch->method('getReplacedWith')->willReturn($replacedWith);
+        $patch->method('getOrigin')->willReturn(SupportCollector::ORIGIN);
 
         // To make mock object unique for assertions and array operations.
         $patch->id = microtime();
@@ -341,15 +343,19 @@ class OptionalPoolTest extends TestCase
      */
     private function createPool(array $cloudPatches = [], array $qualityPatches = []): OptionalPool
     {
-        $this->requiredPool->expects($this->once())
-            ->method('getList')
+        $this->cloudCollector->expects($this->once())
+            ->method('collect')
             ->willReturn($cloudPatches);
 
         $this->qualityCollector->expects($this->once())
             ->method('collect')
             ->willReturn($qualityPatches);
 
-        $pool = new OptionalPool($this->requiredPool, $this->qualityCollector);
+        $collectors = [
+            $this->cloudCollector,
+            $this->qualityCollector
+        ];
+        $pool = new OptionalPool($collectors);
 
         return $pool;
     }

@@ -8,9 +8,11 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Patch\Pool;
 
 use Magento\CloudPatches\Patch\Collector\CollectorException;
-use Magento\CloudPatches\Patch\Collector\QualityCollector;
+use Magento\CloudPatches\Patch\Collector\SupportCollector;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
+use Magento\CloudPatches\Patch\Collector\CommunityCollector;
+use Magento\CloudPatches\Patch\CollectorInterface;
 
 /**
  * Contains all optional patches.
@@ -20,21 +22,18 @@ class OptionalPool
     /**
      * @var PatchInterface[]
      */
-    private $items;
+    private $items = [];
 
     /**
-     * @param RequiredPool $requiredPool
-     * @param QualityCollector $qualityCollector
+     * @param array $collectors
      * @throws CollectorException
      */
-    public function __construct(
-        RequiredPool $requiredPool,
-        QualityCollector $qualityCollector
-    ) {
-        $this->items = array_merge(
-            $requiredPool->getList(),
-            $qualityCollector->collect()
-        );
+    public function __construct(array $collectors = [])
+    {
+        /** @var CollectorInterface $collector */
+        foreach ($collectors as $collector) {
+            $this->items = array_merge($this->items, $collector->collect());
+        }
     }
 
     /**
@@ -75,12 +74,30 @@ class OptionalPool
      * @return PatchInterface[]
      * @throws PatchIntegrityException
      */
-    public function getOptionalAll()
+    public function getOptionalAll(): array
+    {
+        return $this->getOptionalListByOrigin(
+            [
+                SupportCollector::ORIGIN,
+                CommunityCollector::ORIGIN,
+            ]
+        );
+    }
+
+    /**
+     * Returns list of all optional patches.
+     *
+     * @param array $listOfOrigins
+     * @return PatchInterface[]
+     * @throws PatchIntegrityException
+     */
+    public function getOptionalListByOrigin(array $listOfOrigins): array
     {
         $items = array_filter(
             $this->items,
-            function ($patch) {
-                return $patch->getType() === PatchInterface::TYPE_OPTIONAL;
+            function ($patch) use ($listOfOrigins) {
+                return $patch->getType() === PatchInterface::TYPE_OPTIONAL
+                    && in_array($patch->getOrigin(), $listOfOrigins);
             }
         );
 
@@ -91,9 +108,7 @@ class OptionalPool
             }
             $result[] = [$patch];
         }
-        $result = $result ? array_unique(array_merge(...$result)) : [];
-
-        return $result;
+        return $result ? array_unique(array_merge(...$result)) : [];
     }
 
     /**
@@ -102,7 +117,7 @@ class OptionalPool
      * @param string $patchId
      * @return string[]
      */
-    public function getDependentOn($patchId)
+    public function getDependentOn(string $patchId): array
     {
         if (!$patchId) {
             return [];
@@ -127,7 +142,7 @@ class OptionalPool
      * @param string $patchId
      * @return string[]
      */
-    public function getDependencies($patchId)
+    public function getDependencies(string $patchId): array
     {
         $result = array_map(
             function (PatchInterface $patch) {

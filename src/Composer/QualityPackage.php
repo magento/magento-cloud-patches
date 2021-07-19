@@ -20,7 +20,17 @@ class QualityPackage
     /**
      * @var string|null
      */
-    private $patchesConfig;
+    private $supportPatchesConfig;
+
+    /**
+     * @var string|null
+     */
+    private $communityPatchesConfig;
+
+    /**
+     * @var string|null
+     */
+    private $categoriesConfig;
 
     /**
      * QualityPackage constructor
@@ -30,7 +40,9 @@ class QualityPackage
         if (class_exists(\Magento\QualityPatches\Info::class)) {
             $info = new \Magento\QualityPatches\Info();
             $this->patchesDirectory = $info->getPatchesDirectory();
-            $this->patchesConfig = $info->getPatchesConfig();
+            $this->supportPatchesConfig = $info->getSupportPatchesConfig();
+            $this->communityPatchesConfig = $info->getCommunityPatchesConfig();
+            $this->categoriesConfig = $info->getCategoriesConfig();
         }
     }
 
@@ -39,18 +51,38 @@ class QualityPackage
      *
      * @return string|null
      */
-    public function getPatchesDirectory()
+    public function getPatchesDirectoryPath()
     {
         return $this->patchesDirectory;
     }
 
     /**
-     * Returns path to patches configuration file.
+     * Returns path to support patches configuration file.
      *
      * @return string|null
      */
-    public function getPatchesConfig()
+    public function getSupportPatchesConfigPath()
     {
-        return $this->patchesConfig;
+        return $this->supportPatchesConfig;
+    }
+
+    /**
+     * Returns path to community patches configuration file.
+     *
+     * @return string|null
+     */
+    public function getCommunityPatchesConfigPath()
+    {
+        return $this->communityPatchesConfig;
+    }
+
+    /**
+     * Returns path to the categories configuration file.
+     *
+     * @return string|null
+     */
+    public function getCategoriesConfigPath()
+    {
+        return $this->categoriesConfig;
     }
 }

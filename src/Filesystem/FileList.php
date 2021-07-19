@@ -36,6 +36,14 @@ class FileList
     /**
      * @return string
      */
+    public function getCategoriesConfig(): string
+    {
+        return $this->directoryList->getRoot() . '/config/patch-categories.json';
+    }
+
+    /**
+     * @return string
+     */
     public function getPatchLog(): string
     {
         return $this->directoryList->getMagentoRoot() . '/var/log/patch.log';

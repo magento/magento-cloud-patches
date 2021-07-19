@@ -30,6 +30,8 @@ class AggregatedPatchFactory
         $id = $this->getId($items);
         $type = $this->getType($items);
         $title = $this->getTitle($items);
+        $categories = $this->getCategories($items);
+        $origin = $this->getOrigin($items);
         $components = $this->getAffectedComponents($items);
         $require = $this->getRequire($items);
         $replacedWith = $this->getReplacedWith($items);
@@ -39,6 +41,8 @@ class AggregatedPatchFactory
             $id,
             $type,
             $title,
+            $categories,
+            $origin,
             $components,
             $require,
             $replacedWith,
@@ -81,9 +85,35 @@ class AggregatedPatchFactory
      */
     private function getTitle(array $patches): string
     {
-        $patch = end($patches);
+        $patch = reset($patches);
 
         return $patch->getTitle();
+    }
+
+    /**
+     * Returns aggregated patch category.
+     *
+     * @param PatchInterface[] $patches
+     * @return array
+     */
+    private function getCategories(array $patches): array
+    {
+        $patch = reset($patches);
+
+        return $patch->getCategories();
+    }
+
+    /**
+     * Returns aggregated patch origin.
+     *
+     * @param PatchInterface[] $patches
+     * @return string
+     */
+    private function getOrigin(array $patches): string
+    {
+        $patch = reset($patches);
+
+        return $patch->getOrigin();
     }
 
     /**

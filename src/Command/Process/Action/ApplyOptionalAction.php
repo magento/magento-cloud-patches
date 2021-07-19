@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Command\Process\Action;
 
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Renderer;
+use Magento\CloudPatches\Patch\Collector\SupportCollector;
 use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Applier;
@@ -24,6 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Applies optional patches.
  *
  * Patches are applying from top to bottom of config list.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ApplyOptionalAction implements ActionInterface
 {
@@ -139,7 +141,7 @@ class ApplyOptionalAction implements ActionInterface
     {
         if (empty($patchFilter)) {
             return array_filter(
-                $this->optionalPool->getOptionalAll(),
+                $this->optionalPool->getOptionalListByOrigin([SupportCollector::ORIGIN]),
                 function ($patch) {
                     return !$patch->isDeprecated();
                 }

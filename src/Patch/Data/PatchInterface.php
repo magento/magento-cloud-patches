@@ -51,6 +51,20 @@ interface PatchInterface
     public function getTitle(): string;
 
     /**
+     * Patch categories.
+     *
+     * @return array
+     */
+    public function getCategories(): array;
+
+    /**
+     * Patch origin.
+     *
+     * @return string
+     */
+    public function getOrigin(): string;
+
+    /**
      * Patch filename.
      *
      * @return string
