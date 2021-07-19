@@ -10,6 +10,7 @@ namespace Magento\CloudPatches\Test\Unit\Command\Process;
 use Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction;
 use Magento\CloudPatches\Command\Process\Renderer;
 use Magento\CloudPatches\Command\Process\ShowStatus;
+use Magento\CloudPatches\Console\QuestionFactory;
 use Magento\CloudPatches\Patch\Aggregator;
 use Magento\CloudPatches\Patch\Data\AggregatedPatch;
 use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
@@ -19,11 +20,13 @@ use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @inheritdoc
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ShowStatusTest extends TestCase
 {
@@ -63,6 +66,16 @@ class ShowStatusTest extends TestCase
     private $localPool;
 
     /**
+     * @var \PHPUnit\Framework\MockObject\MockObject|\Symfony\Component\Console\Helper\QuestionHelper
+     */
+    private $questionHelper;
+
+    /**
+     * @var \Magento\CloudPatches\Console\QuestionFactory|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private $questionFactory;
+
+    /**
      * @inheritdoc
      */
     protected function setUp()
@@ -73,6 +86,8 @@ class ShowStatusTest extends TestCase
         $this->statusPool = $this->createMock(StatusPool::class);
         $this->reviewAppliedAction = $this->createMock(ReviewAppliedAction::class);
         $this->renderer = $this->createMock(Renderer::class);
+        $this->questionHelper = $this->createMock(QuestionHelper::class);
+        $this->questionFactory = $this->createMock(QuestionFactory::class);
 
         $this->manager = new ShowStatus(
             $this->aggregator,
@@ -80,7 +95,9 @@ class ShowStatusTest extends TestCase
             $this->localPool,
             $this->statusPool,
             $this->reviewAppliedAction,
-            $this->renderer
+            $this->renderer,
+            $this->questionHelper,
+            $this->questionFactory
         );
     }
 

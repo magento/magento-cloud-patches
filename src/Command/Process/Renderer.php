@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Command\Process;
 
 use Magento\CloudPatches\Console\ConfirmationQuestionFactory;
 use Magento\CloudPatches\Console\TableFactory;
+use Magento\CloudPatches\Patch\Collector\CommunityCollector;
 use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Status\StatusPool;
@@ -25,6 +26,10 @@ class Renderer
     const ID = 'Id';
 
     const TITLE = 'Title';
+
+    const CATEGORY = 'Category';
+
+    const ORIGIN = 'Origin';
 
     const TYPE = 'Type';
 
@@ -80,7 +85,7 @@ class Renderer
     public function printTable(OutputInterface $output, array $patchList)
     {
         $table = $this->tableFactory->create($output);
-        $table->setHeaders([self::ID, self::TITLE, self::TYPE, self::STATUS, self::DETAILS]);
+        $table->setHeaders([self::ID, self::TITLE, self::CATEGORY, self::ORIGIN, self::STATUS, self::DETAILS]);
         $table->setStyle('box-double');
 
         $rows = [];
@@ -89,6 +94,9 @@ class Renderer
         }
 
         usort($rows, function ($a, $b) {
+            if ($a[self::STATUS] === $b[self::STATUS]) {
+                return strcmp($a[self::ORIGIN], $b[self::ORIGIN]);
+            }
             return strcmp($a[self::STATUS], $b[self::STATUS]);
         });
 
@@ -165,7 +173,10 @@ class Renderer
      */
     private function createRow(AggregatedPatchInterface $patch): array
     {
-        $details = '';
+        $details = 'Patch type: '
+            . ($patch->isDeprecated() ? '<error>DEPRECATED</error>' : $patch->getType())
+            . PHP_EOL;
+
         if ($patch->getReplacedWith()) {
             $details .= '<info>Recommended replacement: ' . $patch->getReplacedWith() . '</info>' . PHP_EOL;
         }
@@ -191,7 +202,8 @@ class Renderer
         return [
             self::ID => '<comment>' . $id . '</comment>',
             self::TITLE => $title,
-            self::TYPE => $patch->isDeprecated() ? '<error>DEPRECATED</error>' : $patch->getType(),
+            self::CATEGORY =>  implode(PHP_EOL, $patch->getCategories()),
+            self::ORIGIN => $patch->getOrigin(),
             self::STATUS => $this->statusPool->get($patch->getId()),
             self::DETAILS => $details
         ];

@@ -87,5 +87,29 @@
                 <argument type="service" id="Magento\CloudPatches\Shell\Command\PatchDriver"/>
             </argument>
         </service>
+        <service id="Magento\CloudPatches\Patch\Collector\SupportCollector">
+            <argument key="$getPatchesConfig" type="service" id="Magento\CloudPatches\Patch\Collector\GetSupportPatchesConfig"/>
+        </service>
+        <service id="Magento\CloudPatches\Patch\Collector\CommunityCollector">
+            <argument key="$getPatchesConfig" type="service" id="Magento\CloudPatches\Patch\Collector\GetCommunityPatchesConfig"/>
+        </service>
+        <service id="Magento\CloudPatches\Patch\GetCategoriesList">
+            <argument key="$providers" type="collection">
+                <argument type="service" id="Magento\CloudPatches\Patch\CategoriesList\GetLocalPatchCategories"/>
+                <argument type="service" id="Magento\CloudPatches\Patch\CategoriesList\GetSupportPatchCategories"/>
+            </argument>
+        </service>
+        <service id="Magento\CloudPatches\Patch\Pool\OptionalPool">
+            <argument key="$collectors" type="collection">
+                <argument type="service" id="Magento\CloudPatches\Patch\Collector\CloudCollector"/>
+                <argument type="service" id="Magento\CloudPatches\Patch\Collector\SupportCollector"/>
+                <argument type="service" id="Magento\CloudPatches\Patch\Collector\CommunityCollector"/>
+            </argument>
+        </service>
+        <service id="Magento\CloudPatches\Patch\Pool\RequiredPool">
+            <argument key="$collectors" type="collection">
+                <argument type="service" id="Magento\CloudPatches\Patch\Collector\CloudCollector"/>
+            </argument>
+        </service>
     </services>
 </container>

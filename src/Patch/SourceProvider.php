@@ -10,8 +10,7 @@ namespace Magento\CloudPatches\Patch;
 use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
-use Magento\CloudPatches\Filesystem\FileSystemException;
-use Magento\CloudPatches\Filesystem\Filesystem;
+use Magento\CloudPatches\Filesystem\JsonConfigReader;
 
 /**
  * Patches config provider.
@@ -22,11 +21,6 @@ class SourceProvider
      * Directory for hot-fixes.
      */
     const HOT_FIXES_DIR = 'm2-hotfixes';
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
 
     /**
      * @var FileList
@@ -44,21 +38,26 @@ class SourceProvider
     private $qualityPackage;
 
     /**
-     * @param Filesystem $filesystem
+     * @var JsonConfigReader
+     */
+    private $jsonConfigReader;
+
+    /**
      * @param FileList $fileList
      * @param DirectoryList $directoryList
      * @param QualityPackage $qualityPackage
+     * @param JsonConfigReader $jsonConfigReader
      */
     public function __construct(
-        Filesystem $filesystem,
         FileList $fileList,
         DirectoryList $directoryList,
-        QualityPackage $qualityPackage
+        QualityPackage $qualityPackage,
+        JsonConfigReader $jsonConfigReader
     ) {
-        $this->filesystem = $filesystem;
         $this->fileList = $fileList;
         $this->directoryList = $directoryList;
         $this->qualityPackage = $qualityPackage;
+        $this->jsonConfigReader = $jsonConfigReader;
     }
 
     /**
@@ -82,7 +81,7 @@ class SourceProvider
     {
         $configPath = $this->fileList->getPatches();
 
-        return $this->readConfiguration($configPath);
+        return $this->jsonConfigReader->read($configPath);
     }
 
     /**
@@ -91,11 +90,22 @@ class SourceProvider
      * @return array
      * @throws SourceProviderException
      */
-    public function getQualityPatches(): array
+    public function getSupportPatches(): array
     {
-        $configPath = $this->qualityPackage->getPatchesConfig();
+        $configPath = $this->qualityPackage->getSupportPatchesConfigPath();
+        return $configPath ? $this->jsonConfigReader->read($configPath) : [];
+    }
 
-        return $configPath ? $this->readConfiguration($configPath) : [];
+    /**
+     * Returns configuration of Community patches.
+     *
+     * @return array
+     * @throws SourceProviderException
+     */
+    public function getCommunityPatches(): array
+    {
+        $configPath = $this->qualityPackage->getCommunityPatchesConfigPath();
+        return $configPath ? $this->jsonConfigReader->read($configPath) : [];
     }
 
     /**
@@ -112,31 +122,5 @@ class SourceProvider
         }
 
         return $files ?: [];
-    }
-
-    /**
-     * Return patch configuration.
-     *
-     * @param string $configPath
-     *
-     * @return array
-     * @throws SourceProviderException
-     */
-    private function readConfiguration(string $configPath): array
-    {
-        try {
-            $content = $this->filesystem->get($configPath);
-        } catch (FileSystemException $e) {
-            throw new SourceProviderException($e->getMessage(), $e->getCode(), $e);
-        }
-
-        $result = json_decode($content, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new SourceProviderException(
-                "Unable to unserialize patches configuration '{$configPath}'. Error: " . json_last_error_msg()
-            );
-        }
-
-        return $result;
     }
 }

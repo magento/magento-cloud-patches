@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command\Process\Action;
 
+use Magento\CloudPatches\Patch\Collector\SupportCollector;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use Psr\Log\LoggerInterface;
@@ -59,7 +60,7 @@ class ReviewAppliedAction implements ActionInterface
     public function execute(InputInterface $input, OutputInterface $output, array $patchFilter)
     {
         $appliedOptionalPatches = array_filter(
-            $this->optionalPool->getOptionalAll(),
+            $this->optionalPool->getOptionalListByOrigin([SupportCollector::ORIGIN]),
             function ($patch) {
                 return $this->statusPool->isApplied($patch->getId());
             }

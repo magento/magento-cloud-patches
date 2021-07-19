@@ -28,6 +28,11 @@ class Patch implements PatchInterface
     private $title;
 
     /**
+     * @var array
+     */
+    private $categories;
+
+    /**
      * @var string
      */
     private $filename;
@@ -67,9 +72,16 @@ class Patch implements PatchInterface
     private $isDeprecated;
 
     /**
+     * @var string
+     */
+    private $origin;
+
+    /**
      * @param string $id
      * @param string $type
      * @param string $title
+     * @param array $categories
+     * @param string $origin
      * @param string $filename
      * @param string $path
      * @param string $packageName
@@ -85,6 +97,8 @@ class Patch implements PatchInterface
         string $id,
         string $type,
         string $title,
+        array $categories,
+        string $origin,
         string $filename,
         string $path,
         string $packageName,
@@ -98,6 +112,8 @@ class Patch implements PatchInterface
         $this->id = $id;
         $this->type = $type;
         $this->title = $title;
+        $this->categories = $categories;
+        $this->origin = $origin;
         $this->filename = $filename;
         $this->path = $path;
         $this->packageName = $packageName;
@@ -138,6 +154,22 @@ class Patch implements PatchInterface
     public function getTitle(): string
     {
         return $this->title;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getCategories(): array
+    {
+        return $this->categories;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getOrigin(): string
+    {
+        return $this->origin;
     }
 
     /**

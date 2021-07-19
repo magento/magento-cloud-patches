@@ -192,7 +192,8 @@ class ApplyOptionalActionTest extends TestCase
         /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->optionalPool->expects($this->once())
-            ->method('getOptionalAll')
+            ->method('getOptionalListByOrigin')
+            ->with(['Adobe Commerce Support'])
             ->willReturn([$patch1, $patch2]);
 
         $this->applier->method('apply')
