@@ -16,6 +16,8 @@ use Magento\CloudPatches\Patch\SourceProvider;
  */
 class LocalCollector
 {
+    const ORIGIN = 'Local';
+
     /**
      * @var SourceProvider
      */
@@ -54,6 +56,8 @@ class LocalCollector
             $this->patchBuilder->setFilename(basename($file));
             $this->patchBuilder->setPath($file);
             $this->patchBuilder->setType(PatchInterface::TYPE_CUSTOM);
+            $this->patchBuilder->setOrigin(self::ORIGIN);
+            $this->patchBuilder->setCategories(['Other']);
             $result[] = $this->patchBuilder->build();
         }
 

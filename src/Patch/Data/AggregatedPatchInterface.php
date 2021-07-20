@@ -36,6 +36,20 @@ interface AggregatedPatchInterface
     public function getTitle(): string;
 
     /**
+     * Aggregated patch category.
+     *
+     * @return array
+     */
+    public function getCategories(): array;
+
+    /**
+     * Aggregated patch origin.
+     *
+     * @return string
+     */
+    public function getOrigin(): string;
+
+    /**
      * List of affected components.
      *
      * @return string[]

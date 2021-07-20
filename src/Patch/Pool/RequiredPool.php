@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Patch\Pool;
 
-use Magento\CloudPatches\Patch\Collector\CloudCollector;
 use Magento\CloudPatches\Patch\Collector\CollectorException;
+use Magento\CloudPatches\Patch\CollectorInterface;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 
 /**
@@ -19,16 +19,18 @@ class RequiredPool
     /**
      * @var PatchInterface[]
      */
-    private $items;
+    private $items = [];
 
     /**
-     * @param CloudCollector $cloudCollector
+     * @param array $collectors
      * @throws CollectorException
      */
-    public function __construct(
-        CloudCollector $cloudCollector
-    ) {
-        $this->items = $cloudCollector->collect();
+    public function __construct(array $collectors = [])
+    {
+        /** @var CollectorInterface $collector */
+        foreach ($collectors as $collector) {
+            $this->items = array_merge($this->items, $collector->collect());
+        }
     }
 
     /**

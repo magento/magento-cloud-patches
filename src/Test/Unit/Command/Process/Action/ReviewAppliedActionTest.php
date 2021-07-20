@@ -90,7 +90,7 @@ class ReviewAppliedActionTest extends TestCase
             ->willReturn(true);
 
         $this->optionalPool->expects($this->once())
-            ->method('getOptionalAll')
+            ->method('getOptionalListByOrigin')
             ->willReturn($appliedPatches);
 
         $outputMock->expects($this->once())
@@ -119,7 +119,7 @@ class ReviewAppliedActionTest extends TestCase
             ->willReturn(true);
 
         $this->optionalPool->expects($this->once())
-            ->method('getOptionalAll')
+            ->method('getOptionalListByOrigin')
             ->willReturn($appliedPatches);
 
         $outputMock->expects($this->never())

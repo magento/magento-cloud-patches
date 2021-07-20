@@ -30,6 +30,11 @@ class AggregatedPatch implements AggregatedPatchInterface
     /**
      * @var array
      */
+    private $categories;
+
+    /**
+     * @var array
+     */
     private $affectedComponents;
 
     /**
@@ -53,19 +58,29 @@ class AggregatedPatch implements AggregatedPatchInterface
     private $items;
 
     /**
+     * @var string
+     */
+    private $origin;
+
+    /**
      * @param string $id
      * @param string $type
      * @param string $title
+     * @param array $categories
+     * @param string $origin
      * @param string[] $affectedComponents
      * @param string[] $require
      * @param string $replacedWith
      * @param bool $isDeprecated
      * @param PatchInterface[] $items
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
         string $id,
         string $type,
         string $title,
+        array $categories,
+        string $origin,
         array $affectedComponents,
         array $require,
         string $replacedWith,
@@ -76,6 +91,8 @@ class AggregatedPatch implements AggregatedPatchInterface
         $this->id = $id;
         $this->type = $type;
         $this->title = $title;
+        $this->categories = $categories;
+        $this->origin = $origin;
         $this->affectedComponents = $affectedComponents;
         $this->require = $require;
         $this->replacedWith = $replacedWith;
@@ -113,6 +130,22 @@ class AggregatedPatch implements AggregatedPatchInterface
     public function getTitle(): string
     {
         return $this->title;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getCategories(): array
+    {
+        return $this->categories;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getOrigin(): string
+    {
+        return $this->origin;
     }
 
     /**

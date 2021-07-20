@@ -7,11 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
+use Magento\CloudPatches\App\GenericException;
 use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
-use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Filesystem\FileSystemException;
+use Magento\CloudPatches\Filesystem\JsonConfigReader;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -26,11 +27,6 @@ class SourceProviderTest extends TestCase
      * @var SourceProvider
      */
     private $sourceProvider;
-
-    /**
-     * @var Filesystem|MockObject
-     */
-    private $filesystem;
 
     /**
      * @var DirectoryList|MockObject
@@ -48,20 +44,25 @@ class SourceProviderTest extends TestCase
     private $filelist;
 
     /**
+     * @var \Magento\CloudPatches\Filesystem\JsonConfigReader|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private $jsonConfigReader;
+
+    /**
      * @inheritDoc
      */
     protected function setUp()
     {
-        $this->filesystem = $this->createMock(Filesystem::class);
         $this->filelist = $this->createMock(FileList::class);
         $this->directoryList = $this->createMock(DirectoryList::class);
         $this->qualityPackage = $this->createMock(QualityPackage::class);
+        $this->jsonConfigReader = $this->createMock(JsonConfigReader::class);
 
         $this->sourceProvider = new SourceProvider(
-            $this->filesystem,
             $this->filelist,
             $this->directoryList,
-            $this->qualityPackage
+            $this->qualityPackage,
+            $this->jsonConfigReader
         );
     }
 
@@ -72,16 +73,15 @@ class SourceProviderTest extends TestCase
     {
         $configPath = '/cloud/patches.json';
         $configSource = require __DIR__ . '/Collector/Fixture/cloud_config_valid.php';
-        $jsonConfig = json_encode($configSource);
 
         $this->filelist->expects($this->once())
             ->method('getPatches')
             ->willReturn($configPath);
 
-        $this->filesystem->expects($this->once())
-            ->method('get')
+        $this->jsonConfigReader->expects($this->once())
+            ->method('read')
             ->with($configPath)
-            ->willReturn($jsonConfig);
+            ->willReturn($configSource);
 
         $this->assertEquals($configSource, $this->sourceProvider->getCloudPatches());
     }
@@ -93,18 +93,17 @@ class SourceProviderTest extends TestCase
     {
         $configPath = '/quality/patches.json';
         $configSource = require __DIR__ . '/Collector/Fixture/quality_config_valid.php';
-        $jsonConfig = json_encode($configSource);
 
         $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
+            ->method('getSupportPatchesConfigPath')
             ->willReturn($configPath);
 
-        $this->filesystem->expects($this->once())
-            ->method('get')
+        $this->jsonConfigReader->expects($this->once())
+            ->method('read')
             ->with($configPath)
-            ->willReturn($jsonConfig);
+            ->willReturn($configSource);
 
-        $this->assertEquals($configSource, $this->sourceProvider->getQualityPatches());
+        $this->assertEquals($configSource, $this->sourceProvider->getSupportPatches());
     }
 
     /**
@@ -115,13 +114,10 @@ class SourceProviderTest extends TestCase
     public function testGetQualityPatchesWithNullConfigPath()
     {
         $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
+            ->method('getSupportPatchesConfigPath')
             ->willReturn(null);
 
-        $this->filesystem->expects($this->never())
-            ->method('get');
-
-        $this->assertEquals([], $this->sourceProvider->getQualityPatches());
+        $this->assertEquals([], $this->sourceProvider->getSupportPatches());
     }
 
     /**
@@ -148,36 +144,14 @@ class SourceProviderTest extends TestCase
         $configPath = '/quality/patches.json';
 
         $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
+            ->method('getSupportPatchesConfigPath')
             ->willReturn($configPath);
 
-        $this->filesystem->expects($this->once())
-            ->method('get')
-            ->willThrowException(new FileSystemException(''));
+        $this->jsonConfigReader->expects($this->once())
+            ->method('read')
+            ->willThrowException(new SourceProviderException(''));
 
         $this->expectException(SourceProviderException::class);
-        $this->sourceProvider->getQualityPatches();
-    }
-
-    /**
-     * Tests retrieving Quality patch configuration with json decoding exception.
-     */
-    public function testGetQualityPatchesJsonException()
-    {
-        $configPath = '/quality/patches.json';
-
-        $this->qualityPackage->expects($this->once())
-            ->method('getPatchesConfig')
-            ->willReturn($configPath);
-
-        $this->filesystem->expects($this->once())
-            ->method('get')
-            ->with($configPath)
-            ->willReturn('Invalid config format');
-
-        $this->expectException(SourceProviderException::class);
-        $this->expectExceptionMessageRegExp('/Unable to unserialize patches configuration/');
-
-        $this->sourceProvider->getQualityPatches();
+        $this->sourceProvider->getSupportPatches();
     }
 }

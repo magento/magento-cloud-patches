@@ -35,6 +35,16 @@ class PatchBuilder
     private $title;
 
     /**
+     * @var array
+     */
+    private $categories = [];
+
+    /**
+     * @var string
+     */
+    private $origin = '';
+
+    /**
      * @var string
      */
     private $filename;
@@ -113,6 +123,30 @@ class PatchBuilder
     public function setTitle(string $title)
     {
         $this->title = $title;
+    }
+
+    /**
+     * Sets patch categories.
+     *
+     * @param array $categories
+     *
+     * @return void
+     */
+    public function setCategories(array $categories)
+    {
+        $this->categories = $categories;
+    }
+
+    /**
+     * Sets patch origin.
+     *
+     * @param string $origin
+     *
+     * @return void
+     */
+    public function setOrigin(string $origin)
+    {
+        $this->origin = trim($origin);
     }
 
     /**
@@ -207,6 +241,8 @@ class PatchBuilder
             $id,
             $this->type,
             $this->title,
+            $this->categories,
+            $this->origin,
             $this->filename,
             $this->path,
             $this->packageName,

@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Patch\Collector;
 
 use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Filesystem\DirectoryList;
+use Magento\CloudPatches\Patch\CollectorInterface;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Composer\Package;
 use Magento\CloudPatches\Patch\PatchBuilder;
@@ -19,7 +20,7 @@ use Magento\CloudPatches\Patch\SourceProviderException;
 /**
  * Collects cloud patches.
  */
-class CloudCollector
+class CloudCollector implements CollectorInterface
 {
     /**
      * @var SourceProvider
@@ -101,6 +102,8 @@ class CloudCollector
                             $this->patchBuilder->setType($patchType);
                             $this->patchBuilder->setPackageName($packageName);
                             $this->patchBuilder->setPackageConstraint($packageConstraint);
+                            $this->patchBuilder->setOrigin(SupportCollector::ORIGIN);
+                            $this->patchBuilder->setCategories(['Other']);
 
                             $result[] = $this->patchBuilder->build();
                         } catch (PatchIntegrityException $e) {
