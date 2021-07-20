@@ -33,7 +33,7 @@ class RequiredPoolTest extends TestCase
             ->method('collect')
             ->willReturn([$patch1, $patch2, $patch3]);
 
-        $pool = new RequiredPool($cloudCollector);
+        $pool = new RequiredPool([$cloudCollector]);
 
         $this->assertEquals([$patch1, $patch2, $patch3], $pool->getList());
     }

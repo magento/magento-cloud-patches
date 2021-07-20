@@ -7,10 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Unit\Patch\Collector;
 
+use Magento\CloudPatches\App\GenericException;
 use Magento\CloudPatches\Composer\Package;
 use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Patch\Collector\CollectorException;
-use Magento\CloudPatches\Patch\Collector\QualityCollector;
+use Magento\CloudPatches\Patch\Collector\GetPatchesConfigInterface;
+use Magento\CloudPatches\Patch\Collector\GetSupportPatchesConfig;
+use Magento\CloudPatches\Patch\Collector\SupportCollector;
+use Magento\CloudPatches\Patch\Collector\ValidatePatchesConfig;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\PatchBuilder;
@@ -28,7 +32,7 @@ class QualityCollectorTest extends TestCase
     const QUALITY_PATCH_DIR = 'quality/patch/dir';
 
     /**
-     * @var QualityCollector
+     * @var SupportCollector
      */
     private $collector;
 
@@ -36,11 +40,6 @@ class QualityCollectorTest extends TestCase
      * @var PatchBuilder|MockObject
      */
     private $patchBuilder;
-
-    /**
-     * @var SourceProvider|MockObject
-     */
-    private $sourceProvider;
 
     /**
      * @var Package|MockObject
@@ -53,20 +52,25 @@ class QualityCollectorTest extends TestCase
     private $qualityPackage;
 
     /**
+     * @var \Magento\CloudPatches\Patch\Collector\GetPatchesConfigInterface|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private $patchesConfig;
+
+    /**
      * @inheritDoc
      */
     protected function setUp()
     {
-        $this->sourceProvider = $this->createMock(SourceProvider::class);
         $this->package = $this->createMock(Package::class);
         $this->qualityPackage = $this->createMock(QualityPackage::class);
         $this->patchBuilder = $this->createMock(PatchBuilder::class);
+        $this->patchesConfig = $this->createMock(GetPatchesConfigInterface::class);
 
-        $this->collector = new QualityCollector(
-            $this->sourceProvider,
+        $this->collector = new SupportCollector(
             $this->package,
             $this->qualityPackage,
-            $this->patchBuilder
+            $this->patchBuilder,
+            $this->patchesConfig
         );
     }
 
@@ -76,10 +80,10 @@ class QualityCollectorTest extends TestCase
     public function testCollectSuccessful()
     {
         $validConfig = require __DIR__ . '/Fixture/quality_config_valid.php';
-        $this->sourceProvider->expects($this->once())
-            ->method('getQualityPatches')
+        $this->patchesConfig->expects($this->once())
+            ->method('execute')
             ->willReturn($validConfig);
-        $this->qualityPackage->method('getPatchesDirectory')
+        $this->qualityPackage->method('getPatchesDirectoryPath')
             ->willReturn(self::QUALITY_PATCH_DIR);
 
         $this->package->method('matchConstraint')
@@ -103,7 +107,7 @@ class QualityCollectorTest extends TestCase
             ->method('setTitle')
             ->withConsecutive(
                 ['Fix asset locker race condition when using Redis'],
-                ['Fix asset locker race condition when using Redis EE'],
+                ['Fix asset locker race condition when using Redis'],
                 ['Allow DB dumps done with the support module to complete']
             );
         $this->patchBuilder->expects($this->exactly(3))
@@ -171,15 +175,26 @@ class QualityCollectorTest extends TestCase
             PHP_EOL . ' - Property \'replaced-with\' from \'2.2.0 - 2.2.5\' should have a string type' .
             PHP_EOL . ' - Property \'deprecated\' from \'2.2.0 - 2.2.5\' should have a boolean type';
 
-        $this->sourceProvider->expects($this->once())
-            ->method('getQualityPatches')
-            ->willReturn($config);
+        $sourceProvider = $this->createMock(SourceProvider::class);
+        $sourceProvider->expects($this->once())->method('getSupportPatches')->willReturn($config);
+
+        $this->patchesConfig = new GetSupportPatchesConfig(
+            $sourceProvider,
+            new ValidatePatchesConfig()
+        );
 
         $this->patchBuilder->expects($this->never())
             ->method('build');
 
         $this->expectException(CollectorException::class);
         $this->expectExceptionMessage($expectedExceptionMessage);
+
+        $this->collector = new SupportCollector(
+            $this->package,
+            $this->qualityPackage,
+            $this->patchBuilder,
+            $this->patchesConfig
+        );
 
         $this->collector->collect();
     }
@@ -190,8 +205,8 @@ class QualityCollectorTest extends TestCase
     public function testPatchIntegrityException()
     {
         $validConfig = require __DIR__ . '/Fixture/quality_config_valid.php';
-        $this->sourceProvider->expects($this->once())
-            ->method('getQualityPatches')
+        $this->patchesConfig->expects($this->once())
+            ->method('execute')
             ->willReturn($validConfig);
 
         $this->package->method('matchConstraint')
@@ -213,9 +228,9 @@ class QualityCollectorTest extends TestCase
      */
     public function testSourceProviderException()
     {
-        $this->sourceProvider->expects($this->once())
-            ->method('getQualityPatches')
-            ->willThrowException(new SourceProviderException(''));
+        $this->patchesConfig->expects($this->once())
+            ->method('execute')
+            ->willThrowException(new CollectorException(''));
 
         $this->patchBuilder->expects($this->never())
             ->method('build');

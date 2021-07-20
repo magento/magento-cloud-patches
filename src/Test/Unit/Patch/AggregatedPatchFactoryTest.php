@@ -42,13 +42,13 @@ class AggregatedPatchFactoryTest extends TestCase
     {
         $aggregatedPatch = $this->aggregatedPatchFactory->create($patches);
 
-        $this->assertEquals($aggregatedPatch->getId(), $expectedResult['id']);
-        $this->assertEquals($aggregatedPatch->getTitle(), $expectedResult['title']);
-        $this->assertEquals($aggregatedPatch->getType(), $expectedResult['type']);
-        $this->assertEquals($aggregatedPatch->getAffectedComponents(), $expectedResult['affected_components']);
-        $this->assertEquals($aggregatedPatch->getRequire(), $expectedResult['require']);
-        $this->assertEquals($aggregatedPatch->getReplacedWith(), $expectedResult['replaced_with']);
-        $this->assertEquals($aggregatedPatch->isDeprecated(), $expectedResult['is_deprecated']);
+        $this->assertEquals($expectedResult['id'], $aggregatedPatch->getId());
+        $this->assertEquals($expectedResult['title'], $aggregatedPatch->getTitle());
+        $this->assertEquals($expectedResult['type'], $aggregatedPatch->getType());
+        $this->assertEquals($expectedResult['affected_components'], $aggregatedPatch->getAffectedComponents());
+        $this->assertEquals($expectedResult['require'], $aggregatedPatch->getRequire());
+        $this->assertEquals($expectedResult['replaced_with'], $aggregatedPatch->getReplacedWith());
+        $this->assertEquals($expectedResult['is_deprecated'], $aggregatedPatch->isDeprecated());
     }
 
     /**
@@ -80,7 +80,7 @@ class AggregatedPatchFactoryTest extends TestCase
                 ],
                 'expectedResult' => [
                     'id' => 'MC-1',
-                    'title' => 'Title patch MC-1 EE',
+                    'title' => 'Title patch MC-1 CE',
                     'type' => 'Optional',
                     'affected_components' => ['magento-module1', 'magento-module2', 'magento-module3'],
                     'require' => ['MC-2', 'MC-3'],
