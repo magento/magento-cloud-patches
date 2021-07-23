@@ -16,7 +16,7 @@
         "symfony/proxy-manager-bridge": "^3.3||^4.3||^5.1",
         "symfony/yaml": "^3.3||^4.0||^5.1",
         "monolog/monolog": "^1.16",
-        "magento/quality-patches": "^1.0.7"
+        "magento/quality-patches": "^1.1.0"
     },
     "require-dev": {
         "codeception/codeception": "^2.5.3",

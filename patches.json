@@ -365,6 +365,9 @@
     },
     "Re-work consumers to terminate as soon as there is nothing left to process": {
       ">=2.2.0 <2.3.2": "MAGECLOUD-4071__terminate_consumers_if_the_queue_is_empty__2.2.0.patch"
+    },
+    "Fixes issue with PayPal Express where previously placed order price is displayed": {
+      "2.3.7-p1": "MC-42674__paypal_checkout__2.3.7-p1.patch"
     }
   }
 }
