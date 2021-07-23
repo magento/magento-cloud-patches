@@ -1,0 +1,12 @@
+diff --git a/vendor/magento/module-paypal/Controller/Express/AbstractExpress/PlaceOrder.php b/vendor/magento/module-paypal/Controller/Express/AbstractExpress/PlaceOrder.php
+index 055af4162d5f3..3f4fafc110ae2 100644
+--- a/vendor/magento/module-paypal/Controller/Express/AbstractExpress/PlaceOrder.php
++++ b/vendor/magento/module-paypal/Controller/Express/AbstractExpress/PlaceOrder.php
+@@ -99,6 +99,7 @@ public function execute()
+ 
+             // prepare session to success or cancellation page
+             $this->_getCheckoutSession()->clearHelperData();
++            $this->_getSession()->unsQuoteId();
+ 
+             // "last successful quote"
+             $quoteId = $this->_getQuote()->getId();
