@@ -55,6 +55,8 @@ class AcceptanceCest extends AbstractCest
             ['templateVersion' => '2.4.1', 'magentoVersion' => '2.4.1-p1'],
             ['templateVersion' => '2.4.2', 'magentoVersion' => '2.4.2'],
             ['templateVersion' => '2.4.2', 'magentoVersion' => '2.4.2-p1'],
+            ['templateVersion' => '2.4.2', 'magentoVersion' => '2.4.2-p2'],
+            ['templateVersion' => '2.4.3', 'magentoVersion' => '2.4.3'],
             ['templateVersion' => 'master'],
         ];
     }
