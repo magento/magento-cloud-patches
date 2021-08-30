@@ -256,6 +256,10 @@
       ">=2.3.4 <2.3.5": "MCLOUD-6139_MCLOUD-6211__redis_improvement_patches__2.3.4.patch",
       ">=2.3.5 <2.3.6": "MCLOUD-6211__redis_improvement_patches__2.3.5.patch",
       ">=2.4.0 <2.4.1": "MCLOUD-6659__fix_L2_redis_cache__2.4.0.patch"
+    },
+    "Incompatible PHP Method Fix": {
+      "2.3.7-p1": "AC-384__Fix_Incompatible_PHP_Method__2.3.7-p1_ce.patch",
+      "2.4.3": "AC-384__Fix_Incompatible_PHP_Method__2.4.3_ce.patch"
     }
   },
   "magento/module-paypal": {
