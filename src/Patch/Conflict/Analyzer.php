@@ -88,6 +88,7 @@ class Analyzer
      */
     private function analyzeOptional(string $failedPatchId, array $patchFilter = []): string
     {
+        $errorMessage = '';
         $optionalPatchIds = $patchFilter ?: $this->optionalPool->getIdsByType(PatchInterface::TYPE_OPTIONAL);
         $ids = $this->getIncompatiblePatches($optionalPatchIds, $failedPatchId);
         if ($ids) {
