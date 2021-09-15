@@ -52,7 +52,7 @@ class Logger extends \Monolog\Logger
     /**
      * @inheritDoc
      */
-    public function info($message, array $context = [])
+    public function info($message, array $context = []): void
     {
         $message = strip_tags($message);
 

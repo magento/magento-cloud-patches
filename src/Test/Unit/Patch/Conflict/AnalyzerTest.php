@@ -143,6 +143,14 @@ class AnalyzerTest extends TestCase
                 ],
                 'expectedMessage' => 'Patch MC-1 can\'t be applied to clean Magento instance'
             ],
+            [
+                'checkApplyMap' => [
+                    [['REQUIRED-1', 'REQUIRED-2', 'MC-1'], true],
+                    [['OPTIONAL-1', 'MC-1'], true],
+                    [['OPTIONAL-2', 'MC-1'], true],
+                ],
+                'expectedMessage' => ''
+            ],
         ];
     }
 
