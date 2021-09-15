@@ -1,0 +1,12 @@
+diff -Nuar a/vendor/magento/framework/Filesystem/Directory/DenyListPathValidator.php b/vendor/magento/framework/Filesystem/Directory/DenyListPathValidator.php
+--- a/vendor/magento/framework/Filesystem/Directory/DenyListPathValidator.php	(revision d40e8cbfd24ac841900166877e9910f9d549fdf5)
++++ b/vendor/magento/framework/Filesystem/Directory/DenyListPathValidator.php	(revision 7d6a3eeb669d4a11978bf639dc2536ef23d56d09)
+@@ -71,7 +71,7 @@
+ 
+         foreach ($this->fileDenyList as $file) {
+             $baseName = pathinfo($actualPath, PATHINFO_BASENAME);
+-            if (str_contains($baseName, $file) || preg_match('#' . "\." . $file . '#', $fullPath)) {
++            if (strpos($baseName, $file) !== false || preg_match('#' . "\." . $file . '#', $fullPath)) {
+                 throw new ValidatorException(
+                     new Phrase('"%1" is not a valid file path', [$path])
+                 );
