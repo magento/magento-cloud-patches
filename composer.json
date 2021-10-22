@@ -11,7 +11,7 @@
         }
     },
     "require": {
-        "php": "^7.0",
+        "php": "^7.0 || ^8.0",
         "ext-json": "*",
         "composer/composer": "@stable",
         "composer/semver": "@stable",
@@ -25,7 +25,11 @@
         "magento/quality-patches": "^1.1.0"
     },
     "require-dev": {
-        "codeception/codeception": "^2.5.3",
+        "codeception/codeception": "^4.1",
+        "codeception/module-asserts": "^1.2",
+        "codeception/module-db": "^1.0",
+        "codeception/module-phpbrowser": "^1.0",
+        "codeception/module-rest": "^1.2",
         "consolidation/robo": "^1.2",
         "phpmd/phpmd": "@stable",
         "phpunit/phpunit": "^7.2",
