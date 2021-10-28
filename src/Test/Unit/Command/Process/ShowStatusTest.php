@@ -78,7 +78,7 @@ class ShowStatusTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->aggregator = $this->createMock(Aggregator::class);
         $this->optionalPool = $this->createMock(OptionalPool::class);

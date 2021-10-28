@@ -43,7 +43,7 @@ class ApplyCheckerTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->optionalPool = $this->createMock(OptionalPool::class);
         $this->filesystem = $this->createMock(Filesystem::class);

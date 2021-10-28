@@ -41,7 +41,7 @@ class MagentoVersionTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->repository = $this->getMockForAbstractClass(WritableRepositoryInterface::class);
         $this->rootPackage = $this->getMockForAbstractClass(RootPackageInterface::class);

@@ -58,7 +58,7 @@ class ApplyTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->applyLocal = $this->createMock(ApplyLocal::class);
         $this->applyOptionalEce = $this->createMock(ApplyOptional::class);

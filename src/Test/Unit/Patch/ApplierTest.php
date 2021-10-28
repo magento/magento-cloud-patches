@@ -51,7 +51,7 @@ class ApplierTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->patchCommand = $this->createMock(PatchCommandInterface::class);
         $this->gitConverter = $this->createMock(GitConverter::class);
