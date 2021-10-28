@@ -51,7 +51,7 @@ class ApplyOptionalTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->filterFactory = $this->createMock(FilterFactory::class);
         $this->actionPool = $this->createMock(ActionPool::class);

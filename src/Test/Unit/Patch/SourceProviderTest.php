@@ -51,7 +51,7 @@ class SourceProviderTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->filelist = $this->createMock(FileList::class);
         $this->directoryList = $this->createMock(DirectoryList::class);

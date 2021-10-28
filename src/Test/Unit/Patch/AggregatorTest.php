@@ -31,7 +31,7 @@ class AggregatorTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->aggregatedPatchFactory = $this->createMock(AggregatedPatchFactory::class);
         $this->aggregator = new Aggregator($this->aggregatedPatchFactory);

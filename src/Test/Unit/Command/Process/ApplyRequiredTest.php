@@ -59,7 +59,7 @@ class ApplyRequiredTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);

@@ -33,7 +33,7 @@ class DirectoryListTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->directoryList = new DirectoryList(
             $this->root,

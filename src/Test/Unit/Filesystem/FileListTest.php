@@ -29,7 +29,7 @@ class FileListTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->directoryListMock = $this->createMock(DirectoryList::class);
 
