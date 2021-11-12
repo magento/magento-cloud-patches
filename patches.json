@@ -378,7 +378,7 @@
     },
     "Raise rate limits": {
       "2.3.7-p1": "MC-43048__set_rate_limits__2.3.7-p1.patch",
-      "2.4.3": "MC-43048__set_rate_limits__2.4.3.patch"
+      "~2.4.3": "MC-43048__set_rate_limits__2.4.3.patch"
     }
   }
 }
