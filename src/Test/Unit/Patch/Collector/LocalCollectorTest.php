@@ -38,7 +38,7 @@ class LocalCollectorTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->patchBuilder = $this->createMock(PatchBuilder::class);
         $this->sourceProvider = $this->createMock(SourceProvider::class);

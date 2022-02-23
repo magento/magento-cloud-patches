@@ -23,7 +23,7 @@ class GitConverterTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->gitConverter = new GitConverter();
     }

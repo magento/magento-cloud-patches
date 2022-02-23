@@ -52,7 +52,7 @@ class ReviewAppliedActionTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
         $this->statusPool = $this->createMock(StatusPool::class);
