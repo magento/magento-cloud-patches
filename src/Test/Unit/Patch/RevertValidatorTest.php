@@ -37,7 +37,7 @@ class RevertValidatorTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->optionalPool = $this->createMock(OptionalPool::class);
         $this->statusPool = $this->createMock(StatusPool::class);

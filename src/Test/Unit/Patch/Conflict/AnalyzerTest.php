@@ -49,7 +49,7 @@ class AnalyzerTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->optionalPool = $this->createMock(OptionalPool::class);
         $this->config = $this->createMock(Config::class);

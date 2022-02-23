@@ -37,7 +37,7 @@ class OptionalPoolTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->cloudCollector = $this->createMock(CloudCollector::class);
         $this->qualityCollector = $this->createMock(SupportCollector::class);

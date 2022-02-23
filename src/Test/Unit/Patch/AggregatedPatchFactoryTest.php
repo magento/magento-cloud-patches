@@ -26,7 +26,7 @@ class AggregatedPatchFactoryTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->aggregatedPatchFactory = new AggregatedPatchFactory();
     }

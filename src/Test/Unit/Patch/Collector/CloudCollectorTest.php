@@ -61,7 +61,7 @@ class CloudCollectorTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->sourceProvider = $this->createMock(SourceProvider::class);
         $this->package = $this->createMock(Package::class);

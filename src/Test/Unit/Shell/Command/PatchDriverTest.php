@@ -34,7 +34,7 @@ class PatchDriverTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->baseDir = dirname(__DIR__, 5) . '/tests/unit/';
         $this->cwd = $this->baseDir . 'var/';
@@ -58,7 +58,7 @@ class PatchDriverTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         foreach (glob($this->cwd . '*') as $file) {
             if (is_file($file)) {
