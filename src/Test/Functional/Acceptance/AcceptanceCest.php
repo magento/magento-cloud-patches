@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
 /**
- * @group php74
+ * @group php81
  */
 class AcceptanceCest extends AbstractCest
 {
@@ -49,15 +49,7 @@ class AcceptanceCest extends AbstractCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.4.0', 'magentoVersion' => '2.4.0'],
-            ['templateVersion' => '2.4.0', 'magentoVersion' => '2.4.0-p1'],
-            ['templateVersion' => '2.4.1', 'magentoVersion' => '2.4.1'],
-            ['templateVersion' => '2.4.1', 'magentoVersion' => '2.4.1-p1'],
-            ['templateVersion' => '2.4.2', 'magentoVersion' => '2.4.2'],
-            ['templateVersion' => '2.4.2', 'magentoVersion' => '2.4.2-p1'],
-            ['templateVersion' => '2.4.2', 'magentoVersion' => '2.4.2-p2'],
-            ['templateVersion' => '2.4.3', 'magentoVersion' => '2.4.3'],
-            ['templateVersion' => 'master'],
+            ['templateVersion' => '2.4.4'],
         ];
     }
 }

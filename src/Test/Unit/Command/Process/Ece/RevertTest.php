@@ -65,7 +65,7 @@ class RevertTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->revertAction = $this->createMock(RevertAction::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);

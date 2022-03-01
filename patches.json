@@ -260,6 +260,9 @@
     "Incompatible PHP Method Fix": {
       "2.3.7-p1": "AC-384__Fix_Incompatible_PHP_Method__2.3.7-p1_ce.patch",
       "2.4.3": "AC-384__Fix_Incompatible_PHP_Method__2.4.3_ce.patch"
+    },
+    "Fixed currency displaying on product page": {
+      ">=2.4.3 <2.4.4": "MCLOUD-8279__Fixed_currency_displaying_on_product_page__2.4.3.patch"
     }
   },
   "magento/module-paypal": {

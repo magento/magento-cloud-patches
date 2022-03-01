@@ -30,7 +30,7 @@ class ConfigTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->configReader = $this->createMock(ConfigReader::class);
 

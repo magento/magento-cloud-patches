@@ -10,7 +10,7 @@ namespace Magento\CloudPatches\Test\Functional\Acceptance;
 use Magento\CloudDocker\Test\Functional\Codeception\Docker;
 
 /**
- * @group php74
+ * @group php81
  */
 class PatchApplierCest extends AbstractCest
 {
@@ -21,7 +21,7 @@ class PatchApplierCest extends AbstractCest
     {
         parent::_before($I);
 
-        $this->prepareTemplate($I, 'master');
+        $this->prepareTemplate($I, '2.4.4');
         $I->copyFileToWorkDir('files/debug_logging/.magento.env.yaml', '.magento.env.yaml');
     }
 
@@ -40,10 +40,10 @@ class PatchApplierCest extends AbstractCest
         $I->startEnvironment();
 
         $targetFile = $I->grabFileContent('/target_file.md', Docker::BUILD_CONTAINER);
-        $I->assertContains('# Hello Magento', $targetFile);
-        $I->assertContains('## Additional Info', $targetFile);
+        $I->assertStringContainsString('# Hello Magento', $targetFile);
+        $I->assertStringContainsString('## Additional Info', $targetFile);
         $log = $I->grabFileContent('/var/log/cloud.log', Docker::BUILD_CONTAINER);
-        $I->assertContains('Patch ../m2-hotfixes/patch.patch has been applied', $log);
+        $I->assertStringContainsString('Patch ../m2-hotfixes/patch.patch has been applied', $log);
     }
 
     /**
@@ -61,9 +61,9 @@ class PatchApplierCest extends AbstractCest
         $I->startEnvironment();
 
         $targetFile = $I->grabFileContent('/target_file.md', Docker::BUILD_CONTAINER);
-        $I->assertContains('# Hello Magento', $targetFile);
-        $I->assertContains('## Additional Info', $targetFile);
-        $I->assertContains(
+        $I->assertStringContainsString('# Hello Magento', $targetFile);
+        $I->assertStringContainsString('## Additional Info', $targetFile);
+        $I->assertStringContainsString(
             'Patch ../m2-hotfixes/patch.patch was already applied',
             $I->grabFileContent('/var/log/cloud.log', Docker::BUILD_CONTAINER)
         );

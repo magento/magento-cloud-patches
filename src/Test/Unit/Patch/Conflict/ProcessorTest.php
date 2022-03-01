@@ -51,7 +51,7 @@ class ProcessorTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->renderer = $this->createMock(Renderer::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);

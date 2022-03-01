@@ -43,7 +43,7 @@ class RendererTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         /** @var StatusPool|MockObject $statusPool */
         $statusPool = $this->createMock(StatusPool::class);

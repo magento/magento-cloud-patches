@@ -54,7 +54,7 @@ class ConfirmRequiredActionTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->statusPool = $this->createMock(StatusPool::class);
         $this->optionalPool = $this->createMock(OptionalPool::class);

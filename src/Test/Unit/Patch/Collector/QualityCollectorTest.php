@@ -59,7 +59,7 @@ class QualityCollectorTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->package = $this->createMock(Package::class);
         $this->qualityPackage = $this->createMock(QualityPackage::class);

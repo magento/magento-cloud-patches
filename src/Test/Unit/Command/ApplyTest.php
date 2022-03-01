@@ -46,7 +46,7 @@ class ApplyTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->applyOptional = $this->createMock(ApplyOptional::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
