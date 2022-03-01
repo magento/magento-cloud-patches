@@ -37,7 +37,7 @@ class ConfigReaderTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->fileList = $this->createMock(FileList::class);
         $this->filesystem = $this->createPartialMock(Filesystem::class, ['exists']);

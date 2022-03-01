@@ -47,7 +47,7 @@ class LocalResolverTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->filesystem = $this->createMock(Filesystem::class);
         $this->applier = $this->createMock(Applier::class);

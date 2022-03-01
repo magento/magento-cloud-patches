@@ -23,7 +23,7 @@ class FilterFactoryTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->filterFactory = new FilterFactory();
     }

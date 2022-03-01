@@ -46,7 +46,7 @@ class RevertTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->filterFactory = $this->createMock(FilterFactory::class);
         $this->revertAction = $this->createMock(RevertAction::class);

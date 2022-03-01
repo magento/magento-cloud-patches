@@ -42,7 +42,7 @@ class StatusTest extends TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->showStatus = $this->createMock(ShowStatus::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);

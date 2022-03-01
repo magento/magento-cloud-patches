@@ -60,7 +60,7 @@ class RevertActionTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
         $this->revertValidator = $this->createMock(RevertValidator::class);
