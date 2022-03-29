@@ -1,0 +1,354 @@
+diff -Nuar a/vendor/magento/module-email/Model/Template/Filter.php b/vendor/magento/module-email/Model/Template/Filter.php
+--- a/vendor/magento/module-email/Model/Template/Filter.php
++++ b/vendor/magento/module-email/Model/Template/Filter.php
+@@ -379,14 +379,14 @@ class Filter extends \Magento\Framework\Filter\Template
+     }
+
+     /**
+-     * Retrieve Block html directive
+-     *
+      * @param array $construction
++     *
+      * @return string
++     *
+      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+      * @SuppressWarnings(PHPMD.NPathComplexity)
+      */
+-    public function blockDirective($construction)
++    private function resolveBlockDirective($construction)
+     {
+         $skipParams = ['class', 'id', 'output'];
+         $blockParameters = $this->getParameters($construction[2]);
+@@ -427,12 +427,26 @@ class Filter extends \Magento\Framework\Filter\Template
+     }
+
+     /**
+-     * Retrieve layout html directive
++     * Retrieve Block html directive
+      *
++     * @param array $construction
++     * @return string
++     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
++     * @SuppressWarnings(PHPMD.NPathComplexity)
++     */
++    public function blockDirective($construction)
++    {
++        $result = $this->resolveBlockDirective($construction);
++
++        return preg_replace("/{{/", "&#123;&#123;", $result);
++    }
++
++    /**
+      * @param string[] $construction
++     *
+      * @return string
+      */
+-    public function layoutDirective($construction)
++    private function resolveLayoutDirective($construction)
+     {
+         $this->_directiveParams = $this->getParameters($construction[2]);
+         if (!isset($this->_directiveParams['area'])) {
+@@ -448,6 +462,19 @@ class Filter extends \Magento\Framework\Filter\Template
+         }
+     }
+
++    /**
++     * Retrieve layout html directive
++     *
++     * @param string[] $construction
++     * @return string
++     */
++    public function layoutDirective($construction)
++    {
++        $result = $this->resolveLayoutDirective($construction);
++
++        return preg_replace("/{{/", "&#123;&#123;", $result);
++    }
++
+     /**
+      * Retrieve layout html directive callback
+      *
+@@ -515,7 +542,7 @@ class Filter extends \Magento\Framework\Filter\Template
+     {
+         $params = $this->getParameters($construction[2]);
+         $url = $this->_assetRepo->getUrlWithParams($params['url'], $params);
+-        return $url;
++        return $this->sanitizeValue($url);
+     }
+
+     /**
+@@ -528,8 +555,11 @@ class Filter extends \Magento\Framework\Filter\Template
+     {
+         // phpcs:disable Magento2.Functions.DiscouragedFunction
+         $params = $this->getParameters(html_entity_decode($construction[2], ENT_QUOTES));
+-        return $this->_storeManager->getStore()
+-            ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . $params['url'];
++        return $this->sanitizeValue(
++            $this->_storeManager->getStore()
++                ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . $params['url']
++        );
++
+     }
+
+     /**
+@@ -567,7 +597,7 @@ class Filter extends \Magento\Framework\Filter\Template
+             unset($params['url']);
+         }
+
+-        return $this->urlModel->getUrl($path, $params);
++        return $this->sanitizeValue($this->urlModel->getUrl($path, $params));
+     }
+
+     /**
+@@ -605,7 +635,8 @@ class Filter extends \Magento\Framework\Filter\Template
+         }
+
+         $text = __($text, $params)->render();
+-        return $this->applyModifiers($text, $modifiers);
++
++        return $this->applyModifiers($this->sanitizeValue($text), $modifiers);
+     }
+
+     /**
+@@ -649,7 +680,10 @@ class Filter extends \Magento\Framework\Filter\Template
+             $construction[2] . ($construction['filters'] ?? ''),
+             'escape'
+         );
+-        return $this->applyModifiers($this->getVariable($directive, ''), $modifiers);
++
++        $result = $this->sanitizeValue($this->getVariable($directive, ''));
++
++        return $this->applyModifiers($result, $modifiers);
+     }
+
+     /**
+@@ -730,20 +764,11 @@ class Filter extends \Magento\Framework\Filter\Template
+     }
+
+     /**
+-     * HTTP Protocol directive
+-     *
+-     * Usage:
+-     *
+-     *     {{protocol}} - current protocol http or https
+-     *     {{protocol url="www.domain.com/"}} - domain URL with current protocol
+-     *     {{protocol http="http://url" https="https://url"}}
+-     *     {{protocol store="1"}} - Optional parameter which gets protocol from provide store based on store ID or code
+-     *
+      * @param string[] $construction
+      * @throws \Magento\Framework\Exception\MailException
+      * @return string
+      */
+-    public function protocolDirective($construction)
++    private function resolveProtocolDirective($construction)
+     {
+         $params = $this->getParameters($construction[2]);
+         $store = null;
+@@ -770,6 +795,27 @@ class Filter extends \Magento\Framework\Filter\Template
+         return $protocol;
+     }
+
++    /**
++     * HTTP Protocol directive
++     *
++     * Usage:
++     *
++     *     {{protocol}} - current protocol http or https
++     *     {{protocol url="www.domain.com/"}} - domain URL with current protocol
++     *     {{protocol http="http://url" https="https://url"}}
++     *     {{protocol store="1"}} - Optional parameter which gets protocol from provide store based on store ID or code
++     *
++     * @param string[] $construction
++     * @throws \Magento\Framework\Exception\MailException
++     * @return string
++     */
++    public function protocolDirective($construction)
++    {
++        return $this->sanitizeValue(
++            $this->resolveProtocolDirective($construction)
++        );
++    }
++
+     /**
+      * Store config directive
+      *
+@@ -788,7 +834,7 @@ class Filter extends \Magento\Framework\Filter\Template
+                 $storeId
+             );
+         }
+-        return $configValue;
++        return $this->sanitizeValue($configValue);
+     }
+
+     /**
+@@ -829,7 +875,8 @@ class Filter extends \Magento\Framework\Filter\Template
+                 $customVarValue = $value;
+             }
+         }
+-        return $customVarValue;
++
++        return $this->sanitizeValue($customVarValue);
+     }
+
+     /**
+@@ -1057,4 +1104,14 @@ class Filter extends \Magento\Framework\Filter\Template
+         }
+         return $value;
+     }
++
++    /**
++     * @param string $value
++     *
++     * @return string|bool
++     */
++    private function sanitizeValue($value)
++    {
++        return is_bool($value) ? $value : str_replace(['{', '}'], '', (string) $value);
++    }
+ }
+diff -Nuar a/vendor/magento/framework/Filter/DirectiveProcessor/DependDirective.php b/vendor/magento/framework/Filter/DirectiveProcessor/DependDirective.php
+index f557f7465b5..83345acd6e5 100644
+--- a/vendor/magento/framework/Filter/DirectiveProcessor/DependDirective.php
++++ b/vendor/magento/framework/Filter/DirectiveProcessor/DependDirective.php
+@@ -32,9 +32,13 @@ class DependDirective implements DirectiveProcessorInterface
+     }
+
+     /**
+-     * @inheritdoc
++     * @param array $construction
++     * @param Template $filter
++     * @param array $templateVariables
++     *
++     * @return string
+      */
+-    public function process(array $construction, Template $filter, array $templateVariables): string
++    private function resolve(array $construction, Template $filter, array $templateVariables): string
+     {
+         if (empty($templateVariables)) {
+             // If template processing
+@@ -48,6 +52,16 @@ class DependDirective implements DirectiveProcessorInterface
+         }
+     }
+
++    /**
++     * @inheritdoc
++     */
++    public function process(array $construction, Template $filter, array $templateVariables): string
++    {
++        $result = $this->resolve($construction, $filter, $templateVariables);
++
++        return str_replace(['{', '}'], '', (string) $result);
++    }
++
+     /**
+      * @inheritdoc
+      */
+diff -Nuar a/vendor/magento/framework/Filter/DirectiveProcessor/ForDirective.php b/vendor/magento/framework/Filter/DirectiveProcessor/ForDirective.php
+index 2b51185b1b5..41cd58118fd 100644
+--- a/vendor/magento/framework/Filter/DirectiveProcessor/ForDirective.php
++++ b/vendor/magento/framework/Filter/DirectiveProcessor/ForDirective.php
+@@ -36,14 +36,13 @@ class ForDirective implements DirectiveProcessorInterface
+     }
+
+     /**
+-     * Filter the string as template.
+-     *
+      * @param array $construction
+      * @param Template $filter
+      * @param array $templateVariables
++     *
+      * @return string
+      */
+-    public function process(array $construction, Template $filter, array $templateVariables): string
++    private function resolve(array $construction, Template $filter, array $templateVariables): string
+     {
+         if (!$this->isValidLoop($construction)) {
+             return $construction[0];
+@@ -67,6 +66,16 @@ class ForDirective implements DirectiveProcessorInterface
+         return $construction[0];
+     }
+
++    /**
++     * @inheritdoc
++     */
++    public function process(array $construction, Template $filter, array $templateVariables): string
++    {
++        $result = $this->resolve($construction, $filter, $templateVariables);
++
++        return str_replace(['{', '}'], '', (string) $result);
++    }
++
+     /**
+      * Check if the matched construction is valid.
+      *
+diff -Nuar a/vendor/magento/framework/Filter/DirectiveProcessor/IfDirective.php b/vendor/magento/framework/Filter/DirectiveProcessor/IfDirective.php
+index 7fedc7946f2..469dae71d06 100644
+--- a/vendor/magento/framework/Filter/DirectiveProcessor/IfDirective.php
++++ b/vendor/magento/framework/Filter/DirectiveProcessor/IfDirective.php
+@@ -32,9 +32,13 @@ class IfDirective implements DirectiveProcessorInterface
+     }
+
+     /**
+-     * @inheritdoc
++     * @param array $construction
++     * @param Template $filter
++     * @param array $templateVariables
++     *
++     * @return string
+      */
+-    public function process(array $construction, Template $filter, array $templateVariables): string
++    private function resolve(array $construction, Template $filter, array $templateVariables): string
+     {
+         if (empty($templateVariables)) {
+             return $construction[0];
+@@ -50,6 +54,16 @@ class IfDirective implements DirectiveProcessorInterface
+         }
+     }
+
++    /**
++     * @inheritdoc
++     */
++    public function process(array $construction, Template $filter, array $templateVariables): string
++    {
++        $result = $this->resolve($construction, $filter, $templateVariables);
++
++        return str_replace(['{', '}'], '', (string) $result);
++    }
++
+     /**
+      * @inheritdoc
+      */
+diff -Nuar a/vendor/magento/framework/Filter/DirectiveProcessor/SimpleDirective.php b/vendor/magento/framework/Filter/DirectiveProcessor/SimpleDirective.php
+index 9f4b30d0c96..b9280aec283 100644
+--- a/vendor/magento/framework/Filter/DirectiveProcessor/SimpleDirective.php
++++ b/vendor/magento/framework/Filter/DirectiveProcessor/SimpleDirective.php
+@@ -68,7 +68,7 @@ class SimpleDirective implements DirectiveProcessorInterface
+                 ->get($construction['directiveName']);
+         } catch (\InvalidArgumentException $e) {
+             // This directive doesn't have a SimpleProcessor
+-            return $construction[0];
++            return '';
+         }
+
+         $parameters = $this->extractParameters($construction, $filter, $templateVariables);
+@@ -79,6 +79,8 @@ class SimpleDirective implements DirectiveProcessorInterface
+             !empty($construction['content']) ? $filter->filter($construction['content']) : null
+         );
+
++        $value = str_replace(['{', '}'], '', (string) $value);
++
+         $value = $this->filterApplier->applyFromRawParam(
+             $construction['filters'] ?? '',
+             $value,
+diff -Nuar a/vendor/magento/framework/Filter/DirectiveProcessor/VarDirective.php b/vendor/magento/framework/Filter/DirectiveProcessor/VarDirective.php
+--- a/vendor/magento/framework/Filter/DirectiveProcessor/VarDirective.php
++++ b/vendor/magento/framework/Filter/DirectiveProcessor/VarDirective.php
+@@ -55,6 +55,8 @@ class VarDirective implements DirectiveProcessorInterface
+             $result = $this->filterApplier->applyFromRawParam($construction['filters'], $result);
+         }
+
++        $result = str_replace(['{', '}'], '', (string) $result);
++
+         return $result;
+     }
+

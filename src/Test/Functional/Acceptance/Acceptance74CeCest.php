@@ -33,6 +33,7 @@ class Acceptance74CeCest extends Acceptance74Cest
             //  Magento 2.4.3 CE does not work on the cloud
             //  ['templateVersion' => '2.4.3', 'magentoVersion' => '2.4.3'],
             //  ['templateVersion' => '2.4.3', 'magentoVersion' => '2.4.3-p1'],
+            //  ['templateVersion' => '2.4.3', 'magentoVersion' => '2.4.3-p2'],
         ];
     }
 }
