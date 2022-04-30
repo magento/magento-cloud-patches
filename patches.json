@@ -382,8 +382,8 @@
     },
     "Parser token new fix": {
       ">=2.3.3-p1 <=2.3.4": "MDVA-43443__parser_token_new_fix__2.3.3-p1.patch",
-      ">=2.3.4-p2 <2.3.7-p4 || >=2.4.0 <2.4.3": "MDVA-43443__parser_token_new_fix__2.3.4-p2.patch",
-      ">=2.4.3 <2.4.3-p3": "MDVA-43443__parser_token_new_fix__2.4.3.patch"
+      ">=2.3.4-p2 <2.3.7-p3 || >=2.4.0 <2.4.3": "MDVA-43443__parser_token_new_fix__2.3.4-p2.patch",
+      ">=2.4.3 <2.4.3-p2": "MDVA-43443__parser_token_new_fix__2.4.3.patch"
     }
   }
 }
