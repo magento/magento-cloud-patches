@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command\Process;
 
+use Laminas\View\Renderer\JsonRenderer;
 use Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction;
 use Magento\CloudPatches\Console\QuestionFactory;
 use Magento\CloudPatches\Patch\Data\AggregatedPatch;
@@ -18,6 +19,7 @@ use Magento\CloudPatches\Patch\Status\StatusPool;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * Show information about available patches and their statuses.
@@ -103,15 +105,18 @@ class ShowStatus implements ProcessInterface
      */
     public function run(InputInterface $input, OutputInterface $output)
     {
-        $this->printDetailsInfo($output);
+        if ($input->getOption('format') !== 'json') {
+            $this->printDetailsInfo($output);
+        }
 
         $this->reviewAppliedAction->execute($input, $output, []);
 
         $patches = $this->aggregator->aggregate(
             array_merge($this->optionalPool->getList(), $this->localPool->getList())
         );
+
         foreach ($patches as $patch) {
-            if ($patch->isDeprecated() && $this->isPatchVisible($patch)) {
+            if ($patch->isDeprecated() && $this->isPatchVisible($patch) && $input->getOption('format') !== 'json') {
                 $this->printDeprecatedWarning($output, $patch);
             }
         }
@@ -124,7 +129,11 @@ class ShowStatus implements ProcessInterface
             $patches = $this->filterByPatchCategory($input, $output, $patches);
         }
 
-        $this->renderer->printTable($output, array_values($patches));
+        if ($input->getOption('format') === 'json') {
+            $this->renderer->printJson($output, array_values($patches));
+        } else {
+            $this->renderer->printTable($output, array_values($patches));
+        }
     }
 
     /**
