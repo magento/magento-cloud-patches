@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Command\Process;
 
-use Laminas\View\Renderer\JsonRenderer;
 use Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction;
 use Magento\CloudPatches\Console\QuestionFactory;
 use Magento\CloudPatches\Patch\Data\AggregatedPatch;
@@ -19,7 +18,6 @@ use Magento\CloudPatches\Patch\Status\StatusPool;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * Show information about available patches and their statuses.
