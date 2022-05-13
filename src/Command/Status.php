@@ -11,7 +11,9 @@ use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\ShowStatus;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -59,7 +61,8 @@ class Status extends AbstractCommand
     protected function configure()
     {
         $this->setName(self::NAME)
-            ->setDescription('Shows the list of available patches and their statuses');
+            ->setDescription('Shows the list of available patches and their statuses')
+            ->addOption('format', 'f', InputOption::VALUE_OPTIONAL, 'Output format', 'table');
 
         parent::configure();
     }
@@ -71,7 +74,9 @@ class Status extends AbstractCommand
     {
         try {
             $this->showStatus->run($input, $output);
-            $output->writeln('<info>' . $this->magentoVersion->get() . '</info>');
+            if ($input->getOption('format') !== 'json') {
+                $output->writeln('<info>' . $this->magentoVersion->get() . '</info>');
+            }
         } catch (RuntimeException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             $this->logger->error($e->getMessage());

@@ -73,7 +73,7 @@ class ReviewAppliedAction implements ActionInterface
             $appliedOptionalPatches
         );
         $totalNumber = count(array_unique(array_merge($ids, $patchFilter)));
-        if ($totalNumber >= self::UPGRADE_THRESHOLD) {
+        if ($totalNumber >= self::UPGRADE_THRESHOLD && $input->getOption('format') !== 'json') {
             $message = 'Warning for those on a previous minor line! Magento recommends installing a limited'.
                 ' number of quality patches to ensure a smooth upgrade to the latest line. Please begin planning'.
                 ' an upgrade to the latest release line.';
