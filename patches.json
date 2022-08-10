@@ -345,6 +345,9 @@
   "paypal/module-braintree-core": {
     "Fix Braintree Settlement report error": {
       "4.1.0": "BUNDLE-2683__braintree_settlement_report_fix__4.1.0.patch"
+    },
+    "Fix creating orders when Braintree is enabled": {
+      "4.4.0": "BUNDLE-3137__braintree_create_order_fix__2.4.5.patch"
     }
   },
   "magento/magento2-b2b-base": {
