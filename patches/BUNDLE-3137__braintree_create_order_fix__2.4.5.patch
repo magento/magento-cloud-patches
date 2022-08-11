@@ -1,0 +1,20 @@
+diff -Nuar a/vendor/paypal/module-braintree-core/Block/Form.php b/vendor/paypal/module-braintree-core/Block/Form.php
+index 4bc1bdf1..70559bbe 100755
+--- a/vendor/paypal/module-braintree-core/Block/Form.php
++++ b/vendor/paypal/module-braintree-core/Block/Form.php
+@@ -66,6 +66,7 @@ public function __construct(
+         GatewayConfig $gatewayConfig,
+         CcType $ccType,
+         LoggerInterface $logger,
++        Data $paymentDataHelper,
+         array $data = []
+     ) {
+         parent::__construct($context, $paymentConfig, $data);
+@@ -74,6 +75,7 @@ public function __construct(
+         $this->gatewayConfig = $gatewayConfig;
+         $this->ccType = $ccType;
+         $this->logger = $logger;
++        $this->paymentDataHelper = $paymentDataHelper;
+     }
+ 
+     /**
