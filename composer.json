@@ -2,7 +2,7 @@
     "name": "magento/magento-cloud-patches",
     "description": "Provides critical fixes for Magento 2 Enterprise Edition",
     "type": "magento2-component",
-    "version": "1.0.17",
+    "version": "1.0.18",
     "license": "OSL-3.0",
     "repositories": {
         "repo.magento.com": {
