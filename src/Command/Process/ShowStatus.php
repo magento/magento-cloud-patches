@@ -105,9 +105,9 @@ class ShowStatus implements ProcessInterface
     {
         if ($input->getOption('format') !== 'json') {
             $this->printDetailsInfo($output);
+            $this->reviewAppliedAction->execute($input, $output, []);
         }
 
-        $this->reviewAppliedAction->execute($input, $output, []);
 
         $patches = $this->aggregator->aggregate(
             array_merge($this->optionalPool->getList(), $this->localPool->getList())
