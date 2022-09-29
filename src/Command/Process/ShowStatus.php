@@ -28,6 +28,8 @@ class ShowStatus implements ProcessInterface
 
     const FILTER_OPTION_ALL = 'All';
 
+    const FORMAT_JSON = 'json';
+
     /**
      * @var Aggregator
      */
@@ -103,31 +105,31 @@ class ShowStatus implements ProcessInterface
      */
     public function run(InputInterface $input, OutputInterface $output)
     {
-        if ($input->getOption('format') !== 'json') {
-            $this->printDetailsInfo($output);
-            $this->reviewAppliedAction->execute($input, $output, []);
-        }
-
-
+        $isJsonFormat = $input->getOption('format') === self::FORMAT_JSON;
         $patches = $this->aggregator->aggregate(
             array_merge($this->optionalPool->getList(), $this->localPool->getList())
         );
 
-        foreach ($patches as $patch) {
-            if ($patch->isDeprecated() && $this->isPatchVisible($patch) && $input->getOption('format') !== 'json') {
-                $this->printDeprecatedWarning($output, $patch);
+        if (!$isJsonFormat) {
+            $this->printDetailsInfo($output);
+            $this->reviewAppliedAction->execute($input, $output, []);
+            foreach ($patches as $patch) {
+                if ($patch->isDeprecated() && $this->isPatchVisible($patch)) {
+                    $this->printDeprecatedWarning($output, $patch);
+                }
             }
         }
+
         $patches = $this->filterNotVisiblePatches($patches);
 
-        if (count($patches) > self::INTERACTIVE_FILTER_THRESHOLD) {
+        if (!$isJsonFormat && count($patches) > self::INTERACTIVE_FILTER_THRESHOLD) {
             $this->printPatchProviders($output, $patches);
             $patches = $this->filterByPatchProvider($input, $output, $patches);
             $this->printCategoriesInfo($output, $patches);
             $patches = $this->filterByPatchCategory($input, $output, $patches);
         }
 
-        if ($input->getOption('format') === 'json') {
+        if ($isJsonFormat) {
             $this->renderer->printJson($output, array_values($patches));
         } else {
             $this->renderer->printTable($output, array_values($patches));
