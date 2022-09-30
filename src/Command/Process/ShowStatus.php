@@ -141,9 +141,6 @@ class ShowStatus implements ProcessInterface
             $this->renderer->printJson($output, array_values($patches));
         } else {
             $this->renderer->printTable($output, array_values($patches));
-        }
-
-        if (!$isJsonFormat) {
             $output->writeln('<info>' . $this->magentoVersion->get() . '</info>');
         }
     }
