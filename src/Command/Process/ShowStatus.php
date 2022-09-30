@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Command\Process;
 
 use Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction;
+use Magento\CloudPatches\Composer\MagentoVersion;
 use Magento\CloudPatches\Console\QuestionFactory;
 use Magento\CloudPatches\Patch\Data\AggregatedPatch;
 use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
@@ -44,6 +45,11 @@ class ShowStatus implements ProcessInterface
      * @var LocalPool
      */
     private $localPool;
+
+    /**
+     * @var MagentoVersion
+     */
+    private $magentoVersion;
 
     /**
      * @var StatusPool
@@ -88,7 +94,8 @@ class ShowStatus implements ProcessInterface
         ReviewAppliedAction $reviewAppliedAction,
         Renderer $renderer,
         QuestionHelper $questionHelper,
-        QuestionFactory $questionFactory
+        QuestionFactory $questionFactory,
+        MagentoVersion $magentoVersion
     ) {
         $this->aggregator = $aggregator;
         $this->optionalPool = $optionalPool;
@@ -98,6 +105,7 @@ class ShowStatus implements ProcessInterface
         $this->renderer = $renderer;
         $this->questionHelper = $questionHelper;
         $this->questionFactory = $questionFactory;
+        $this->magentoVersion = $magentoVersion;
     }
 
     /**
@@ -133,6 +141,10 @@ class ShowStatus implements ProcessInterface
             $this->renderer->printJson($output, array_values($patches));
         } else {
             $this->renderer->printTable($output, array_values($patches));
+        }
+
+        if (!$isJsonFormat) {
+            $output->writeln('<info>' . $this->magentoVersion->get() . '</info>');
         }
     }
 
