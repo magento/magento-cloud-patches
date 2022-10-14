@@ -92,7 +92,6 @@ class ShowStatusTest extends TestCase
         /** @var MagentoVersion|MockObject $magentoVersion */
         $magentoVersion = $this->createMock(MagentoVersion::class);
 
-
         $this->manager = new ShowStatus(
             $this->aggregator,
             $this->optionalPool,
