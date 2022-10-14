@@ -10,6 +10,7 @@ namespace Magento\CloudPatches\Test\Unit\Command\Process;
 use Magento\CloudPatches\Command\Process\Action\ReviewAppliedAction;
 use Magento\CloudPatches\Command\Process\Renderer;
 use Magento\CloudPatches\Command\Process\ShowStatus;
+use Magento\CloudPatches\Composer\MagentoVersion;
 use Magento\CloudPatches\Console\QuestionFactory;
 use Magento\CloudPatches\Patch\Aggregator;
 use Magento\CloudPatches\Patch\Data\AggregatedPatch;
@@ -88,6 +89,8 @@ class ShowStatusTest extends TestCase
         $this->renderer = $this->createMock(Renderer::class);
         $this->questionHelper = $this->createMock(QuestionHelper::class);
         $this->questionFactory = $this->createMock(QuestionFactory::class);
+        /** @var MagentoVersion|MockObject $magentoVersion */
+        $magentoVersion = $this->createMock(MagentoVersion::class);
 
         $this->manager = new ShowStatus(
             $this->aggregator,
@@ -97,7 +100,8 @@ class ShowStatusTest extends TestCase
             $this->reviewAppliedAction,
             $this->renderer,
             $this->questionHelper,
-            $this->questionFactory
+            $this->questionFactory,
+            $magentoVersion
         );
     }
 
@@ -147,7 +151,7 @@ class ShowStatusTest extends TestCase
             ->willReturn([$patch1, $patch2, $patch3, $patch4, $patch5]);
 
         // Show warning message about patch deprecation
-        $outputMock->expects($this->exactly(3))
+        $outputMock->expects($this->exactly(4))
             ->method('writeln')
             ->withConsecutive(
                 [$this->anything()],
