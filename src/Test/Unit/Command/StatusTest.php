@@ -12,7 +12,6 @@ use Magento\CloudPatches\Command\AbstractCommand;
 use Magento\CloudPatches\Command\Apply;
 use Magento\CloudPatches\Command\Process\ShowStatus;
 use Magento\CloudPatches\Command\Status;
-use Magento\CloudPatches\Composer\MagentoVersion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -46,13 +45,10 @@ class StatusTest extends TestCase
     {
         $this->showStatus = $this->createMock(ShowStatus::class);
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
-        /** @var MagentoVersion|MockObject $magentoVersion */
-        $magentoVersion = $this->createMock(MagentoVersion::class);
 
         $this->command = new Status(
             $this->showStatus,
-            $this->logger,
-            $magentoVersion
+            $this->logger
         );
     }
 

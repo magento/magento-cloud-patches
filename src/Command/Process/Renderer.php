@@ -106,6 +106,30 @@ class Renderer
     }
 
     /**
+     * Renders patches list as JSON.
+     *
+     * @param OutputInterface $output
+     * @param AggregatedPatchInterface[] $patchList
+     * @return void
+     */
+    public function printJson(OutputInterface $output, array $patchList)
+    {
+        $rows = [];
+        foreach ($patchList as $patch) {
+            $rows[] = $this->createJsonRow($patch);
+        }
+
+        usort($rows, function ($a, $b) {
+            if ($a[self::STATUS] === $b[self::STATUS]) {
+                return strcmp($a[self::ORIGIN], $b[self::ORIGIN]);
+            }
+            return strcmp($a[self::STATUS], $b[self::STATUS]);
+        });
+
+        $output->writeln(json_encode($rows, JSON_PRETTY_PRINT));
+    }
+
+    /**
      * Print patch info.
      *
      * @param OutputInterface $output
@@ -207,6 +231,17 @@ class Renderer
             self::STATUS => $this->statusPool->get($patch->getId()),
             self::DETAILS => $details
         ];
+    }
+
+    /**
+     * Creates JSON row.
+     *
+     * @param AggregatedPatchInterface $patch
+     * @return array
+     */
+    private function createJsonRow(AggregatedPatchInterface $patch): array
+    {
+        return array_map('strip_tags', $this->createRow($patch));
     }
 
     /**
