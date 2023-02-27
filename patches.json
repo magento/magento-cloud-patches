@@ -264,6 +264,9 @@
     },
     "Fixed currency displaying on product page": {
       ">=2.4.3 <2.4.4": "MCLOUD-8279__Fixed_currency_displaying_on_product_page__2.4.3.patch"
+    },
+    "Auto increment number jumping up for catalog_product_entity_* tables": {
+      ">=2.3.7 <2.4.7": "MCLOUD-10032__Increment_number_for_catalog_product_entity_tables__2.4.3-p1.patch"
     }
   },
   "magento/module-paypal": {
