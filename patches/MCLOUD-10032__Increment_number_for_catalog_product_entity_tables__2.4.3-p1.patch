@@ -1,4 +1,4 @@
-diff --git a/vendor/magento/module-catalog/Model/ResourceModel/AbstractResource.php b/vendor/magento/module-catalog/Model/ResourceModel/AbstractResource.php
+diff -Nuar a/vendor/magento/module-catalog/Model/ResourceModel/AbstractResource.php b/vendor/magento/module-catalog/Model/ResourceModel/AbstractResource.php
 index c71225b4fc6..3f0ee96d70e 100644
 --- a/vendor/magento/module-catalog/Model/ResourceModel/AbstractResource.php
 +++ b/vendor/magento/module-catalog/Model/ResourceModel/AbstractResource.php
