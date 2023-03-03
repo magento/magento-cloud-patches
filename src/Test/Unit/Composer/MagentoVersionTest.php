@@ -12,6 +12,7 @@ use Composer\Package\PackageInterface;
 use Composer\Package\RootPackageInterface;
 use Composer\Repository\RepositoryManager;
 use Composer\Repository\WritableRepositoryInterface;
+use Composer\Repository\InstalledRepositoryInterface;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -24,7 +25,7 @@ class MagentoVersionTest extends TestCase
     const VERSION = '2.3.5';
 
     /**
-     * @var WritableRepositoryInterface|MockObject
+     * @var WritableRepositoryInterface|InstalledRepositoryInterface|MockObject
      */
     private $repository;
 
@@ -43,7 +44,11 @@ class MagentoVersionTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->repository = $this->getMockForAbstractClass(WritableRepositoryInterface::class);
+        $this->repository = $this->getMockForAbstractClass(
+            (version_compare(PHP_VERSION, '7.3') == -1)
+                ? WritableRepositoryInterface::class
+                : InstalledRepositoryInterface::class
+        );
         $this->rootPackage = $this->getMockForAbstractClass(RootPackageInterface::class);
         $repositoryManager = $this->createMock(RepositoryManager::class);
         $repositoryManager->method('getLocalRepository')
