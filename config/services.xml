@@ -7,6 +7,7 @@
         <prototype namespace="Magento\CloudPatches\" resource="../src/*" exclude="../src/{Test}"/>
 
         <service id="Psr\Log\LoggerInterface" alias="Magento\CloudPatches\App\Logger" />
+        <service id="Psr\Container\ContainerInterface" alias="Magento\CloudPatches\App\Container" />
         <service id="Magento\CloudPatches\App\Container" autowire="false"/>
         <service id="Magento\CloudPatches\Filesystem\DirectoryList" autowire="false"/>
         <service id="Symfony\Component\Console\Helper\QuestionHelper"/>

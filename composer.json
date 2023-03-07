@@ -2,7 +2,7 @@
     "name": "magento/magento-cloud-patches",
     "description": "Provides critical fixes for Magento 2 Enterprise Edition",
     "type": "magento2-component",
-    "version": "1.0.20",
+    "version": "1.0.21",
     "license": "OSL-3.0",
     "repositories": {
         "repo.magento.com": {
@@ -13,14 +13,14 @@
     "require": {
         "php": "^7.2 || ^8.0",
         "ext-json": "*",
-        "composer/composer": "@stable",
+        "composer/composer": "^1.4 || ^2.0",
         "composer/semver": "@stable",
-        "symfony/config": "^3.3||^4.4||^5.0",
-        "symfony/console": "^2.6||^4.0||^5.0",
-        "symfony/dependency-injection": "^3.3||^4.3||^5.0",
-        "symfony/process": "^2.1||^4.1||^5.0",
-        "symfony/proxy-manager-bridge": "^3.3||^4.3||^5.0",
-        "symfony/yaml": "^3.3||^4.0||^5.0",
+        "symfony/config": "^3.3||^4.4||^5.0||^6.0",
+        "symfony/console": "^2.6||^4.0||^5.0||^6.0",
+        "symfony/dependency-injection": "^3.3||^4.3||^5.0||^6.0",
+        "symfony/process": "^2.1||^4.1||^5.0||^6.0",
+        "symfony/proxy-manager-bridge": "^3.3||^4.3||^5.0||^6.0",
+        "symfony/yaml": "^3.3||^4.0||^5.0||^6.0",
         "monolog/monolog": "^1.25||^2.3",
         "magento/quality-patches": "^1.1.0"
     },
@@ -30,7 +30,7 @@
         "codeception/module-db": "^1.0",
         "codeception/module-phpbrowser": "^1.0",
         "codeception/module-rest": "^1.2",
-        "consolidation/robo": "^1.2",
+        "consolidation/robo": "^1.2 || ^2.0",
         "phpmd/phpmd": "@stable",
         "phpunit/phpunit": "^8.5 || ^9.5",
         "squizlabs/php_codesniffer": "^3.0"
@@ -56,7 +56,10 @@
         "phpunit": "phpunit --configuration tests/unit"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "magento/*": true
+        }
     },
     "prefer-stable": true
 }
