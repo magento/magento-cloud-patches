@@ -267,6 +267,10 @@
     },
     "Auto increment number jumping up for catalog_product_entity_* tables": {
       ">=2.3.7 <2.4.7": "MCLOUD-10032__Increment_number_for_catalog_product_entity_tables__2.4.3-p1.patch"
+    },
+    "Fixes the error 'The file can't be deleted. Warning!unlink: No such file or directory' when flushing JS/CSS cache from the Admin": {
+      ">=2.4.0 <2.4.1-p1": "MCLOUD-10279__errors_when_flushing_js_css_cache_from_admin__2.4.0.patch",
+      ">=2.4.1-p1 <2.4.7": "MCLOUD-10279__errors_when_flushing_js_css_cache_from_admin__2.4.4.patch"
     }
   },
   "magento/module-paypal": {
