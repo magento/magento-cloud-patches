@@ -284,8 +284,9 @@ class ShowStatus implements ProcessInterface
      */
     private function printDetailsInfo(OutputInterface $output)
     {
-        $supportUrl = 'https://support.magento.com';
-        $releaseNotesUrl = 'https://devdocs.magento.com/quality-patches/release-notes.html';
+        // phpcs:ignore
+        $releaseNotesUrl = 'https://experienceleague.adobe.com/docs/commerce-operations/tools/quality-patches-tool/release-notes.html';
+        $supportUrl = 'https://experienceleague.adobe.com/tools/commerce-quality-patches/index.html';
 
         $output->writeln(
             '<info>Patch details you can find on </info>' .

@@ -36,6 +36,7 @@ class AggregatedPatchFactory
         $require = $this->getRequire($items);
         $replacedWith = $this->getReplacedWith($items);
         $isDeprecated = $this->isDeprecated($items);
+        $requirements = $this->getRequirements($items);
 
         return new AggregatedPatch(
             $id,
@@ -47,7 +48,8 @@ class AggregatedPatchFactory
             $require,
             $replacedWith,
             $isDeprecated,
-            $items
+            $items,
+            $requirements
         );
     }
 
@@ -188,5 +190,18 @@ class AggregatedPatchFactory
         }
 
         return false;
+    }
+
+    /**
+     * Returns aggregated patch requirements.
+     *
+     * @param PatchInterface[] $patches
+     * @return string
+     */
+    private function getRequirements(array $patches): string
+    {
+        $patch = reset($patches);
+
+        return $patch->getRequirements();
     }
 }
