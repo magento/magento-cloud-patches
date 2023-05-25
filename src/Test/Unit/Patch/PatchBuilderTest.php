@@ -57,7 +57,8 @@ class PatchBuilderTest extends TestCase
             'packageConstraint' => '2.3.5',
             'require' => ['MC-2'],
             'replacedWith' => 'MC-3',
-            'deprecated' => true
+            'deprecated' => true,
+            'requirements'=> 'Some requirements'
         ];
         $patchContent = file_get_contents(__DIR__ . '/Fixture/MC-1__testfixture__1.1.patch');
 
@@ -76,6 +77,7 @@ class PatchBuilderTest extends TestCase
         $this->assertEquals($patch->getRequire(), $patchData['require']);
         $this->assertEquals($patch->getReplacedWith(), $patchData['replacedWith']);
         $this->assertEquals($patch->isDeprecated(), $patchData['deprecated']);
+        $this->assertEquals($patch->getRequirements(), $patchData['requirements']);
         $this->assertEquals(
             ['magento/framework', 'magento/module-email', 'setup/src'],
             $patch->getAffectedComponents()
@@ -99,7 +101,8 @@ class PatchBuilderTest extends TestCase
             'packageConstraint' => '2.3.5',
             'require' => ['MC-2'],
             'replacedWith' => 'MC-3',
-            'deprecated' => true
+            'deprecated' => true,
+            'requirements'=> 'Some requirements'
         ];
 
         $this->filesystem->method('get')
@@ -129,6 +132,7 @@ class PatchBuilderTest extends TestCase
         $this->patchBuilder->setRequire($patchData['require']);
         $this->patchBuilder->setReplacedWith($patchData['replacedWith']);
         $this->patchBuilder->setDeprecated($patchData['deprecated']);
+        $this->patchBuilder->setRequirements($patchData['requirements']);
 
         return $this->patchBuilder->build();
     }

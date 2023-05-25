@@ -55,6 +55,8 @@ class SupportCollector implements CollectorInterface
 
     const ORIGIN = 'Adobe Commerce Support';
 
+    const PROP_REQUIREMENTS = 'requirements';
+
     /**
      * @var Package
      */
@@ -113,6 +115,7 @@ class SupportCollector implements CollectorInterface
                     $category = !empty($patchGeneralConfig[self::PROP_CATEGORIES])
                         ? array_map('trim', $patchGeneralConfig[self::PROP_CATEGORIES])
                         : ['Other'];
+                    $patchRequirements = $patchGeneralConfig[self::PROP_REQUIREMENTS] ?? '';
 
                     if ($this->package->matchConstraint($packageName, $packageConstraint)) {
                         $result[] = $this->createPatch(
@@ -124,7 +127,8 @@ class SupportCollector implements CollectorInterface
                             $packageConstraint,
                             $patchRequire,
                             $patchReplacedWith,
-                            $patchDeprecated
+                            $patchDeprecated,
+                            $patchRequirements
                         );
                     }
                 }
@@ -145,9 +149,11 @@ class SupportCollector implements CollectorInterface
      * @param array $patchRequire
      * @param string $patchReplacedWith
      * @param bool $patchDeprecated
+     * @param string $patchRequirements
      *
      * @return PatchInterface
      * @throws CollectorException
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     private function createPatch(
         string $patchId,
@@ -158,7 +164,8 @@ class SupportCollector implements CollectorInterface
         string $packageConstraint,
         array $patchRequire,
         string $patchReplacedWith,
-        bool $patchDeprecated
+        bool $patchDeprecated,
+        string $patchRequirements
     ): PatchInterface {
         try {
             $patchPath = $this->qualityPackage->getPatchesDirectoryPath() . '/' . $patchFile;
@@ -174,6 +181,7 @@ class SupportCollector implements CollectorInterface
             $this->patchBuilder->setRequire($patchRequire);
             $this->patchBuilder->setReplacedWith($patchReplacedWith);
             $this->patchBuilder->setDeprecated($patchDeprecated);
+            $this->patchBuilder->setRequirements($patchRequirements);
             $patch = $this->patchBuilder->build();
         } catch (PatchIntegrityException $e) {
             throw new CollectorException($e->getMessage(), $e->getCode(), $e);

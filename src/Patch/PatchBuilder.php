@@ -85,6 +85,11 @@ class PatchBuilder
     private $filesystem;
 
     /**
+     * @var string
+     */
+    private $requirements;
+
+    /**
      * @param Filesystem $filesystem
      */
     public function __construct(Filesystem $filesystem)
@@ -227,6 +232,17 @@ class PatchBuilder
     }
 
     /**
+     * Sets patch requirements.
+     *
+     * @param string $requirements
+     * @return void
+     */
+    public function setRequirements(string $requirements)
+    {
+        $this->requirements = $requirements;
+    }
+
+    /**
      * Builds patch data object.
      *
      * @return PatchInterface
@@ -250,7 +266,8 @@ class PatchBuilder
             $components,
             $this->require,
             $this->replacedWith,
-            $this->deprecated
+            $this->deprecated,
+            $this->requirements
         );
     }
 
