@@ -87,7 +87,7 @@ class PatchBuilder
     /**
      * @var string
      */
-    private $requirements;
+    private $requirements = '';
 
     /**
      * @param Filesystem $filesystem

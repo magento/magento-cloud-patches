@@ -65,7 +65,7 @@ class AggregatedPatch implements AggregatedPatchInterface
     /**
      * @var string
      */
-    private $requirements;
+    private $requirements = '';
 
     /**
      * @param string $id
@@ -91,7 +91,7 @@ class AggregatedPatch implements AggregatedPatchInterface
         string $replacedWith,
         bool $isDeprecated,
         array $items,
-        string $requirements
+        string $requirements = ''
     ) {
 
         $this->id = $id;
