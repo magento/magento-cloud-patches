@@ -79,7 +79,7 @@ class Patch implements PatchInterface
     /**
      * @var string
      */
-    private $requirements;
+    private $requirements = '';
 
     /**
      * @param string $id
@@ -113,7 +113,7 @@ class Patch implements PatchInterface
         array $require,
         string $replacedWith,
         bool $isDeprecated,
-        string $requirements
+        string $requirements = ''
     ) {
 
         $this->id = $id;
