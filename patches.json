@@ -396,5 +396,10 @@
       ">=2.3.4-p2 <2.3.7-p3 || >=2.4.0 <2.4.3": "MDVA-43443__parser_token_new_fix__2.3.4-p2.patch",
       ">=2.4.3 <2.4.3-p2": "MDVA-43443__parser_token_new_fix__2.4.3.patch"
     }
+  },
+  "magento/framework": {
+    "Fix regexp cache tag validation": {
+      ">=103.0.6 <103.0.7": "MCLOUD-10226__fix_regexp_cache_tag_validation__2.4.6.patch"
+    }
   }
 }
