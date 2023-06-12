@@ -63,6 +63,11 @@ class AggregatedPatch implements AggregatedPatchInterface
     private $origin;
 
     /**
+     * @var string
+     */
+    private $requirements = '';
+
+    /**
      * @param string $id
      * @param string $type
      * @param string $title
@@ -85,7 +90,8 @@ class AggregatedPatch implements AggregatedPatchInterface
         array $require,
         string $replacedWith,
         bool $isDeprecated,
-        array $items
+        array $items,
+        string $requirements = ''
     ) {
 
         $this->id = $id;
@@ -98,6 +104,7 @@ class AggregatedPatch implements AggregatedPatchInterface
         $this->replacedWith = $replacedWith;
         $this->isDeprecated = $isDeprecated;
         $this->items = $items;
+        $this->requirements = $requirements;
     }
 
     /**
@@ -186,5 +193,12 @@ class AggregatedPatch implements AggregatedPatchInterface
     public function getItems(): array
     {
         return $this->items;
+    }
+    /**
+     * @inheritDoc
+     */
+    public function getRequirements(): string
+    {
+        return $this->requirements;
     }
 }
