@@ -21,6 +21,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class ConfirmRequiredAction implements ActionInterface
 {
+    const PATCH_INFO_URL = "https://experienceleague.adobe.com/tools/commerce-quality-patches/index.html";
+
     /**
      * @var OptionalPool
      */
@@ -76,10 +78,16 @@ class ConfirmRequiredAction implements ActionInterface
         }
 
         if ($requiredNotAppliedPatches) {
+            $url = self::PATCH_INFO_URL . '?keyword=' . current($patchFilter);
+            $output->writeln(
+                '<info>Please double check patch details and requirements at ' .
+                sprintf('<href=%1$s>%1$s</>', $url) .
+                '</info>' .
+                PHP_EOL
+            );
             $output->writeln(
                 '<info>Next patches are required by ' . implode(' ', $patchFilter) . ':</info>' . PHP_EOL
             );
-
             $aggregatedPatches = $this->aggregator->aggregate($requiredNotAppliedPatches);
             $this->renderer->printTable($output, $aggregatedPatches);
 

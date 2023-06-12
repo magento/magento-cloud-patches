@@ -83,4 +83,11 @@ interface AggregatedPatchInterface
      * @return PatchInterface[]
      */
     public function getItems(): array;
+
+    /**
+     * Patch requirements.
+     *
+     * @return string
+     */
+    public function getRequirements(): string;
 }

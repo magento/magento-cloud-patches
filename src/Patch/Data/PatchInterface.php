@@ -119,4 +119,11 @@ interface PatchInterface
      * @return bool
      */
     public function isDeprecated(): bool;
+
+    /**
+     * Patch requirements.
+     *
+     * @return string
+     */
+    public function getRequirements(): string;
 }

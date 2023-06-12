@@ -77,6 +77,11 @@ class Patch implements PatchInterface
     private $origin;
 
     /**
+     * @var string
+     */
+    private $requirements = '';
+
+    /**
      * @param string $id
      * @param string $type
      * @param string $title
@@ -90,6 +95,7 @@ class Patch implements PatchInterface
      * @param string[] $require
      * @param string $replacedWith
      * @param bool $isDeprecated
+     * @param string $requirements
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
@@ -106,7 +112,8 @@ class Patch implements PatchInterface
         array $affectedComponents,
         array $require,
         string $replacedWith,
-        bool $isDeprecated
+        bool $isDeprecated,
+        string $requirements = ''
     ) {
 
         $this->id = $id;
@@ -122,6 +129,7 @@ class Patch implements PatchInterface
         $this->require = $require;
         $this->replacedWith = $replacedWith;
         $this->isDeprecated = $isDeprecated;
+        $this->requirements = $requirements;
     }
 
     /**
@@ -234,5 +242,13 @@ class Patch implements PatchInterface
     public function isDeprecated(): bool
     {
         return $this->isDeprecated;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRequirements(): string
+    {
+        return $this->requirements;
     }
 }
