@@ -22,6 +22,7 @@ class Acceptance81Cest extends AcceptanceCest
             ['templateVersion' => '2.4.4', 'magentoVersion' => '2.4.4-p1'],
             ['templateVersion' => '2.4.4', 'magentoVersion' => '2.4.4-p2'],
             ['templateVersion' => '2.4.4', 'magentoVersion' => '2.4.4-p3'],
+            ['templateVersion' => '2.4.4', 'magentoVersion' => '2.4.4-p4'],
             ['templateVersion' => '2.4.5', 'magentoVersion' => '2.4.5'],
             ['templateVersion' => '2.4.5', 'magentoVersion' => '2.4.5-p1'],
             ['templateVersion' => '2.4.5', 'magentoVersion' => '2.4.5-p2'],
