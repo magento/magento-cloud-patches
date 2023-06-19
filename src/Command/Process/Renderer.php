@@ -220,6 +220,11 @@ class Renderer
             $details .= 'Affected components:' . $glue . implode($glue, $patch->getAffectedComponents());
         }
 
+        if ($patch->getRequirements()) {
+            $requirements = rtrim(chunk_split($patch->getRequirements(), 50, PHP_EOL));
+            $details .= PHP_EOL . '<comment>Requirements:</comment>' . PHP_EOL . ' - ' . $requirements;
+        }
+
         $id = $patch->getType() === PatchInterface::TYPE_CUSTOM ? 'N/A' : $patch->getId();
         $title = chunk_split($patch->getTitle(), 60, PHP_EOL);
 
