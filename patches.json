@@ -271,6 +271,9 @@
     "Fixes the error 'The file can't be deleted. Warning!unlink: No such file or directory' when flushing JS/CSS cache from the Admin": {
       ">=2.4.0 <2.4.1-p1": "MCLOUD-10279__errors_when_flushing_js_css_cache_from_admin__2.4.0.patch",
       ">=2.4.1-p1 <2.4.7": "MCLOUD-10279__errors_when_flushing_js_css_cache_from_admin__2.4.4.patch"
+    },
+    "Reduced the number of times the same deployment configurations load": {
+      ">=2.4.6 <2.4.6-p2": "MCLOUD-10604__performance_degradation_around_deployment_configuration__2.4.6.patch"
     }
   },
   "magento/module-paypal": {
