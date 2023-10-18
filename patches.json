@@ -274,6 +274,9 @@
     },
     "Reduced the number of times the same deployment configurations load": {
       ">=2.4.6 <2.4.6-p2": "MCLOUD-10604__performance_degradation_around_deployment_configuration__2.4.6.patch"
+    },
+    "Fixes the issue where missed jobs unnecessarily wait for cron job locks.": {
+      ">=2.4.4 <2.4.7": "MCLOUD-11329__missed_jobs_unnecessarily_wait_for_cron_job_locks__2.4.6.patch"
     }
   },
   "magento/module-paypal": {
