@@ -277,6 +277,9 @@
     },
     "Fixes the issue where missed jobs unnecessarily wait for cron job locks.": {
       ">=2.4.4 <2.4.7": "MCLOUD-11329__missed_jobs_unnecessarily_wait_for_cron_job_locks__2.4.6.patch"
+    },
+    "Enhanced Layout Cache Efficiency (memory usage reduced)": {
+      ">=2.4.4 <2.4.7": "MCLOUD-11514__enhanced_layout_cache_efficiency__2.4.6-p3.patch"
     }
   },
   "magento/module-paypal": {
