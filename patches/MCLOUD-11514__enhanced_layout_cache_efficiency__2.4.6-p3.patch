@@ -1,0 +1,92 @@
+diff --git a/vendor/magento/framework/App/Cache/Type/Layout.php b/vendor/magento/framework/App/Cache/Type/Layout.php
+index 2ea069a..57b1cb4 100644
+--- a/vendor/magento/framework/App/Cache/Type/Layout.php
++++ b/vendor/magento/framework/App/Cache/Type/Layout.php
+@@ -3,6 +3,8 @@
+  * Copyright © Magento, Inc. All rights reserved.
+  * See COPYING.txt for license details.
+  */
++declare(strict_types=1);
++
+ namespace Magento\Framework\App\Cache\Type;
+ 
+ /**
+@@ -11,14 +13,29 @@ namespace Magento\Framework\App\Cache\Type;
+ class Layout extends \Magento\Framework\Cache\Frontend\Decorator\TagScope
+ {
+     /**
++     * Prefix for hash kay and hash data
++     */
++    public const HASH_PREFIX = 'l:';
++
++    /**
++     * Hash type, not used for security, only for uniqueness
++     */
++    public const HASH_TYPE = 'xxh3';
++
++    /**
++     * Data lifetime in milliseconds
++     */
++    public const DATA_LIFETIME = 86_400_000; // "1 day" milliseconds
++
++    /**
+      * Cache type code unique among all cache types
+      */
+-    const TYPE_IDENTIFIER = 'layout';
++    public const TYPE_IDENTIFIER = 'layout';
+ 
+     /**
+      * Cache tag used to distinguish the cache type from all other cache
+      */
+-    const CACHE_TAG = 'LAYOUT_GENERAL_CACHE_TAG';
++    public const CACHE_TAG = 'LAYOUT_GENERAL_CACHE_TAG';
+ 
+     /**
+      * @param FrontendPool $cacheFrontendPool
+@@ -27,4 +44,33 @@ class Layout extends \Magento\Framework\Cache\Frontend\Decorator\TagScope
+     {
+         parent::__construct($cacheFrontendPool->get(self::TYPE_IDENTIFIER), self::CACHE_TAG);
+     }
++
++    /**
++     * @inheritDoc
++     */
++    public function save($data, $identifier, array $tags = [], $lifeTime = null)
++    {
++        $dataHash = hash(self::HASH_TYPE, $data);
++        $identifierForHash = self::HASH_PREFIX . $dataHash;
++        return parent::save($data, $identifierForHash, $tags, self::DATA_LIFETIME) // key is hash of data hash
++            && parent::save(self::HASH_PREFIX . $dataHash, $identifier, $tags, $lifeTime); // store hash of data
++    }
++
++    /**
++     * @inheritDoc
++     */
++    public function load($identifier)
++    {
++        $data = parent::load($identifier);
++        if ($data === false || $data === null) {
++            return $data;
++        }
++
++        if (str_starts_with($data, self::HASH_PREFIX)) {
++            // so data stored in other place
++            return parent::load($data);
++        } else {
++            return $data;
++        }
++    }
+ }
+diff --git a/vendor/magento/framework/Cache/Backend/Redis.php b/vendor/magento/framework/Cache/Backend/Redis.php
+index 565777d..9527ebc 100644
+--- a/vendor/magento/framework/Cache/Backend/Redis.php
++++ b/vendor/magento/framework/Cache/Backend/Redis.php
+@@ -70,7 +70,7 @@ class Redis extends \Cm_Cache_Backend_Redis
+      * @param bool $specificLifetime
+      * @return bool
+      */
+-    public function save($data, $id, $tags = [], $specificLifetime = false)
++    public function save($data, $id, $tags = [], $specificLifetime = 86_400_000)
+     {
+         try {
+             $result = parent::save($data, $id, $tags, $specificLifetime);
