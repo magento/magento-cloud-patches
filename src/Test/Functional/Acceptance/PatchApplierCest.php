@@ -10,7 +10,7 @@ namespace Magento\CloudPatches\Test\Functional\Acceptance;
 use Magento\CloudDocker\Test\Functional\Codeception\Docker;
 
 /**
- * @group php82
+ * @group php83
  */
 class PatchApplierCest extends AbstractCest
 {
@@ -21,7 +21,7 @@ class PatchApplierCest extends AbstractCest
     {
         parent::_before($I);
 
-        $this->prepareTemplate($I, '2.4.6');
+        $this->prepareTemplate($I, '2.4.7-beta-test');
         $I->copyFileToWorkDir('files/debug_logging/.magento.env.yaml', '.magento.env.yaml');
     }
 
