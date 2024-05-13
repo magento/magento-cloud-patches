@@ -49,7 +49,7 @@ class AcceptanceCest extends AbstractCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.4.7-beta-test', 'magentoVersion' => '2.4.7-beta401'],
+            ['templateVersion' => '2.4.7', 'magentoVersion' => '2.4.7'],
         ];
     }
 }
