@@ -7,10 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
-/**
- * @group php83
- */
-class AcceptanceCest extends AbstractCest
+abstract class AcceptanceCest extends AbstractCest
 {
     /**
      * @param \CliTester $I
@@ -41,15 +38,5 @@ class AcceptanceCest extends AbstractCest
         $I->amOnPage('/');
         $I->see('Home page');
         $I->see('CMS homepage content goes here.');
-    }
-
-    /**
-     * @return array
-     */
-    protected function patchesDataProvider(): array
-    {
-        return [
-            ['templateVersion' => '2.4.7', 'magentoVersion' => '2.4.7'],
-        ];
     }
 }
