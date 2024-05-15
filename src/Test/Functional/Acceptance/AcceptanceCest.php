@@ -39,4 +39,9 @@ abstract class AcceptanceCest extends AbstractCest
         $I->see('Home page');
         $I->see('CMS homepage content goes here.');
     }
+
+    /**
+     * @return array
+     */
+    abstract protected function patchesDataProvider(): array;
 }
