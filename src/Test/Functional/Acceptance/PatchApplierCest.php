@@ -21,7 +21,7 @@ class PatchApplierCest extends AbstractCest
     {
         parent::_before($I);
 
-        $this->prepareTemplate($I, '2.4.7-beta-test');
+        $this->prepareTemplate($I, '2.4.7');
         $I->copyFileToWorkDir('files/debug_logging/.magento.env.yaml', '.magento.env.yaml');
     }
 
