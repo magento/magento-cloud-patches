@@ -8,9 +8,9 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
 /**
- * @group php82
+ * @group php83
  */
-class Acceptance82Cest extends AcceptanceCest
+class Acceptance83Cest extends AcceptanceCest
 {
     /**
      * @return array
@@ -18,9 +18,7 @@ class Acceptance82Cest extends AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.4.6', 'magentoVersion' => '2.4.6'],
-            ['templateVersion' => '2.4.6', 'magentoVersion' => '2.4.6-p1'],
-            ['templateVersion' => '2.4.7', 'magentoVersion' => null],
+            ['templateVersion' => '2.4.7', 'magentoVersion' => '2.4.7'],
         ];
     }
 }
