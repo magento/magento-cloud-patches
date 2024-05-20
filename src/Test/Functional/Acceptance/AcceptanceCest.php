@@ -7,6 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
+/**
+ * Abstract AcceptanceCest
+ *
+ * @abstract
+ */
 abstract class AcceptanceCest extends AbstractCest
 {
     /**
