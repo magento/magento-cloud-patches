@@ -24,13 +24,13 @@ index ecd83bf61ef0..05acb97e4bd7 100644
  use Magento\Framework\GraphQl\Schema\Type\Entity\MapperInterface;
 @@ -36,9 +38,9 @@ class AttributeReader implements ReaderInterface
      private Type $typeLocator;
- 
+
      /**
 -     * @var Collection
 +     * @var CollectionFactory
       */
 -    private Collection $collection;
-+    private readonly CollectionFactory $collectionFactory;
++    private CollectionFactory $collectionFactory;
  
      /**
       * @var ScopeConfigInterface
@@ -58,7 +58,7 @@ index ecd83bf61ef0..05acb97e4bd7 100644
 +        $this->collectionFactory = $collectionFactory ?? ObjectManager::getInstance()->get(CollectionFactory::class);
          $this->config = $config;
      }
- 
+
 @@ -74,12 +79,11 @@ public function __construct(
      public function read($scope = null) : array
      {
@@ -66,7 +66,7 @@ index ecd83bf61ef0..05acb97e4bd7 100644
 -
          if ($this->config->isSetFlag(self::XML_PATH_INCLUDE_DYNAMIC_ATTRIBUTES, ScopeInterface::SCOPE_STORE)) {
              $typeNames = $this->mapper->getMappedTypes(Product::ENTITY);
- 
+
              /** @var Attribute $attribute */
 -            foreach ($this->collection->getAttributes() as $attribute) {
 +            foreach ($this->collectionFactory->create()->getAttributes() as $attribute) {
