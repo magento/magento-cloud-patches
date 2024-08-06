@@ -1,0 +1,75 @@
+From c964bc3248811dc63df6205a1246d383ad4c6e4a Mon Sep 17 00:00:00 2001
+From: Jacob Brown <jacob@gnu.org>
+Date: Wed, 3 Apr 2024 14:07:21 -0500
+Subject: [PATCH] ACPT-1854: AttributeReader should use Factory for Collection
+
+---
+ .../Model/Config/AttributeReader.php           | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/vendor/magento/module-catalog-graph-ql/Model/Config/AttributeReader.php b/vendor/magento/module-catalog-graph-ql/Model/Config/AttributeReader.php
+index ecd83bf61ef0..05acb97e4bd7 100644
+--- a/vendor/magento/module-catalog-graph-ql/Model/Config/AttributeReader.php
++++ b/vendor/magento/module-catalog-graph-ql/Model/Config/AttributeReader.php
+@@ -9,8 +9,10 @@
+ use Magento\Catalog\Model\Product;
+ use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+ use Magento\CatalogGraphQl\Model\Resolver\Products\Attributes\Collection;
++use Magento\CatalogGraphQl\Model\Resolver\Products\Attributes\CollectionFactory;
+ use Magento\EavGraphQl\Model\Resolver\Query\Type;
+ use Magento\Framework\App\Config\ScopeConfigInterface;
++use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\Config\ReaderInterface;
+ use Magento\Framework\GraphQl\Exception\GraphQlInputException;
+ use Magento\Framework\GraphQl\Schema\Type\Entity\MapperInterface;
+@@ -36,9 +38,9 @@ class AttributeReader implements ReaderInterface
+     private Type $typeLocator;
+
+     /**
+-     * @var Collection
++     * @var CollectionFactory
+      */
+-    private Collection $collection;
++    private CollectionFactory $collectionFactory;
+ 
+     /**
+      * @var ScopeConfigInterface
+@@ -48,18 +50,21 @@ class AttributeReader implements ReaderInterface
+     /**
+      * @param MapperInterface $mapper
+      * @param Type $typeLocator
+-     * @param Collection $collection
++     * @param Collection $collection @deprecated @see $collectionFactory
+      * @param ScopeConfigInterface $config
++     * @param CollectionFactory|null $collectionFactory
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+      */
+     public function __construct(
+         MapperInterface $mapper,
+         Type $typeLocator,
+         Collection $collection,
+-        ScopeConfigInterface $config
++        ScopeConfigInterface $config,
++        CollectionFactory $collectionFactory = null,
+     ) {
+         $this->mapper = $mapper;
+         $this->typeLocator = $typeLocator;
+-        $this->collection = $collection;
++        $this->collectionFactory = $collectionFactory ?? ObjectManager::getInstance()->get(CollectionFactory::class);
+         $this->config = $config;
+     }
+
+@@ -74,12 +79,11 @@ public function __construct(
+     public function read($scope = null) : array
+     {
+         $config = [];
+-
+         if ($this->config->isSetFlag(self::XML_PATH_INCLUDE_DYNAMIC_ATTRIBUTES, ScopeInterface::SCOPE_STORE)) {
+             $typeNames = $this->mapper->getMappedTypes(Product::ENTITY);
+
+             /** @var Attribute $attribute */
+-            foreach ($this->collection->getAttributes() as $attribute) {
++            foreach ($this->collectionFactory->create()->getAttributes() as $attribute) {
+                 $attributeCode = $attribute->getAttributeCode();
+                 $locatedType = $this->typeLocator->getType($attributeCode, Product::ENTITY) ?: 'String';
+                 $locatedType = TypeProcessor::NORMALIZED_ANY_TYPE === $locatedType ? 'String' : ucfirst($locatedType);
