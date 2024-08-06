@@ -410,5 +410,10 @@
     "Fix regexp cache tag validation": {
       ">=103.0.6 <103.0.7": "MCLOUD-10226__fix_regexp_cache_tag_validation__2.4.6.patch"
     }
+  },
+  "magento/module-catalog-graph-ql": {
+    "AttributeReader should use Factory for Collection": {
+      ">=100.4.7 <100.4.8": "ACPT-1876__attribute_reader_should_use_factory_for_collection__2.4.7.patch"
+    }
   }
 }
