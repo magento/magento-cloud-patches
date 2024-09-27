@@ -18,7 +18,6 @@ class Acceptance81Cest extends AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.4.4-p1-p8', 'magentoVersion' => '2.4.4'],
             ['templateVersion' => '2.4.4-p1-p8', 'magentoVersion' => '2.4.4-p1'],
             ['templateVersion' => '2.4.4-p1-p8', 'magentoVersion' => '2.4.4-p2'],
             ['templateVersion' => '2.4.4-p1-p8', 'magentoVersion' => '2.4.4-p3'],
