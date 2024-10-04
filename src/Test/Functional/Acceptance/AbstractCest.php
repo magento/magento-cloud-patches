@@ -134,7 +134,6 @@ class AbstractCest
         "magento/module-page-builder-admin-gws-admin-ui" => "1.7.1"
     ];
 
-
     /**
      * @param \CliTester $I
      */
