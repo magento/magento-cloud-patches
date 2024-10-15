@@ -1,0 +1,144 @@
+new file mode 100644
+--- /dev/null
++++ b/vendor/magento/module-company/Model/Customer/AccountManagement/CompanyRequestHydrator.php
+@@ -0,0 +1,66 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\Company\Model\Customer\AccountManagement;
++
++use Magento\Company\Api\Data\CompanyInterface;
++
++/**
++ * Getting company data form request.
++ */
++class CompanyRequestHydrator
++{
++    /**
++     * @var \Magento\Framework\App\Request\Http
++     */
++    private $request;
++    /**
++     * @var array
++     */
++    private $fieldsToSave = [
++        CompanyInterface::NAME,
++        CompanyInterface::LEGAL_NAME,
++        CompanyInterface::COMPANY_EMAIL,
++        CompanyInterface::VAT_TAX_ID,
++        CompanyInterface::RESELLER_ID,
++        CompanyInterface::STREET,
++        CompanyInterface::CITY,
++        CompanyInterface::COUNTRY_ID,
++        CompanyInterface::REGION,
++        CompanyInterface::REGION_ID,
++        CompanyInterface::POSTCODE,
++        CompanyInterface::TELEPHONE,
++        CompanyInterface::JOB_TITLE
++    ];
++
++    /**
++     * @param \Magento\Framework\App\Request\Http $request
++     */
++    public function __construct(
++        \Magento\Framework\App\Request\Http $request,
++    ) {
++        $this->request = $request;
++    }
++
++    /**
++     *  Get and hydrate company data from HTTP request.
++     *
++     * @return array
++     */
++    public function getCompanyDataFromRequest(): array
++    {
++        $result = [];
++        $companyData = $this->request->getPost('company', []);
++        foreach ($this->fieldsToSave as $item) {
++            if (isset($companyData[$item])) {
++                $result[$item] = $companyData[$item];
++            }
++        }
++
++        return $result;
++    }
++}
+--- a/vendor/magento/module-company/Plugin/Customer/Api/AccountManagement.php
++++ b/vendor/magento/module-company/Plugin/Customer/Api/AccountManagement.php
+@@ -11,17 +11,13 @@
+ use Magento\Customer\Api\CustomerRepositoryInterface;
+ use Magento\Company\Api\CompanyManagementInterface;
+ use Magento\Framework\Exception\NoSuchEntityException;
++use Magento\Company\Model\Customer\AccountManagement\CompanyRequestHydrator;
+
+ /**
+  * Plugin for AccountManagement. Processing company data.
+  */
+ class AccountManagement
+ {
+-    /**
+-     * @var \Magento\Framework\App\Request\Http
+-     */
+-    private $request;
+-
+     /**
+      * @var \Magento\Company\Model\Email\Sender
+      */
+@@ -47,30 +43,35 @@
+      */
+     private $customerRepository;
+
++    /**
++     * @var CompanyRequestHydrator
++     */
++    private $companyRequestHydrator;
++
+     /**
+      * AccountManagement constructor
+      *
+-     * @param \Magento\Framework\App\Request\Http $request
+      * @param \Magento\Company\Model\Email\Sender $companyEmailSender
+      * @param \Magento\Backend\Model\UrlInterface $urlBuilder
+      * @param \Magento\Company\Model\Customer\Company $customerCompany
+      * @param CompanyManagementInterface $companyManagement
+      * @param CustomerRepositoryInterface $customerRepository
++     * @param CompanyRequestHydrator $companyRequestHydrator
+      */
+     public function __construct(
+-        \Magento\Framework\App\Request\Http $request,
+         \Magento\Company\Model\Email\Sender $companyEmailSender,
+         \Magento\Backend\Model\UrlInterface $urlBuilder,
+         \Magento\Company\Model\Customer\Company $customerCompany,
+         CompanyManagementInterface $companyManagement,
+-        CustomerRepositoryInterface $customerRepository
++        CustomerRepositoryInterface $customerRepository,
++        CompanyRequestHydrator $companyRequestHydrator
+     ) {
+-        $this->request = $request;
+         $this->companyEmailSender = $companyEmailSender;
+         $this->urlBuilder = $urlBuilder;
+         $this->customerCompany = $customerCompany;
+         $this->companyManagement = $companyManagement;
+         $this->customerRepository = $customerRepository;
++        $this->companyRequestHydrator = $companyRequestHydrator;
+     }
+
+     /**
+@@ -127,11 +128,7 @@
+         \Magento\Customer\Api\AccountManagementInterface $subject,
+         \Magento\Customer\Api\Data\CustomerInterface $result
+     ) {
+-        $companyData = $this->request->getPost('company', []);
+-        if (isset($companyData['status'])) {
+-            unset($companyData['status']);
+-        }
+-
++        $companyData = $this->companyRequestHydrator->getCompanyDataFromRequest();
+         if (is_array($companyData) && !empty($companyData)) {
+             $jobTitle = $companyData['job_title'] ?? null;
+             $companyDataObject = $this->customerCompany->createCompany($result, $companyData, $jobTitle);
