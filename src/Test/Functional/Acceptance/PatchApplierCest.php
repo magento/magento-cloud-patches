@@ -42,7 +42,7 @@ class PatchApplierCest extends AbstractCest
         $targetFile = $I->grabFileContent('/target_file.md', Docker::BUILD_CONTAINER);
         $I->assertStringContainsString('# Hello Magento', $targetFile);
         $I->assertStringContainsString('## Additional Info', $targetFile);
-        $log = $I->grabFileContent('/var/log/cloud.log', Docker::BUILD_CONTAINER);
+        $log = $I->grabFileContent('/init/var/log/cloud.log', Docker::BUILD_CONTAINER);
         $I->assertStringContainsString('Patch ../m2-hotfixes/patch.patch has been applied', $log);
     }
 
@@ -65,7 +65,7 @@ class PatchApplierCest extends AbstractCest
         $I->assertStringContainsString('## Additional Info', $targetFile);
         $I->assertStringContainsString(
             'Patch ../m2-hotfixes/patch.patch was already applied',
-            $I->grabFileContent('/var/log/cloud.log', Docker::BUILD_CONTAINER)
+            $I->grabFileContent('/init/var/log/cloud.log', Docker::BUILD_CONTAINER)
         );
     }
 }
