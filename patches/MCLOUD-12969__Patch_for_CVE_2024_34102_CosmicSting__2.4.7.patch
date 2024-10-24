@@ -53,3 +53,4 @@ diff --git a/vendor/magento/module-jwt-user-token/Model/SecretBasedJwksFactory.p
          //Making sure keys are large enough.
          foreach ($this->keys as &$key) {
              $key = str_pad($key, 2048, '&', STR_PAD_BOTH);
+
