@@ -280,6 +280,18 @@
     },
     "Enhanced Layout Cache Efficiency (memory usage reduced)": {
       ">=2.4.4 <2.4.7": "MCLOUD-11514__enhanced_layout_cache_efficiency__2.4.6-p3.patch"
+    },
+    "Patch for CVE-2024-34102 - CosmicSting": {
+      ">=2.4.4 <2.4.4-p8": "MCLOUD-12969__Patch_for_CVE_2024_34102_CosmicSting__2.4.4.patch",
+      ">=2.4.5 <2.4.5-p7": "MCLOUD-12969__Patch_for_CVE_2024_34102_CosmicSting__2.4.5.patch",
+      ">=2.4.6 <2.4.6-p5": "MCLOUD-12969__Patch_for_CVE_2024_34102_CosmicSting__2.4.6.patch",
+      "2.4.7": "MCLOUD-12969__Patch_for_CVE_2024_34102_CosmicSting__2.4.7.patch"
+    },
+    "Patch for CVE-2024-34102 - KeyRotation": {
+      ">=2.4.4 <2.4.4-p10": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.4.patch",
+      ">=2.4.5 <2.4.5-p9": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.5.patch",
+      ">=2.4.6 <2.4.6-p7": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.6.patch",
+      ">=2.4.7 <2.4.7-p2": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.7.patch"
     }
   },
   "magento/module-paypal": {
