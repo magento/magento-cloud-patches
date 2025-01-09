@@ -56,12 +56,19 @@ class RevertActionTest extends TestCase
      * @var RevertValidator|MockObject
      */
     private $revertValidator;
+    
+    /**
+    * @var revertAction|MockObject
+    */
+    protected $revertAction;
 
     /**
      * @inheritdoc
      */
     protected function setUp(): void
     {
+        // Initialize the $revertAction property
+        $this->revertAction = $this->createMock(RevertAction::class);
         $this->applier = $this->createMock(Applier::class);
         $this->revertValidator = $this->createMock(RevertValidator::class);
         $this->statusPool = $this->createMock(StatusPool::class);
