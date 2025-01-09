@@ -22,7 +22,7 @@ class QuestionFactory
      *
      * @return Question
      */
-    public function create(string $question, string $default = null): Question
+    public function create(string $question, ?string $default = null): Question
     {
         return new Question($question, $default);
     }

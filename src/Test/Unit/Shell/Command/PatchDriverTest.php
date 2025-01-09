@@ -36,12 +36,13 @@ class PatchDriverTest extends TestCase
      */
     protected function setUp(): void
     {
+        parent::setUp();
         $this->baseDir = dirname(__DIR__, 5) . '/tests/unit/';
         $this->cwd = $this->baseDir . 'var/';
         $processFactory = $this->createMock(ProcessFactory::class);
         $processFactory->method('create')
             ->willReturnCallback(
-                function (array $cmd, string $input = null) {
+                function (array $cmd, ?string $input = null) {
                     return new Process(
                         $cmd,
                         $this->cwd,
@@ -179,7 +180,7 @@ class PatchDriverTest extends TestCase
      * @param string $path
      * @param string|null $name
      */
-    private function copyFileToWorkingDir(string $path, string $name = null)
+    private function copyFileToWorkingDir(string $path, ?string $name = null)
     {
         $name = $name ?? basename($path);
         copy($path, $this->getVarFile($name));
