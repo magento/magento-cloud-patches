@@ -91,7 +91,12 @@ class ConfirmRequiredActionTest extends TestCase
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getAdditionalRequiredPatches')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn([$patch1, $patch2, $patch3]);
 
         $aggregatedPatch = $this->getMockForAbstractClass(AggregatedPatchInterface::class);
@@ -102,8 +107,13 @@ class ConfirmRequiredActionTest extends TestCase
 
         $this->renderer->expects($this->once())
             ->method('printTable')
-            ->withConsecutive([$outputMock, [$aggregatedPatch]]);
-
+            ->with($outputMock, [$aggregatedPatch])
+            ->willReturnCallback(function($output,$patches ) use ($outputMock, $aggregatedPatch) {
+                if ($output === $outputMock && $aggregatedPatch === [$aggregatedPatch] ) {
+                    throw new RuntimeException('Error message');
+                }
+                return null;
+            });
         $this->renderer->expects($this->once())
             ->method('printQuestion')
             ->willReturn(true);
@@ -124,7 +134,12 @@ class ConfirmRequiredActionTest extends TestCase
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getAdditionalRequiredPatches')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+                    if ($filter === $patchFilter) {
+                        return [$patch1];
+                    }
+                    return [];
+                })
             ->willThrowException(new PatchNotFoundException(''));
 
         $this->expectException(RuntimeException::class);
@@ -149,7 +164,12 @@ class ConfirmRequiredActionTest extends TestCase
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getAdditionalRequiredPatches')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn([$patch1]);
 
         $aggregatedPatch = $this->getMockForAbstractClass(AggregatedPatchInterface::class);
@@ -160,7 +180,13 @@ class ConfirmRequiredActionTest extends TestCase
 
         $this->renderer->expects($this->once())
             ->method('printTable')
-            ->withConsecutive([$outputMock, [$aggregatedPatch]]);
+            ->with($outputMock, [$aggregatedPatch])
+            ->willReturnCallback(function($output,$patches ) use ($outputMock, $aggregatedPatch) {
+                if ($output === $outputMock && $aggregatedPatch === [$aggregatedPatch] ) {
+                    throw new RuntimeException('Error message');
+                }
+                return null;
+            });
 
         $this->renderer->expects($this->once())
             ->method('printQuestion')

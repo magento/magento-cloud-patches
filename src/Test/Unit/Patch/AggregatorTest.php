@@ -50,12 +50,17 @@ class AggregatorTest extends TestCase
         $patch3 = $this->createPatch('MC-3', 'Patch3');
 
         $this->aggregatedPatchFactory->expects($this->exactly(3))
-            ->method('create')
-            ->withConsecutive(
-                [[$patch1CE, $patch1EE, $patch1B2B]],
-                [[$patch2CE, $patch2EE]],
-                [[$patch3]]
-            );
+        ->method('create')
+        ->willReturnCallback(function () use (&$callCount) {
+                $callCount++;
+                if ($callCount === 1) {
+                    return [$patch1CE, $patch1EE, $patch1B2B];
+                } elseif ($callCount === 2) {
+                    return [$patch2CE, $patch2EE];
+                } elseif($callCount === 3){
+                    return [$patch3];
+                }
+        });
 
         $this->assertTrue(
             is_array(

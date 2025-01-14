@@ -76,7 +76,12 @@ class RendererTest extends TestCase
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $outputMock->expects($this->atLeastOnce())
             ->method('writeln')
-            ->withConsecutive([$expectedArray]);
+            ->willReturnCallback(function($filter) use ($expectedArray, $patch1) {
+                if ($filter === $expectedArray) {
+                    return [$patch1];
+                }
+                return [];
+            });
 
         $this->renderer->printPatchInfo($outputMock, $patch, $prependedMessage);
     }

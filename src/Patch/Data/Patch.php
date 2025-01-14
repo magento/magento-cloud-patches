@@ -149,14 +149,6 @@ class Patch implements PatchInterface
     }
 
     /**
-    * @inheritDoc
-    */
-    public function setId(): string
-    {
-        return $this->id;
-    }
-
-    /**
      * @inheritDoc
      */
     public function getType(): string
