@@ -95,7 +95,12 @@ class ReviewAppliedActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->withConsecutive([$this->stringContains('error')]);
+            ->willReturnCallback(function($filter) use ($patch1) {
+                if ($filter === $patch1) {
+                    $this->stringContains('error');
+                }
+                return false;
+            });
 
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }

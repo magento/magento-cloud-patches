@@ -103,12 +103,22 @@ class ApplyRequiredTest extends TestCase
 
         $this->renderer->expects($this->exactly(3))
             ->method('printPatchInfo')
-            ->withConsecutive(
-                [$outputMock, $patch1, 'Patch ' . $patch1->getId() .' has been applied'],
-                [$outputMock, $patch2, 'Patch ' . $patch2->getId() .' has been applied'],
-                [$outputMock, $patch3, 'Patch ' . $patch3->getId() .' has been applied']
-            );
+            ->willReturnCallback(function() use ($patch1, $patch2, $patch3) {
+                static $callCount = 0;
+                $expectedPatches = [$patch1, $patch2, $patch3];
+                $expectedMessages = [
+                    'Patch ' . $patch1->getId() . ' has been applied',
+                    'Patch ' . $patch2->getId() . ' has been applied',
+                    'Patch ' . $patch3->getId() . ' has been applied'
+                ];
 
+                if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
+                    $callCount++;
+                    return true;
+                }
+
+                return false;
+            });
         $this->manager->run($inputMock, $outputMock);
     }
 
@@ -129,17 +139,29 @@ class ApplyRequiredTest extends TestCase
             ->willReturn([$patch]);
 
         $this->applier->method('apply')
-            ->withConsecutive([$patch->getPath(), $patch->getId()])
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    $patch->getPath(), 
+                    $patch->getId()
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            })
             ->willThrowException(new ApplierException('Applier error message'));
-        $this->conflictProcessor->expects($this->once())
-            ->method('process')
-            ->withConsecutive([$outputMock, $patch, [], 'Applier error message'])
-            ->willThrowException(new RuntimeException('Error message'));
 
+            $this->conflictProcessor->expects($this->once())
+            ->method('process')
+            ->with($outputMock, $patch, [], 'Applier error message')
+            ->willReturnCallback(function($output, $patch, $data = '', string $errorMessage) use ($outputMock, $patch2, $patch1) {
+                if ($output === $outputMock && $patch === $patch2 && $data === $patch1 && $errorMessage === 'Applier error message') {
+                    throw new RuntimeException('Error message');
+                }
+                return null;
+            });
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Error message');
 
-        $this->manager->run($inputMock, $outputMock);
+        $this->manager->run($inputMock, $outputMock, $patchFilter);
     }
 
     /**

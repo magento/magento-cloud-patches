@@ -102,59 +102,112 @@ class QualityCollectorTest extends TestCase
 
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setId')
-            ->withConsecutive(['MDVA-2470'], ['MDVA-2470'], ['MDVA-2033']);
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'MDVA-2470', 'MDVA-2470', 'MDVA-2033'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setTitle')
-            ->withConsecutive(
-                ['Fix asset locker race condition when using Redis'],
-                ['Fix asset locker race condition when using Redis'],
-                ['Allow DB dumps done with the support module to complete']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'Fix asset locker race condition when using Redis',
+                    'Fix asset locker race condition when using Redis',
+                    'Allow DB dumps done with the support module to complete'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setFilename')
-            ->withConsecutive(
-                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
-                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
-                ['MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
+                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
+                    'MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPath')
-            ->withConsecutive(
-                [self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
-                [self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
-                [self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
+                    self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
+                    self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setType')
-            ->withConsecutive(
-                [PatchInterface::TYPE_OPTIONAL],
-                [PatchInterface::TYPE_OPTIONAL],
-                [PatchInterface::TYPE_OPTIONAL]
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    PatchInterface::TYPE_OPTIONAL,
+                    PatchInterface::TYPE_OPTIONAL,
+                    PatchInterface::TYPE_OPTIONAL
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPackageName')
-            ->withConsecutive(
-                ['magento/magento2-base'],
-                ['magento/magento2-ee-base'],
-                ['magento/magento2-ee-base']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'magento/magento2-base',
+                    'magento/magento2-ee-base',
+                    'magento/magento2-ee-base'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPackageConstraint')
-            ->withConsecutive(
-                ['2.2.0 - 2.2.5'],
-                ['2.2.0 - 2.2.5'],
-                ['2.2.0 - 2.2.5']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    '2.2.0 - 2.2.5',
+                    '2.2.0 - 2.2.5',
+                    '2.2.0 - 2.2.5'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setRequire')
-            ->withConsecutive([[]], [[]], [['MC-11111', 'MC-22222']]);
-
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    [],
+                    [],
+                    ['MC-11111', 'MC-22222']
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setReplacedWith')
-            ->withConsecutive([''], [''], ['MC-33333']);
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    '',
+                    '',
+                    'MC-33333'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setDeprecated')
-            ->withConsecutive([false], [false], [true]);
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    false,
+                    false,
+                    true
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('build')
             ->willReturn($this->createMock(Patch::class));

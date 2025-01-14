@@ -88,8 +88,13 @@ class ApplyOptionalTest extends TestCase
 
         $this->actionPool->expects($this->once())
             ->method('execute')
-            ->withConsecutive([$inputMock, $outputMock, $configQualityPatches]);
-
+            ->with($inputMock, $outputMock, $configQualityPatches)
+            ->willReturnCallback(function($input, $output, $config) use ($inputMock, $outputMock, $configQualityPatches) {
+                if ($input === $inputMock && $output === $outputMock && $config === $configQualityPatches) {
+                    return true;
+                }
+                return null;
+            });
         $this->applyOptionalEce->run($inputMock, $outputMock);
     }
 
