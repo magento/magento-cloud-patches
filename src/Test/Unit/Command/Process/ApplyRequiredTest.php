@@ -152,7 +152,7 @@ class ApplyRequiredTest extends TestCase
             $this->conflictProcessor->expects($this->once())
             ->method('process')
             ->with($outputMock, $patch, [], 'Applier error message')
-            ->willReturnCallback(function($output, $patch, $data = '', string $errorMessage) use ($outputMock, $patch2, $patch1) {
+            ->willReturnCallback(function($output, $patch, string $errorMessage, $data = '') use ($outputMock, $patch2, $patch1) {
                 if ($output === $outputMock && $patch === $patch2 && $data === $patch1 && $errorMessage === 'Applier error message') {
                     throw new RuntimeException('Error message');
                 }
