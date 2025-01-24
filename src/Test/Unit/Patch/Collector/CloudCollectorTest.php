@@ -191,7 +191,7 @@ class CloudCollectorTest extends TestCase
     /**
      * @return array
      */
-    public function collectDataProvider(): array
+    public static function collectDataProvider(): array
     {
         return [
             ['isCloud' => false, 'expectedType' => PatchInterface::TYPE_OPTIONAL],
@@ -221,13 +221,13 @@ class CloudCollectorTest extends TestCase
     /**
      * @return array
      */
-    public function invalidPatchFilenameDataProvider(): array
+    public static function invalidPatchFilenameDataProvider(): array
     {
         return [
-            [$this->createConfig('fix_asset_locking_race_condition__2.1.4.patch')],
-            [$this->createConfig('MDVA-2470__fix_asset_locking_race_condition.patch')],
-            [$this->createConfig('MDVA-2470_fix_asset_locking_race_condition__2.1.4.patch')],
-            [$this->createConfig('MDVA-2470__fix_asset_locking_race_condition_2.1.4.patch')],
+            [self::createConfig('fix_asset_locking_race_condition__2.1.4.patch')],
+            [self::createConfig('MDVA-2470__fix_asset_locking_race_condition.patch')],
+            [self::createConfig('MDVA-2470_fix_asset_locking_race_condition__2.1.4.patch')],
+            [self::createConfig('MDVA-2470__fix_asset_locking_race_condition_2.1.4.patch')],
         ];
     }
 
@@ -237,7 +237,7 @@ class CloudCollectorTest extends TestCase
      * @param string $filename
      * @return array
      */
-    private function createConfig(string $filename): array
+    private static function createConfig(string $filename): array
     {
         return [
             'magento/magento2-base' => [
@@ -270,7 +270,7 @@ class CloudCollectorTest extends TestCase
     /**
      * @return array
      */
-    public function invalidTitleSectionDataProvider(): array
+    public static function invalidTitleSectionDataProvider(): array
     {
         return [
             [
