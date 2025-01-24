@@ -248,9 +248,6 @@ class OptionalResolverTest extends TestCase
         $aggregatedPatch->method('getRequire')->willReturn($require);
         $aggregatedPatch->method('getItems')->willReturn([$patch]);
 
-        // To make mock object unique for assertions and array operations.
-        $aggregatedPatch->id = microtime();
-
         return $aggregatedPatch;
     }
 }

@@ -89,10 +89,7 @@ public function testAggregate()
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getTitle')->willReturn($title);
-
-        // To make mock object unique for assertions and array operations.
-        $patch->id = microtime();
-        $patch->method('__toString')->willReturn($patch->id);
+        $patch->method('__toString')->willReturn(microtime());
 
         return $patch;
     }

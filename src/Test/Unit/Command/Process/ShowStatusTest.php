@@ -194,9 +194,6 @@ class ShowStatusTest extends TestCase
         $patch->method('isDeprecated')->willReturn($isDeprecated);
         $patch->method('getReplacedWith')->willReturn($replacedWith);
 
-        // To make mock object unique for assertions and array operations.
-        $patch->id = microtime();
-
         return $patch;
     }
 }
