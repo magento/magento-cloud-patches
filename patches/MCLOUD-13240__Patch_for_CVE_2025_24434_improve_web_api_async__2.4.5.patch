@@ -1,0 +1,1170 @@
+---
+ .../Customer/Model/AccountManagement.php      |   5 -
+ .../Customer/Model/AccountManagementApi.php   | 132 ++++++
+ ...AsyncRequestCustomerGroupAuthorization.php |  78 ++++
+ .../Unit/Model/AccountManagementApiTest.php   | 421 ++++++++++++++++++
+ .../Test/Unit/Model/AccountManagementTest.php |   4 -
+ ...cRequestCustomerGroupAuthorizationTest.php | 112 +++++
+ app/code/Magento/Customer/composer.json       |   3 +-
+ app/code/Magento/Customer/etc/di.xml          |   5 +
+ 8 files changed, 750 insertions(+), 10 deletions(-)
+ create mode 100644 app/code/Magento/Customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
+ create mode 100644 app/code/Magento/Customer/Test/Unit/Model/AccountManagementApiTest.php
+ create mode 100644 app/code/Magento/Customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
+
+diff --git a/vendor/magento/module-customer/Model/AccountManagement.php b/vendor/magento/module-customer/Model/AccountManagement.php
+index d70058aef445f..513c0b0717e85 100644
+--- a/vendor/magento/module-customer/Model/AccountManagement.php
++++ b/vendor/magento/module-customer/Model/AccountManagement.php
+@@ -879,11 +879,6 @@ public function getConfirmationStatus($customerId)
+      */
+     public function createAccount(CustomerInterface $customer, $password = null, $redirectUrl = '')
+     {
+-        $groupId = $customer->getGroupId();
+-        if (isset($groupId) && !$this->authorization->isAllowed(self::ADMIN_RESOURCE)) {
+-            $customer->setGroupId(null);
+-        }
+-
+         if ($password !== null) {
+             $this->checkPasswordStrength($password);
+             $customerEmail = $customer->getEmail();
+diff --git a/vendor/magento/module-customer/Model/AccountManagementApi.php b/vendor/magento/module-customer/Model/AccountManagementApi.php
+index 02a05705b57ef..8b4f78ab26c77 100644
+--- a/vendor/magento/module-customer/Model/AccountManagementApi.php
++++ b/vendor/magento/module-customer/Model/AccountManagementApi.php
+@@ -6,16 +6,127 @@
+ 
+ namespace Magento\Customer\Model;
+ 
++use Magento\Customer\Api\AddressRepositoryInterface;
++use Magento\Customer\Api\CustomerMetadataInterface;
++use Magento\Customer\Api\CustomerRepositoryInterface;
+ use Magento\Customer\Api\Data\CustomerInterface;
++use Magento\Customer\Api\Data\ValidationResultsInterfaceFactory;
++use Magento\Customer\Helper\View as CustomerViewHelper;
++use Magento\Customer\Model\Config\Share as ConfigShare;
++use Magento\Customer\Model\Customer as CustomerModel;
++use Magento\Customer\Model\Metadata\Validator;
++use Magento\Framework\Api\ExtensibleDataObjectConverter;
++use Magento\Framework\App\Config\ScopeConfigInterface;
++use Magento\Framework\AuthorizationInterface;
++use Magento\Framework\DataObjectFactory as ObjectFactory;
++use Magento\Framework\Encryption\EncryptorInterface as Encryptor;
++use Magento\Framework\Event\ManagerInterface;
++use Magento\Framework\Exception\AuthorizationException;
++use Magento\Framework\Mail\Template\TransportBuilder;
++use Magento\Framework\Math\Random;
++use Magento\Framework\Reflection\DataObjectProcessor;
++use Magento\Framework\Registry;
++use Magento\Framework\Stdlib\DateTime;
++use Magento\Framework\Stdlib\StringUtils as StringHelper;
++use Magento\Store\Model\StoreManagerInterface;
++use Psr\Log\LoggerInterface as PsrLogger;
+ 
+ /**
+  * Account Management service implementation for external API access.
++ *
+  * Handle various customer account actions.
+  *
+  * @SuppressWarnings(PHPMD.CookieAndSessionMisuse)
++ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+  */
+ class AccountManagementApi extends AccountManagement
+ {
++    /**
++     * @var AuthorizationInterface
++     */
++    private $authorization;
++
++    /**
++     * @param CustomerFactory $customerFactory
++     * @param ManagerInterface $eventManager
++     * @param StoreManagerInterface $storeManager
++     * @param Random $mathRandom
++     * @param Validator $validator
++     * @param ValidationResultsInterfaceFactory $validationResultsDataFactory
++     * @param AddressRepositoryInterface $addressRepository
++     * @param CustomerMetadataInterface $customerMetadataService
++     * @param CustomerRegistry $customerRegistry
++     * @param PsrLogger $logger
++     * @param Encryptor $encryptor
++     * @param ConfigShare $configShare
++     * @param StringHelper $stringHelper
++     * @param CustomerRepositoryInterface $customerRepository
++     * @param ScopeConfigInterface $scopeConfig
++     * @param TransportBuilder $transportBuilder
++     * @param DataObjectProcessor $dataProcessor
++     * @param Registry $registry
++     * @param CustomerViewHelper $customerViewHelper
++     * @param DateTime $dateTime
++     * @param CustomerModel $customerModel
++     * @param ObjectFactory $objectFactory
++     * @param ExtensibleDataObjectConverter $extensibleDataObjectConverter
++     * @param AuthorizationInterface $authorization
++     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
++     */
++    public function __construct(
++        CustomerFactory $customerFactory,
++        ManagerInterface $eventManager,
++        StoreManagerInterface $storeManager,
++        Random $mathRandom,
++        Validator $validator,
++        ValidationResultsInterfaceFactory $validationResultsDataFactory,
++        AddressRepositoryInterface $addressRepository,
++        CustomerMetadataInterface $customerMetadataService,
++        CustomerRegistry $customerRegistry,
++        PsrLogger $logger,
++        Encryptor $encryptor,
++        ConfigShare $configShare,
++        StringHelper $stringHelper,
++        CustomerRepositoryInterface $customerRepository,
++        ScopeConfigInterface $scopeConfig,
++        TransportBuilder $transportBuilder,
++        DataObjectProcessor $dataProcessor,
++        Registry $registry,
++        CustomerViewHelper $customerViewHelper,
++        DateTime $dateTime,
++        CustomerModel $customerModel,
++        ObjectFactory $objectFactory,
++        ExtensibleDataObjectConverter $extensibleDataObjectConverter,
++        AuthorizationInterface $authorization
++    ) {
++        $this->authorization = $authorization;
++        parent::__construct(
++            $customerFactory,
++            $eventManager,
++            $storeManager,
++            $mathRandom,
++            $validator,
++            $validationResultsDataFactory,
++            $addressRepository,
++            $customerMetadataService,
++            $customerRegistry,
++            $logger,
++            $encryptor,
++            $configShare,
++            $stringHelper,
++            $customerRepository,
++            $scopeConfig,
++            $transportBuilder,
++            $dataProcessor,
++            $registry,
++            $customerViewHelper,
++            $dateTime,
++            $customerModel,
++            $objectFactory,
++            $extensibleDataObjectConverter
++        );
++    }
++
+     /**
+      * @inheritDoc
+      *
+@@ -23,9 +134,30 @@ class AccountManagementApi extends AccountManagement
+      */
+     public function createAccount(CustomerInterface $customer, $password = null, $redirectUrl = '')
+     {
++        $this->validateCustomerRequest($customer);
+         $customer = parent::createAccount($customer, $password, $redirectUrl);
+         $customer->setConfirmation(null);
+ 
+         return $customer;
+     }
++
++    /**
++     * Validate anonymous request
++     *
++     * @param CustomerInterface $customer
++     * @return void
++     * @throws AuthorizationException
++     */
++    private function validateCustomerRequest(CustomerInterface $customer): void
++    {
++        $groupId = $customer->getGroupId();
++        if (isset($groupId) &&
++            !$this->authorization->isAllowed(self::ADMIN_RESOURCE)
++        ) {
++            $params = ['resources' => self::ADMIN_RESOURCE];
++            throw new AuthorizationException(
++                __("The consumer isn't authorized to access %resources.", $params)
++            );
++        }
++    }
+ }
+diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
+new file mode 100644
+index 0000000000000..5b5c8ce1fc0ca
+--- /dev/null
++++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
+@@ -0,0 +1,78 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++
++declare(strict_types=1);
++
++namespace Magento\Customer\Plugin;
++
++use Magento\Customer\Api\Data\CustomerInterface;
++use Magento\Framework\App\ObjectManager;
++use Magento\Framework\AuthorizationInterface;
++use Magento\Framework\Exception\AuthorizationException;
++use Magento\AsynchronousOperations\Model\MassSchedule;
++
++/**
++ * Plugin to validate anonymous request for asynchronous operations containing group id.
++ */
++class AsyncRequestCustomerGroupAuthorization
++{
++    /**
++     * Authorization level of a basic admin session
++     *
++     * @see _isAllowed()
++     */
++    public const ADMIN_RESOURCE = 'Magento_Customer::manage';
++
++    /**
++     * @var AuthorizationInterface
++     */
++    private $authorization;
++
++    /**
++     *
++     * @param AuthorizationInterface $authorization
++     */
++    public function __construct(
++        AuthorizationInterface $authorization
++    ) {
++        $this->authorization = $authorization;
++    }
++
++    /**
++     * Validate groupId for anonymous request
++     *
++     * @param MassSchedule $massSchedule
++     * @param string $topic
++     * @param array $entitiesArray
++     * @param string|null $groupId
++     * @param string|null $userId
++     * @return null
++     * @throws AuthorizationException
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    public function beforePublishMass(
++        MassSchedule $massSchedule,
++        string       $topic,
++        array        $entitiesArray,
++        string       $groupId = null,
++        string       $userId = null
++    ) {
++        foreach ($entitiesArray as $entityParams) {
++            foreach ($entityParams as $entity) {
++                if ($entity instanceof CustomerInterface) {
++                    $groupId = $entity->getGroupId();
++                    if (isset($groupId) && !$this->authorization->isAllowed(self::ADMIN_RESOURCE)) {
++                        $params = ['resources' => self::ADMIN_RESOURCE];
++                        throw new AuthorizationException(
++                            __("The consumer isn't authorized to access %resources.", $params)
++                        );
++                    }
++                }
++            }
++        }
++        return null;
++    }
++}
+diff --git a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php
+new file mode 100644
+index 0000000000000..074d40021a184
+--- /dev/null
++++ b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php
+@@ -0,0 +1,421 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\Customer\Test\Unit\Model;
++
++use Magento\Customer\Api\AddressRepositoryInterface;
++use Magento\Customer\Api\CustomerMetadataInterface;
++use Magento\Customer\Api\CustomerRepositoryInterface;
++use Magento\Customer\Api\Data\CustomerInterface;
++use Magento\Customer\Api\Data\ValidationResultsInterfaceFactory;
++use Magento\Customer\Helper\View;
++use Magento\Customer\Model\AccountConfirmation;
++use Magento\Customer\Model\AccountManagement;
++use Magento\Customer\Model\AccountManagementApi;
++use Magento\Customer\Model\AddressRegistry;
++use Magento\Customer\Model\Config\Share;
++use Magento\Customer\Model\CustomerFactory;
++use Magento\Customer\Model\CustomerRegistry;
++use Magento\Customer\Model\Data\CustomerSecure;
++use Magento\Customer\Model\Metadata\Validator;
++use Magento\Customer\Model\ResourceModel\Visitor\CollectionFactory;
++use Magento\Directory\Model\AllowedCountries;
++use Magento\Framework\Api\ExtensibleDataObjectConverter;
++use Magento\Framework\Api\SearchCriteriaBuilder;
++use Magento\Framework\App\Config\ScopeConfigInterface;
++use Magento\Framework\Authorization;
++use Magento\Framework\DataObjectFactory;
++use Magento\Framework\Encryption\EncryptorInterface;
++use Magento\Framework\Event\ManagerInterface;
++use Magento\Framework\Exception\AuthorizationException;
++use Magento\Framework\Exception\LocalizedException;
++use Magento\Framework\Intl\DateTimeFactory;
++use Magento\Framework\Mail\Template\TransportBuilder;
++use Magento\Framework\Math\Random;
++use Magento\Framework\Reflection\DataObjectProcessor;
++use Magento\Framework\Registry;
++use Magento\Framework\Session\SaveHandlerInterface;
++use Magento\Framework\Session\SessionManagerInterface;
++use Magento\Framework\Stdlib\StringUtils;
++use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
++use Magento\Store\Api\Data\StoreInterface;
++use Magento\Store\Model\StoreManagerInterface;
++use PHPUnit\Framework\MockObject\MockObject;
++use PHPUnit\Framework\TestCase;
++use Psr\Log\LoggerInterface;
++
++/**
++ * Test for validating anonymous request for synchronous operations containing group id.
++ *
++ * @SuppressWarnings(PHPMD.TooManyFields)
++ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
++ */
++class AccountManagementApiTest extends TestCase
++{
++    /**
++     * @var AccountManagement
++     */
++    private $accountManagementMock;
++
++    /**
++     * @var AccountManagementApi
++     */
++    private $accountManagement;
++
++    /**
++     * @var ObjectManagerHelper
++     */
++    private $objectManagerHelper;
++
++    /**
++     * @var CustomerFactory|MockObject
++     */
++    private $customerFactory;
++
++    /**
++     * @var ManagerInterface|MockObject
++     */
++    private $manager;
++
++    /**
++     * @var StoreManagerInterface|MockObject
++     */
++    private $storeManager;
++
++    /**
++     * @var Random|MockObject
++     */
++    private $random;
++
++    /**
++     * @var Validator|MockObject
++     */
++    private $validator;
++
++    /**
++     * @var ValidationResultsInterfaceFactory|MockObject
++     */
++    private $validationResultsInterfaceFactory;
++
++    /**
++     * @var AddressRepositoryInterface|MockObject
++     */
++    private $addressRepository;
++
++    /**
++     * @var CustomerMetadataInterface|MockObject
++     */
++    private $customerMetadata;
++
++    /**
++     * @var CustomerRegistry|MockObject
++     */
++    private $customerRegistry;
++
++    /**
++     * @var LoggerInterface|MockObject
++     */
++    private $logger;
++
++    /**
++     * @var EncryptorInterface|MockObject
++     */
++    private $encryptor;
++
++    /**
++     * @var Share|MockObject
++     */
++    private $share;
++
++    /**
++     * @var StringUtils|MockObject
++     */
++    private $string;
++
++    /**
++     * @var CustomerRepositoryInterface|MockObject
++     */
++    private $customerRepository;
++
++    /**
++     * @var ScopeConfigInterface|MockObject
++     */
++    private $scopeConfig;
++
++    /**
++     * @var TransportBuilder|MockObject
++     */
++    private $transportBuilder;
++
++    /**
++     * @var DataObjectProcessor|MockObject
++     */
++    private $dataObjectProcessor;
++
++    /**
++     * @var Registry|MockObject
++     */
++    private $registry;
++
++    /**
++     * @var View|MockObject
++     */
++    private $customerViewHelper;
++
++    /**
++     * @var \Magento\Framework\Stdlib\DateTime|MockObject
++     */
++    private $dateTime;
++
++    /**
++     * @var \Magento\Customer\Model\Customer|MockObject
++     */
++    private $customer;
++
++    /**
++     * @var DataObjectFactory|MockObject
++     */
++    private $objectFactory;
++
++    /**
++     * @var ExtensibleDataObjectConverter|MockObject
++     */
++    private $extensibleDataObjectConverter;
++
++    /**
++     * @var DateTimeFactory|MockObject
++     */
++    private $dateTimeFactory;
++
++    /**
++     * @var AccountConfirmation|MockObject
++     */
++    private $accountConfirmation;
++
++    /**
++     * @var MockObject|SessionManagerInterface
++     */
++    private $sessionManager;
++
++    /**
++     * @var  MockObject|CollectionFactory
++     */
++    private $visitorCollectionFactory;
++
++    /**
++     * @var MockObject|SaveHandlerInterface
++     */
++    private $saveHandler;
++
++    /**
++     * @var MockObject|AddressRegistry
++     */
++    private $addressRegistryMock;
++
++    /**
++     * @var MockObject|SearchCriteriaBuilder
++     */
++    private $searchCriteriaBuilderMock;
++
++    /**
++     * @var AllowedCountries|MockObject
++     */
++    private $allowedCountriesReader;
++
++    /**
++     * @var Authorization|MockObject
++     */
++    private $authorizationMock;
++
++    /**
++     * @var CustomerSecure|MockObject
++     */
++    private $customerSecure;
++
++    /**
++     * @var StoreInterface|MockObject
++     */
++    private $storeMock;
++
++    /**
++     * @inheritDoc
++     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
++     */
++    protected function setUp(): void
++    {
++        $this->customerFactory = $this->createPartialMock(CustomerFactory::class, ['create']);
++        $this->manager = $this->getMockForAbstractClass(ManagerInterface::class);
++        $this->storeManager = $this->getMockForAbstractClass(StoreManagerInterface::class);
++        $this->random = $this->createMock(Random::class);
++        $this->validator = $this->createMock(Validator::class);
++        $this->validationResultsInterfaceFactory = $this->createMock(
++            ValidationResultsInterfaceFactory::class
++        );
++        $this->addressRepository = $this->getMockForAbstractClass(AddressRepositoryInterface::class);
++        $this->customerMetadata = $this->getMockForAbstractClass(CustomerMetadataInterface::class);
++        $this->customerRegistry = $this->createMock(CustomerRegistry::class);
++
++        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
++        $this->encryptor = $this->getMockForAbstractClass(EncryptorInterface::class);
++        $this->share = $this->createMock(Share::class);
++        $this->string = $this->createMock(StringUtils::class);
++        $this->customerRepository = $this->getMockForAbstractClass(CustomerRepositoryInterface::class);
++        $this->scopeConfig = $this->getMockBuilder(ScopeConfigInterface::class)
++            ->disableOriginalConstructor()
++            ->getMockForAbstractClass();
++        $this->transportBuilder = $this->createMock(TransportBuilder::class);
++        $this->dataObjectProcessor = $this->createMock(DataObjectProcessor::class);
++        $this->registry = $this->createMock(Registry::class);
++        $this->customerViewHelper = $this->createMock(View::class);
++        $this->dateTime = $this->createMock(\Magento\Framework\Stdlib\DateTime::class);
++        $this->customer = $this->createMock(\Magento\Customer\Model\Customer::class);
++        $this->objectFactory = $this->createMock(DataObjectFactory::class);
++        $this->addressRegistryMock = $this->createMock(AddressRegistry::class);
++        $this->extensibleDataObjectConverter = $this->createMock(
++            ExtensibleDataObjectConverter::class
++        );
++        $this->allowedCountriesReader = $this->createMock(AllowedCountries::class);
++        $this->customerSecure = $this->getMockBuilder(CustomerSecure::class)
++            ->onlyMethods(['addData', 'setData'])
++            ->addMethods(['setRpToken', 'setRpTokenCreatedAt'])
++            ->disableOriginalConstructor()
++            ->getMock();
++        $this->dateTimeFactory = $this->createMock(DateTimeFactory::class);
++        $this->accountConfirmation = $this->createMock(AccountConfirmation::class);
++        $this->searchCriteriaBuilderMock = $this->createMock(SearchCriteriaBuilder::class);
++
++        $this->visitorCollectionFactory = $this->getMockBuilder(CollectionFactory::class)
++            ->disableOriginalConstructor()
++            ->onlyMethods(['create'])
++            ->getMock();
++        $this->sessionManager = $this->getMockBuilder(SessionManagerInterface::class)
++            ->disableOriginalConstructor()
++            ->getMockForAbstractClass();
++        $this->saveHandler = $this->getMockBuilder(SaveHandlerInterface::class)
++            ->disableOriginalConstructor()
++            ->getMockForAbstractClass();
++        $this->authorizationMock = $this->createMock(Authorization::class);
++        $this->objectManagerHelper = new ObjectManagerHelper($this);
++        $this->accountManagement = $this->objectManagerHelper->getObject(
++            AccountManagementApi::class,
++            [
++                'customerFactory' => $this->customerFactory,
++                'eventManager' => $this->manager,
++                'storeManager' => $this->storeManager,
++                'mathRandom' => $this->random,
++                'validator' => $this->validator,
++                'validationResultsDataFactory' => $this->validationResultsInterfaceFactory,
++                'addressRepository' => $this->addressRepository,
++                'customerMetadataService' => $this->customerMetadata,
++                'customerRegistry' => $this->customerRegistry,
++                'logger' => $this->logger,
++                'encryptor' => $this->encryptor,
++                'configShare' => $this->share,
++                'stringHelper' => $this->string,
++                'customerRepository' => $this->customerRepository,
++                'scopeConfig' => $this->scopeConfig,
++                'transportBuilder' => $this->transportBuilder,
++                'dataProcessor' => $this->dataObjectProcessor,
++                'registry' => $this->registry,
++                'customerViewHelper' => $this->customerViewHelper,
++                'dateTime' => $this->dateTime,
++                'customerModel' => $this->customer,
++                'objectFactory' => $this->objectFactory,
++                'extensibleDataObjectConverter' => $this->extensibleDataObjectConverter,
++                'dateTimeFactory' => $this->dateTimeFactory,
++                'accountConfirmation' => $this->accountConfirmation,
++                'sessionManager' => $this->sessionManager,
++                'saveHandler' => $this->saveHandler,
++                'visitorCollectionFactory' => $this->visitorCollectionFactory,
++                'searchCriteriaBuilder' => $this->searchCriteriaBuilderMock,
++                'addressRegistry' => $this->addressRegistryMock,
++                'allowedCountriesReader' => $this->allowedCountriesReader,
++                'authorization' => $this->authorizationMock
++            ]
++        );
++        $this->accountManagementMock = $this->createMock(AccountManagement::class);
++
++        $this->storeMock = $this->getMockBuilder(
++            StoreInterface::class
++        )->disableOriginalConstructor()
++            ->getMock();
++    }
++
++    /**
++     * Verify that only authorized request will be able to change groupId
++     *
++     * @param int $groupId
++     * @param int $customerId
++     * @param bool $isAllowed
++     * @param int $willThrowException
++     * @return void
++     * @throws AuthorizationException
++     * @throws LocalizedException
++     * @dataProvider customerDataProvider
++     */
++    public function testBeforeCreateAccount(
++        int $groupId,
++        int $customerId,
++        bool $isAllowed,
++        int $willThrowException
++    ): void {
++        if ($willThrowException) {
++            $this->expectException(AuthorizationException::class);
++        } else {
++            $this->expectNotToPerformAssertions();
++        }
++        $this->authorizationMock
++            ->expects($this->once())
++            ->method('isAllowed')
++            ->with('Magento_Customer::manage')
++            ->willReturn($isAllowed);
++
++        $customer =  $this->getMockBuilder(CustomerInterface::class)
++            ->addMethods(['setData'])
++            ->getMockForAbstractClass();
++        $customer->method('getGroupId')->willReturn($groupId);
++        $customer->method('getId')->willReturn($customerId);
++        $customer->method('getWebsiteId')->willReturn(2);
++        $customer->method('getStoreId')->willReturn(1);
++        $customer->method('setData')->willReturn(1);
++
++        $this->customerRepository->method('get')->willReturn($customer);
++        $this->customerRepository->method('getById')->with($customerId)->willReturn($customer);
++        $this->customerRepository->method('save')->willReturn($customer);
++
++        if (!$willThrowException) {
++            $this->accountManagementMock->method('createAccountWithPasswordHash')->willReturn($customer);
++            $this->storeMock->expects($this->any())->method('getId')->willReturnOnConsecutiveCalls(2, 1);
++            $this->random->method('getUniqueHash')->willReturn('testabc');
++            $date = $this->getMockBuilder(\DateTime::class)
++            ->disableOriginalConstructor()
++            ->getMock();
++            $this->dateTimeFactory->expects(static::once())
++            ->method('create')
++            ->willReturn($date);
++            $date->expects(static::once())
++            ->method('format')
++            ->with('Y-m-d H:i:s')
++            ->willReturn('2015-01-01 00:00:00');
++            $this->customerRegistry->method('retrieveSecureData')->willReturn($this->customerSecure);
++            $this->storeManager->method('getStores')
++            ->willReturn([$this->storeMock]);
++        }
++        $this->accountManagement->createAccount($customer);
++    }
++
++    /**
++     * @return array
++     */
++    public function customerDataProvider(): array
++    {
++        return [
++            [3, 1, false, 1],
++            [3, 1, true, 0]
++        ];
++    }
++}
+diff --git a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
+index 8ff6a8585212f..cbe0a18e4b178 100644
+--- a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
++++ b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
+@@ -1222,7 +1222,6 @@ public function testCreateAccountWithGroupId(): void
+         $minPasswordLength = 5;
+         $minCharacterSetsNum = 2;
+         $defaultGroupId = 1;
+-        $requestedGroupId = 3;
+ 
+         $datetime = $this->prepareDateTimeFactory();
+ 
+@@ -1299,9 +1298,6 @@ public function testCreateAccountWithGroupId(): void
+                     return null;
+                 }
+             }));
+-        $customer->expects($this->atLeastOnce())
+-            ->method('getGroupId')
+-            ->willReturn($requestedGroupId);
+         $customer
+             ->method('setGroupId')
+             ->willReturnOnConsecutiveCalls(null, $defaultGroupId);
+diff --git a/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php b/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
+new file mode 100644
+index 0000000000000..107df2c2863ef
+--- /dev/null
++++ b/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
+@@ -0,0 +1,112 @@
++<?php
++/**
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
++ */
++declare(strict_types=1);
++
++namespace Magento\Customer\Test\Unit\Plugin;
++
++use Magento\AsynchronousOperations\Model\MassSchedule;
++use Magento\Customer\Api\CustomerRepositoryInterface;
++use Magento\Customer\Api\Data\CustomerInterface;
++use Magento\Framework\Authorization;
++use Magento\Framework\Exception\AuthorizationException;
++use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
++use Magento\Customer\Plugin\AsyncRequestCustomerGroupAuthorization;
++use PHPUnit\Framework\MockObject\MockObject;
++use PHPUnit\Framework\TestCase;
++
++/**
++ * Test for validating anonymous request for asynchronous operations containing group id.
++ */
++class AsyncRequestCustomerGroupAuthorizationTest extends TestCase
++{
++    /**
++     * @var Authorization|MockObject
++     */
++    private $authorizationMock;
++
++    /**
++     * @var AsyncRequestCustomerGroupAuthorization
++     */
++    private $plugin;
++
++    /**
++     * @var MassSchedule|MockObject
++     */
++    private $massScheduleMock;
++
++    /**
++     * @var CustomerRepositoryInterface|MockObject
++     */
++    private $customerRepository;
++
++    /**
++     * @inheritDoc
++     */
++    protected function setUp(): void
++    {
++        $objectManager = new ObjectManager($this);
++        $this->authorizationMock = $this->createMock(Authorization::class);
++        $this->plugin = $objectManager->getObject(AsyncRequestCustomerGroupAuthorization::class, [
++            'authorization' => $this->authorizationMock
++        ]);
++        $this->massScheduleMock = $this->createMock(MassSchedule::class);
++        $this->customerRepository = $this->getMockForAbstractClass(CustomerRepositoryInterface::class);
++    }
++
++    /**
++     * Verify that only authorized request will be able to change groupId
++     *
++     * @param int $groupId
++     * @param int $customerId
++     * @param bool $isAllowed
++     * @param int $willThrowException
++     * @return void
++     * @throws AuthorizationException
++     * @dataProvider customerDataProvider
++     */
++    public function testBeforePublishMass(
++        int $groupId,
++        int $customerId,
++        bool $isAllowed,
++        int $willThrowException
++    ): void {
++        if ($willThrowException) {
++            $this->expectException(AuthorizationException::class);
++        } else {
++            $this->expectNotToPerformAssertions();
++        }
++        $customer = $this->getMockForAbstractClass(CustomerInterface::class);
++        $customer->method('getGroupId')->willReturn($groupId);
++        $customer->method('getId')->willReturn($customerId);
++        $this->customerRepository->method('getById')->with($customerId)->willReturn($customer);
++        $entitiesArray = [
++            [$customer, 'Password1', '']
++        ];
++        $this->authorizationMock
++            ->expects($this->once())
++            ->method('isAllowed')
++            ->with('Magento_Customer::manage')
++            ->willReturn($isAllowed);
++        $this->plugin->beforePublishMass(
++            $this->massScheduleMock,
++            'async.magento.customer.api.accountmanagementinterface.createaccount.post',
++            $entitiesArray,
++            '',
++            ''
++        );
++    }
++
++    /**
++     * @return array
++     */
++    public function customerDataProvider(): array
++    {
++        return [
++            [3, 1, false, 1],
++            [3, 1, true, 0]
++        ];
++    }
++}
+diff --git a/vendor/magento/module-customer/composer.json b/vendor/magento/module-customer/composer.json
+index 2d76da56bff7d..ff34d423c2da5 100644
+--- a/vendor/magento/module-customer/composer.json
++++ b/vendor/magento/module-customer/composer.json
+@@ -35,5 +35,6 @@
+     "suggest": {
+         "magento/module-cookie": "100.4.*",
+         "magento/module-customer-sample-data": "Sample Data version: 100.4.*",
+-        "magento/module-webapi": "100.4.*"
++        "magento/module-webapi": "100.4.*",
++        "magento/module-asynchronous-operations": "100.4.*"
+     },
+
+diff --git a/vendor/magento/module-customer/etc/di.xml b/vendor/magento/module-customer/etc/di.xml
+index 31b79935ad9ab..4cda16e121c97 100644
+--- a/vendor/magento/module-customer/etc/di.xml
++++ b/vendor/magento/module-customer/etc/di.xml
+@@ -567,4 +567,9 @@
+             </argument>
+         </arguments>
+     </type>
++    <type name="Magento\AsynchronousOperations\Model\MassSchedule">
++        <plugin name="anonymousAsyncCustomerRequest"
++                type="Magento\Customer\Plugin\AsyncRequestCustomerGroupAuthorization"
++        />
++    </type>
+ </config>
+
+---
+ ...AsyncRequestCustomerGroupAuthorization.php |  6 +-
+ app/code/Magento/Quote/etc/webapi.xml         |  3 +
+ .../Rest/Asynchronous/InputParamsResolver.php | 96 ++++++++++++++++++-
+ .../Quote/Api/GuestCartManagementTest.php     |  2 +-
+ 4 files changed, 102 insertions(+), 5 deletions(-)
+
+diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
+index 5b5c8ce1fc0ca..0aa2b8bfb1d18 100644
+--- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
++++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
+@@ -9,7 +9,6 @@
+ namespace Magento\Customer\Plugin;
+ 
+ use Magento\Customer\Api\Data\CustomerInterface;
+-use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\AuthorizationInterface;
+ use Magento\Framework\Exception\AuthorizationException;
+ use Magento\AsynchronousOperations\Model\MassSchedule;
+@@ -60,6 +59,11 @@ public function beforePublishMass(
+         string       $groupId = null,
+         string       $userId = null
+     ) {
++        // only apply the plugin on account create.
++        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
++            return;
++        }
++
+         foreach ($entitiesArray as $entityParams) {
+             foreach ($entityParams as $entity) {
+                 if ($entity instanceof CustomerInterface) {
+diff --git a/vendor/magento/module-quote/etc/webapi.xml b/vendor/magento/module-quote/etc/webapi.xml
+index 79d98968ea198..a7cce5b03a26d 100644
+--- a/vendor/magento/module-quote/etc/webapi.xml
++++ b/vendor/magento/module-quote/etc/webapi.xml
+@@ -98,6 +98,9 @@
+         <resources>
+             <resource ref="self" />
+         </resources>
++        <data>
++            <parameter name="customerId" force="true">%customer_id%</parameter>
++        </data>
+     </route>
+     <route url="/V1/guest-carts/:cartId/order" method="PUT">
+         <service class="Magento\Quote\Api\GuestCartManagementInterface" method="placeOrder"/>
+diff --git a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
+index 6718087888bc5..93555559ac9a1 100644
+--- a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
++++ b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
+@@ -8,10 +8,12 @@
+ 
+ namespace Magento\WebapiAsync\Controller\Rest\Asynchronous;
+ 
++use Magento\Framework\Api\SimpleDataObjectConverter;
+ use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\Exception\AuthorizationException;
+ use Magento\Framework\Exception\InputException;
+ use Magento\Framework\Exception\LocalizedException;
++use Magento\Framework\Reflection\MethodsMap;
+ use Magento\Framework\Webapi\Exception;
+ use Magento\Framework\Webapi\Rest\Request as RestRequest;
+ use Magento\Framework\Webapi\ServiceInputProcessor;
+@@ -24,6 +26,8 @@
+ 
+ /**
+  * This class is responsible for retrieving resolved input data
++ *
++ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+  */
+ class InputParamsResolver
+ {
+@@ -61,6 +65,11 @@ class InputParamsResolver
+      */
+     private $inputArraySizeLimitValue;
+ 
++    /**
++     * @var MethodsMap
++     */
++    private $methodsMap;
++
+     /**
+      * Initialize dependencies.
+      *
+@@ -72,6 +81,7 @@ class InputParamsResolver
+      * @param WebapiInputParamsResolver $inputParamsResolver
+      * @param bool $isBulk
+      * @param InputArraySizeLimitValue|null $inputArraySizeLimitValue
++     * @param MethodsMap|null $methodsMap
+      */
+     public function __construct(
+         RestRequest $request,
+@@ -81,7 +91,8 @@ public function __construct(
+         RequestValidator $requestValidator,
+         WebapiInputParamsResolver $inputParamsResolver,
+         bool $isBulk = false,
+-        ?InputArraySizeLimitValue $inputArraySizeLimitValue = null
++        ?InputArraySizeLimitValue $inputArraySizeLimitValue = null,
++        ?MethodsMap $methodsMap = null
+     ) {
+         $this->request = $request;
+         $this->paramsOverrider = $paramsOverrider;
+@@ -92,6 +103,8 @@ public function __construct(
+         $this->isBulk = $isBulk;
+         $this->inputArraySizeLimitValue = $inputArraySizeLimitValue ?? ObjectManager::getInstance()
+                 ->get(InputArraySizeLimitValue::class);
++        $this->methodsMap = $methodsMap ?? ObjectManager::getInstance()
++            ->get(MethodsMap::class);
+     }
+ 
+     /**
+@@ -119,7 +132,13 @@ public function resolve()
+         $routeServiceMethod = $route->getServiceMethod();
+         $this->inputArraySizeLimitValue->set($route->getInputArraySizeLimit());
+ 
++        $this->validateParameters($routeServiceClass, $routeServiceMethod, array_keys($route->getParameters()));
++
+         foreach ($inputData as $key => $singleEntityParams) {
++            if (!is_array($singleEntityParams)) {
++                continue;
++            }
++
+             $webapiResolvedParams[$key] = $this->resolveBulkItemParams(
+                 $singleEntityParams,
+                 $routeServiceClass,
+@@ -143,11 +162,22 @@ public function getInputData()
+         $inputData = $this->request->getRequestData();
+ 
+         $httpMethod = $this->request->getHttpMethod();
+-        if ($httpMethod == RestRequest::HTTP_METHOD_DELETE) {
++        if ($httpMethod === RestRequest::HTTP_METHOD_DELETE) {
+             $requestBodyParams = $this->request->getBodyParams();
+             $inputData = array_merge($requestBodyParams, $inputData);
+         }
+-        return $inputData;
++
++        return array_map(function ($singleEntityParams) {
++            if (is_array($singleEntityParams)) {
++                $singleEntityParams = $this->filterInputData($singleEntityParams);
++                $singleEntityParams = $this->paramsOverrider->override(
++                    $singleEntityParams,
++                    $this->getRoute()->getParameters()
++                );
++            }
++
++            return $singleEntityParams;
++        }, $inputData);
+     }
+ 
+     /**
+@@ -180,4 +210,64 @@ private function resolveBulkItemParams(array $inputData, string $serviceClass, s
+     {
+         return $this->serviceInputProcessor->process($serviceClass, $serviceMethod, $inputData);
+     }
++
++    /**
++     * Validates InputData
++     *
++     * @param array $inputData
++     * @return array
++     */
++    private function filterInputData(array $inputData): array
++    {
++        $result = [];
++
++        $data = array_filter($inputData, function ($k) use (&$result) {
++            $key = is_string($k) ? strtolower(str_replace('_', "", $k)) : $k;
++            return !isset($result[$key]) && ($result[$key] = true);
++        }, ARRAY_FILTER_USE_KEY);
++
++        return array_map(function ($value) {
++            return is_array($value) ? $this->filterInputData($value) : $value;
++        }, $data);
++    }
++
++    /**
++     * Validate that parameters are really used in the current request.
++     *
++     * @param string $serviceClassName
++     * @param string $serviceMethodName
++     * @param array $paramOverriders
++     */
++    private function validateParameters(
++        string $serviceClassName,
++        string $serviceMethodName,
++        array $paramOverriders
++    ): void {
++        $methodParams = $this->methodsMap->getMethodParams($serviceClassName, $serviceMethodName);
++        foreach ($paramOverriders as $key => $param) {
++            $arrayKeys = explode('.', $param ?? '');
++            $value = array_shift($arrayKeys);
++
++            foreach ($methodParams as $serviceMethodParam) {
++                $serviceMethodParamName = $serviceMethodParam[MethodsMap::METHOD_META_NAME];
++                $serviceMethodType = $serviceMethodParam[MethodsMap::METHOD_META_TYPE];
++
++                $camelCaseValue = SimpleDataObjectConverter::snakeCaseToCamelCase($value);
++                if ($serviceMethodParamName === $value || $serviceMethodParamName === $camelCaseValue) {
++                    if (count($arrayKeys) > 0) {
++                        $camelCaseKey = SimpleDataObjectConverter::snakeCaseToCamelCase('set_' . $arrayKeys[0]);
++                        $this->validateParameters($serviceMethodType, $camelCaseKey, [implode('.', $arrayKeys)]);
++                    }
++                    unset($paramOverriders[$key]);
++                    break;
++                }
++            }
++        }
++
++        if (!empty($paramOverriders)) {
++             $message = 'The current request does not expect the next parameters: '
++                 . implode(', ', $paramOverriders);
++             throw new \UnexpectedValueException(__($message)->__toString());
++        }
++    }
+ }
+diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
+index ce9e4ee941785..44533303c632d 100644
+--- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
++++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
+@@ -339,7 +339,7 @@ public function testPlaceOrder()
+     public function testAssignCustomerByGuestUser()
+     {
+         $this->expectException(\Exception::class);
+-        $this->expectExceptionMessage('You don\'t have the correct permissions to assign the customer to the cart.');
++        $this->expectExceptionMessage('Enter and try again.');
+ 
+         /** @var $quote \Magento\Quote\Model\Quote */
+         $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load('test01', 'reserved_order_id');
+
+---
+ .../Magento/Quote/Api/GuestCartManagementTest.php        | 9 ++++++---
+ .../Magento/Test/Php/_files/phpcpd/blacklist/common.txt  | 3 ++-
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
+index 44533303c632d..e08fe0388cfbe 100644
+--- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
++++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
+@@ -10,10 +10,13 @@
+ 
+ class GuestCartManagementTest extends WebapiAbstract
+ {
+-    const SERVICE_VERSION = 'V1';
+-    const SERVICE_NAME = 'quoteGuestCartManagementV1';
+-    const RESOURCE_PATH = '/V1/guest-carts/';
++    public const SERVICE_VERSION = 'V1';
++    public const SERVICE_NAME = 'quoteGuestCartManagementV1';
++    public const RESOURCE_PATH = '/V1/guest-carts/';
+ 
++    /**
++     * @var array List of created quotes
++     */
+     protected $createdQuotes = [];
+ 
+     /**
+diff --git a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
+index 9991dd4e05fe7..dc98670bd000f 100644
+--- a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
++++ b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
+@@ -110,4 +110,5 @@ app/code/Magento/Elasticsearch/Model/Layer/Search/ItemCollectionProvider.php
+ app/code/Magento/Newsletter/Model/Queue/TransportBuilder.php
+ app/code/Magento/ConfigurableProduct/view/adminhtml/templates/catalog/product/edit/attribute/steps/bulk.phtml
+ app/code/Magento/GoogleGtag
+-app/code/Magento/AdminAdobeIms/Observer/AuthObserver
+\ No newline at end of file
++app/code/Magento/AdminAdobeIms/Observer/AuthObserver
++app/code/Magento/WebapiAsync/Controller/Rest/Asynchronous/InputParamsResolver.php
+
+---
+ .../Plugin/AsyncRequestCustomerGroupAuthorization.php    | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
+index 0aa2b8bfb1d18..295b33d2db14a 100644
+--- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
++++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
+@@ -25,6 +25,13 @@ class AsyncRequestCustomerGroupAuthorization
+      */
+     public const ADMIN_RESOURCE = 'Magento_Customer::manage';
+ 
++    /**
++     * account create topic name
++     *
++     * @var string
++     */
++    private const TOPIC_NAME = 'async.magento.customer.api.accountmanagementinterface.createaccount.post';
++
+     /**
+      * @var AuthorizationInterface
+      */
+@@ -60,7 +67,7 @@ public function beforePublishMass(
+         string       $userId = null
+     ) {
+         // only apply the plugin on account create.
+-        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
++        if ($topic !== self::TOPIC_NAME) {
+             return;
+         }
+ 
