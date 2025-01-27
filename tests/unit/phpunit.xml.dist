@@ -11,6 +11,11 @@
             <directory suffix="Test.php">../../src/Test/Unit</directory>
         </testsuite>
     </testsuites>
+     <source>
+        <include>
+            <directory>../../src</directory>
+        </include>
+    </source>
     
     <php>
         <ini name="date.timezone" value="UTC"/>
