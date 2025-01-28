@@ -152,7 +152,7 @@ class Patch implements PatchInterface
      * Set the ID
      *
      * @return $this
-    */
+     */
     public function setId($id): string
     {
         $this->id = $id;

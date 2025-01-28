@@ -39,29 +39,29 @@ class AggregatorTest extends TestCase
     }
 
   /**
- * Tests patch aggregation.
- */
-public function testAggregate()
-{
-    $patch1CE = $this->createPatch('MC-1', 'Patch1 CE');
-    $patch1EE = $this->createPatch('MC-1', 'Patch1 EE');
-    $patch1B2B = $this->createPatch('MC-1', 'Patch1 B2B');
-    $patch2CE = $this->createPatch('MC-2', 'Patch2 CE');
-    $patch2EE = $this->createPatch('MC-2', 'Patch2 EE');
-    $patch3 = $this->createPatch('MC-3', 'Patch3');
+   * Tests patch aggregation.
+   */
+    public function testAggregate()
+    {
+        $patch1CE = $this->createPatch('MC-1', 'Patch1 CE');
+        $patch1EE = $this->createPatch('MC-1', 'Patch1 EE');
+        $patch1B2B = $this->createPatch('MC-1', 'Patch1 B2B');
+        $patch2CE = $this->createPatch('MC-2', 'Patch2 CE');
+        $patch2EE = $this->createPatch('MC-2', 'Patch2 EE');
+        $patch3 = $this->createPatch('MC-3', 'Patch3');
 
-    // Mock AggregatedPatchInterface to return the patches when getPatches is called
-    $aggregatedPatchMock1 = $this->createMock(AggregatedPatchInterface::class);
-    $aggregatedPatchMock1->method('getRequire')->willReturn([$patch1CE, $patch1EE, $patch1B2B]);
+        // Mock AggregatedPatchInterface to return the patches when getPatches is called
+        $aggregatedPatchMock1 = $this->createMock(AggregatedPatchInterface::class);
+        $aggregatedPatchMock1->method('getRequire')->willReturn([$patch1CE, $patch1EE, $patch1B2B]);
 
-    $aggregatedPatchMock2 = $this->createMock(AggregatedPatchInterface::class);
-    $aggregatedPatchMock2->method('getRequire')->willReturn([$patch2CE, $patch2EE]);
+        $aggregatedPatchMock2 = $this->createMock(AggregatedPatchInterface::class);
+        $aggregatedPatchMock2->method('getRequire')->willReturn([$patch2CE, $patch2EE]);
 
-    $aggregatedPatchMock3 = $this->createMock(AggregatedPatchInterface::class);
-    $aggregatedPatchMock3->method('getRequire')->willReturn([$patch3]);
+        $aggregatedPatchMock3 = $this->createMock(AggregatedPatchInterface::class);
+        $aggregatedPatchMock3->method('getRequire')->willReturn([$patch3]);
 
-    // Setting up the factory mock to return AggregatedPatchInterface mocks
-    $this->aggregatedPatchFactory->expects($this->exactly(3))
+        // Setting up the factory mock to return AggregatedPatchInterface mocks
+        $this->aggregatedPatchFactory->expects($this->exactly(3))
         ->method('create')
         ->willReturnOnConsecutiveCalls(
             $aggregatedPatchMock1,  // First call returns this AggregatedPatchInterface mock
@@ -69,12 +69,12 @@ public function testAggregate()
             $aggregatedPatchMock3   // Third call returns this AggregatedPatchInterface mock
         );
 
-    $result = $this->aggregator->aggregate(
-        [$patch1CE, $patch1EE, $patch1B2B, $patch2CE, $patch2EE, $patch3]
-    );
+        $result = $this->aggregator->aggregate(
+            [$patch1CE, $patch1EE, $patch1B2B, $patch2CE, $patch2EE, $patch3]
+        );
 
-    $this->assertTrue(is_array($result));
-}
+        $this->assertTrue(is_array($result));
+    }
 
 
     /**

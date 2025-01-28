@@ -327,10 +327,9 @@ class OptionalPoolTest extends TestCase
         $patch->method('getOrigin')->willReturn(SupportCollector::ORIGIN);
 
         // To avoid dynamically adding properties, use __toString method instead
-        $patch->method('__toString')->willReturn($id); 
+        $patch->method('__toString')->willReturn($id);
 
         return $patch;
-
     }
 
     /**

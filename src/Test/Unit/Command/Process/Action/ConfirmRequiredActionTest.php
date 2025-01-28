@@ -91,7 +91,7 @@ class ConfirmRequiredActionTest extends TestCase
         $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getAdditionalRequiredPatches')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
                 if ($filter === $patchFilter) {
                     return [$patch1];
                 }
@@ -108,8 +108,8 @@ class ConfirmRequiredActionTest extends TestCase
         $this->renderer->expects($this->once())
             ->method('printTable')
             ->with($outputMock, [$aggregatedPatch])
-            ->willReturnCallback(function($output) use ($outputMock, $aggregatedPatch) {
-                if ($output === $outputMock && $aggregatedPatch === [$aggregatedPatch] ) {
+            ->willReturnCallback(function ($output) use ($outputMock, $aggregatedPatch) {
+                if ($output === $outputMock && $aggregatedPatch === [$aggregatedPatch]) {
                     throw new RuntimeException('Error message');
                 }
                 return null;
@@ -159,7 +159,7 @@ class ConfirmRequiredActionTest extends TestCase
         $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getAdditionalRequiredPatches')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
                 if ($filter === $patchFilter) {
                     return [$patch1];
                 }

@@ -76,7 +76,7 @@ class RendererTest extends TestCase
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $outputMock->expects($this->atLeastOnce())
             ->method('writeln')
-            ->willReturnCallback(function($filter) use ($expectedArray) {
+            ->willReturnCallback(function ($filter) use ($expectedArray) {
                 if ($filter === $expectedArray) {
                     return $expectedArray;
                 }
