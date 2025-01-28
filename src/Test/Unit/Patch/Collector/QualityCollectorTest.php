@@ -223,7 +223,7 @@ class QualityCollectorTest extends TestCase
         $config = require __DIR__ . '/Fixture/quality_config_invalid.php';
 
         $expectedExceptionMessage = 'Patch MDVA-2033 has invalid configuration:' .
-            PHP_EOL . ' - Property \'file\' is not found in \'2.2.0 - 2.2.5\' ' .
+            PHP_EOL . ' - Property \'file\' is not found in \'2.2.0 - 2.2.5\'' .
             PHP_EOL . ' - Property \'require\' from \'2.2.0 - 2.2.5\' should have an array type' .
             PHP_EOL . ' - Property \'replaced-with\' from \'2.2.0 - 2.2.5\' should have a string type' .
             PHP_EOL . ' - Property \'deprecated\' from \'2.2.0 - 2.2.5\' should have a boolean type';
