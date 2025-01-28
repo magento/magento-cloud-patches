@@ -65,24 +65,14 @@ class LocalCollectorTest extends TestCase
 
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setId')
-            ->willReturnCallback(function () use (&$callCount, $shortPath1, $shortPath2) {
-                $callCount++;
-                if ($callCount === 1) {
-                    return $shortPath1;
-                } elseif ($callCount === 2) {
-                    return $shortPath12;
-                }
-            });
+            ->with(
+                $this->logicalOr($this->equalTo($shortPath1), $this->equalTo($shortPath2))
+            );
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setTitle')
-            ->willReturnCallback(function () use (&$callCount, $shortPath1, $shortPath2) {
-                $callCount++;
-                if ($callCount === 1) {
-                    return $shortPath1;
-                } elseif ($callCount === 2) {
-                    return $shortPath12;
-                }
-            });
+            ->with(
+                $this->logicalOr($this->equalTo($shortPath1), $this->equalTo($shortPath2))
+            );
 
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setFilename')

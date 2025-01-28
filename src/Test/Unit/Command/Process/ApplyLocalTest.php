@@ -62,7 +62,7 @@ class ApplyLocalTest extends TestCase
     protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->localPool = $this->createMock(LocalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
         $this->rollbackProcessor = $this->createMock(RollbackProcessor::class);
@@ -86,9 +86,9 @@ class ApplyLocalTest extends TestCase
         $expectedMessage = '<info>Hot-fixes were not found. Skipping</info>';
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([]);
         $outputMock->expects($this->once())
@@ -125,7 +125,7 @@ class ApplyLocalTest extends TestCase
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->willReturnCallback(function() use ($patch1, $patch2, $patch3) {
+            ->willReturnCallback(function($patch, $message) use ($patch1, $patch2, $patch3) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [

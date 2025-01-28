@@ -83,7 +83,7 @@ class ProcessorTest extends TestCase
 
         $this->rollbackProcessor->expects($this->once())
             ->method('process')
-            ->willReturnCallback(function() use ($appliedPatch1, $appliedPatch2) {
+            ->willReturnCallback(function($patch) use ($appliedPatch1, $appliedPatch2) {
                 static $callCount = 0;
                 $expectedPatches = [$appliedPatch1, $appliedPatch2];
                 if ($patch === $expectedPatches[$callCount]) {
@@ -96,12 +96,7 @@ class ProcessorTest extends TestCase
             ->willReturn($rollbackMessages);
         $this->conflictAnalyzer->expects($this->once())
             ->method('analyze')
-            ->willReturnCallback(function($filter) use ($failedPatch, $patch1) {
-                    if ($filter === $failedPatch) {
-                        return [$patch1];
-                    }
-                    return [];
-                })
+            ->with($failedPatch)
             ->willReturn($conflictDetails);
         $outputMock->expects($this->exactly(2))
             ->method('writeln')
