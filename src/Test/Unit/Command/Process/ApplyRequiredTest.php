@@ -103,7 +103,7 @@ class ApplyRequiredTest extends TestCase
 
         $this->renderer->expects($this->exactly(3))
             ->method('printPatchInfo')
-            ->willReturnCallback(function($patch, $message) use ($patch1, $patch2, $patch3) {
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [
@@ -140,15 +140,15 @@ class ApplyRequiredTest extends TestCase
 
         $this->applier->method('apply')
             ->with(
-             $this->logicalOr($this->equalTo($patch->getPath()), $this->equalTo($patch->getId()))
+                $this->logicalOr($this->equalTo($patch->getPath()), $this->equalTo($patch->getId()))
             )
             ->willThrowException(new ApplierException('Applier error message'));
 
         $this->conflictProcessor->expects($this->once())
            ->method('process')
            ->with(
-            $this->logicalOr($this->equalTo($outputMock), $this->equalTo($patch), $this->equalTo([]), $this->equalTo('Applier error message'))
-            )
+               $this->logicalOr($this->equalTo($outputMock), $this->equalTo($patch), $this->equalTo([]), $this->equalTo('Applier error message'))
+           )
         ->willThrowException(new RuntimeException('Error message'));
             
         $this->expectException(RuntimeException::class);

@@ -108,12 +108,12 @@ class ApplyOptionalActionTest extends TestCase
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
-                    if ($filter === $patchFilter) {
-                        return [$patch1];
-                    }
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
                     return [];
-                })
+            })
             ->willReturn([$patch1, $patch2, $patch3]);
 
         $this->applier->method('apply')
@@ -124,7 +124,7 @@ class ApplyOptionalActionTest extends TestCase
             ]);
         $this->renderer->expects($this->exactly(3))
         ->method('printPatchInfo')
-        ->willReturnCallback(function($patch, $message) use ($patch1, $patch2, $patch3) {
+        ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
             static $callCount = 0;
             $expectedPatches = [$patch1, $patch2, $patch3];
             $expectedMessages = [
@@ -165,7 +165,7 @@ class ApplyOptionalActionTest extends TestCase
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
                 if ($filter === $patchFilter) {
                     return [$patch1];
                 }
@@ -180,7 +180,6 @@ class ApplyOptionalActionTest extends TestCase
         $outputMock->expects($this->once())
             ->method('writeln')
             ->with(
-                
                 $this->stringContains(
                     'Patch ' . $patch1->getId() .' (' . $patch1->getFilename() . ') was already applied'
                 )
@@ -224,7 +223,9 @@ class ApplyOptionalActionTest extends TestCase
         $this->renderer->expects($this->once())
             ->method('printPatchInfo')
             ->with(
-                $outputMock, $patch1, 'Patch ' . $patch1->getId() .' has been applied'
+                $outputMock,
+                $patch1,
+                'Patch ' . $patch1->getId() .' has been applied'
             );
 
         $this->action->execute($inputMock, $outputMock, $patchFilter);
@@ -261,7 +262,7 @@ class ApplyOptionalActionTest extends TestCase
             });
         $this->conflictProcessor->expects($this->once())
             ->method('process')
-            ->willReturnCallback(function($patch, $message) use ($patch1, $patch2, $patch3) {
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [

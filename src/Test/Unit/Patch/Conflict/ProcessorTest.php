@@ -83,7 +83,7 @@ class ProcessorTest extends TestCase
 
         $this->rollbackProcessor->expects($this->once())
             ->method('process')
-            ->willReturnCallback(function($patch) use ($appliedPatch1, $appliedPatch2) {
+            ->willReturnCallback(function ($patch) use ($appliedPatch1, $appliedPatch2) {
                 static $callCount = 0;
                 $expectedPatches = [$appliedPatch1, $appliedPatch2];
                 if ($patch === $expectedPatches[$callCount]) {
@@ -100,7 +100,7 @@ class ProcessorTest extends TestCase
             ->willReturn($conflictDetails);
         $outputMock->expects($this->exactly(2))
             ->method('writeln')
-            ->willReturnCallback(function($filter) use ($failedPatch) {
+            ->willReturnCallback(function ($filter) use ($failedPatch) {
                 if ($filter === $failedPatch->getId() && $filter === $rollbackMessages) {
                     $this->stringContains('Error: patch ' . $failedPatch->getId() . ' can\'t be applied');
                     $rollbackMessages;

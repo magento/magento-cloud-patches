@@ -105,16 +105,16 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
-                    if ($filter === $patchFilter) {
-                        return [$patch1];
-                    }
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
                     return [];
-                })
+            })
             ->willReturn([$patchMock]);
         $this->optionalPool->expects($this->once())
             ->method('getReplacedBy')
-            ->willReturnCallback(function($patchId) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $patch1) {
                 if ($patchId === $patch1->getId()) {
                     return [$patch1];
                 }
@@ -128,7 +128,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->willReturnCallback(function($patchId) use ($patchFilter) {
+            ->willReturnCallback(function ($patchId) use ($patchFilter) {
                 if ($patchId === $expectedMessage) {
                     $this->stringContains($expectedMessage);
                 }
@@ -157,7 +157,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
                 if ($filter === $patchFilter) {
                     return [$patch1];
                 }
@@ -204,12 +204,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
-                    if ($filter === $patchFilter) {
-                        return [$patch1];
-                    }
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
                     return [];
-                })
+            })
             ->willReturn([$patchMock]);
 
         $this->aggregator->expects($this->once())
@@ -218,7 +218,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getReplacedBy')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
                 if ($filter === $patchFilter) {
                     return [$patch1];
                 }
@@ -228,7 +228,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->willReturnCallback(function($patchId) use ($patchFilter) {
+            ->willReturnCallback(function ($patchId) use ($patchFilter) {
                 if ($patchId === $expectedMessage) {
                     $this->stringContains($expectedMessage);
                 }
@@ -263,12 +263,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-             ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+             ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
                 if ($filter === $patchFilter) {
                     return [$patch1];
                 }
                 return [];
-            })
+             })
             ->willReturn([$patchMock]);
 
         $this->aggregator->expects($this->once())
@@ -303,7 +303,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->willReturnCallback(function($filter) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
                 if ($filter === $patchFilter) {
                     return [$patch1];
                 }
@@ -317,7 +317,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getReplacedBy')
-            ->willReturnCallback(function($patchId) use ($patchFilter, $patch1) {
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $patch1) {
                 if ($patchId === $patch1->getId()) {
                     return [$patch1];
                 }

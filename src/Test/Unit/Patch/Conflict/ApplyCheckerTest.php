@@ -68,12 +68,12 @@ class ApplyCheckerTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->willReturnCallback(function($filter) use ($patchIds, $patch1) {
+            ->willReturnCallback(function ($filter) use ($patchIds, $patch1) {
                 if ($filter === $patchIds) {
                         return [$patch1];
-                    }
+                }
                     return [];
-                })
+            })
             ->willReturn([$patch1, $patch2, $patch3]);
         $this->filesystem->expects($this->exactly(3))
             ->method('get')

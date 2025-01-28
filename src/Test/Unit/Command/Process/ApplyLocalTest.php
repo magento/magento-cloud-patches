@@ -125,7 +125,7 @@ class ApplyLocalTest extends TestCase
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->willReturnCallback(function($patch, $message) use ($patch1, $patch2, $patch3) {
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [
@@ -180,7 +180,7 @@ class ApplyLocalTest extends TestCase
 
         $this->rollbackProcessor->expects($this->once())
             ->method('process')
-            ->willReturnCallback(function($filter) use ($patch1) {
+            ->willReturnCallback(function ($filter) use ($patch1) {
                 if ($filter === $patch1) {
                     return [$patch1];
                 }

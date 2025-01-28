@@ -144,9 +144,10 @@ class QualityCollectorTest extends TestCase
     }
     
     /**
-     * patchBuilder function 
+     * patchBuilder function
      */
-    public function PatchBuildertest(){
+    public function patchBuilderTest()
+    {
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setType')
             ->with(

@@ -116,7 +116,7 @@ class RevertTest extends TestCase
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->willReturnCallback(function($patch, $message) use ($patch1, $patch2) {
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [
@@ -135,8 +135,8 @@ class RevertTest extends TestCase
         $this->revertAction->expects($this->once())
             ->method('execute')
             ->with($inputMock, $outputMock, [])
-            ->willReturnCallback(function($input, $output) use ($inputMock, $outputMock) {
-                if ($output === $outputMock && $input === $inputMock && $patch === [] ) {
+            ->willReturnCallback(function ($input, $output) use ($inputMock, $outputMock) {
+                if ($output === $outputMock && $input === $inputMock && $patch === []) {
                     return true;
                 }
                 return false;
@@ -183,7 +183,7 @@ class RevertTest extends TestCase
         $this->revertAction->expects($this->once())
             ->method('execute')
              ->with($inputMock, $outputMock)
-            ->willReturnCallback(function($input, $output) use ($inputMock, $outputMock) {
+            ->willReturnCallback(function ($input, $output) use ($inputMock, $outputMock) {
                 if ($output === $outputMock && $input === $inputMock) {
                     return true;
                 }

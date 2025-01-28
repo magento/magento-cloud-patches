@@ -80,7 +80,7 @@ class ApplyOptionalTest extends TestCase
             ->with($cliPatchArgument)
             ->willReturn($cliPatchArgument);
 
-       $this->actionPool->expects($this->once())
+        $this->actionPool->expects($this->once())
             ->method('execute')
             ->with($inputMock, $outputMock, $cliPatchArgument);
         $this->applyOptional->run($inputMock, $outputMock);
