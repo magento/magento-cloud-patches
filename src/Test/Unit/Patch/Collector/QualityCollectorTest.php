@@ -134,6 +134,19 @@ class QualityCollectorTest extends TestCase
                 )
             );
 
+        $this->PatchBuildertest();
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('build')
+            ->willReturn($this->createMock(Patch::class));
+
+        $this->assertTrue(is_array($this->collector->collect()));
+    }
+    
+    /**
+     * patchBuilder function 
+     */
+    public function PatchBuildertest(){
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setType')
             ->with(
@@ -193,12 +206,6 @@ class QualityCollectorTest extends TestCase
                     $this->equalTo(true)
                 )
             );
-
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('build')
-            ->willReturn($this->createMock(Patch::class));
-
-        $this->assertTrue(is_array($this->collector->collect()));
     }
 
 
