@@ -170,8 +170,10 @@ class ShowStatusTest extends TestCase
         $this->renderer->expects($this->once())
             ->method('printTable')
             ->with($outputMock, [$patch1, $patch2, $patch5])
-            ->willReturnCallback(function ($output, $patches) use ($outputMock, $patch, $patch2, $patch5) {
-                if ($output === $outputMock && $patches === [$patch2] && $patches === [$patch2] && $patches === [$patch2]) {
+            ->willReturnCallback(function ($output, $patches)
+ use ($outputMock, $patch, $patch2, $patch5) {
+                if ($output === $outputMock && $patches === [$patch2]
+                    && $patches === [$patch2] && $patches === [$patch2]) {
                     return true;
                 }
                 return false;

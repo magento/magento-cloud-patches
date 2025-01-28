@@ -95,7 +95,8 @@ class RevertTest extends TestCase
         $this->revertAction->expects($this->once())
             ->method('execute')
             ->with($inputMock, $outputMock, $cliPatchArgument)
-            ->willReturnCallback(function ($input, $output, $cliPatch) use ($inputMock, $outputMock, $cliPatchArgument) {
+            ->willReturnCallback(function ($input, $output, $cliPatch)
+ use ($inputMock, $outputMock, $cliPatchArgument) {
                 if ($input === $inputMock && $output === $outputMock && $cliPatch === $cliPatchArgument) {
                     return true;
                 }

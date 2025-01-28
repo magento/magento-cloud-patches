@@ -147,10 +147,15 @@ class ApplyRequiredTest extends TestCase
         $this->conflictProcessor->expects($this->once())
             ->method('process')
             ->with(
-                $this->logicalOr($this->equalTo($outputMock), $this->equalTo($patch), $this->equalTo([]), $this->equalTo('Applier error message'))
+                $this->logicalOr(
+                    $this->equalTo($outputMock),
+                    $this->equalTo($patch),
+                    $this->equalTo([]),
+                    $this->equalTo('Applier error message')
+                )
             )
         ->willThrowException(new RuntimeException('Error message'));
-    
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Error message');
 
