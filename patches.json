@@ -294,10 +294,10 @@
       ">=2.4.7 <2.4.7-p2": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.7.patch"
     },
     "Patch for CVE-2025-24434 - Improve-web-api-async": {
-      ">=2.4.4 <2.4.4-p11": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.4.patch",
-      ">=2.4.5 <2.4.5-p10": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.5.patch",
-      ">=2.4.6 <2.4.6-p8": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.6.patch",
-      "2.4.7": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.7.patch"
+      ">=2.4.4 <2.4.4-p12": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.4.patch",
+      ">=2.4.5 <2.4.5-p11": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.5.patch",
+      ">=2.4.6 <2.4.6-p9": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.6.patch",
+      ">=2.4.7 <2.4.7-p5": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.7.patch"
     }
   },
   "magento/module-paypal": {
