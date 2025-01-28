@@ -142,9 +142,7 @@ class ApplyOptionalActionTest extends TestCase
         });
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
-
-
-
+    
     /**
      * Tests successful optional patches applying.
      *
@@ -187,7 +185,6 @@ class ApplyOptionalActionTest extends TestCase
 
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
-
 
     /**
      * Tests successful optional patches applying.

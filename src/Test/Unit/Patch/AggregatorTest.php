@@ -76,7 +76,6 @@ class AggregatorTest extends TestCase
         $this->assertTrue(is_array($result));
     }
 
-
     /**
      * Creates patch mock.
      *

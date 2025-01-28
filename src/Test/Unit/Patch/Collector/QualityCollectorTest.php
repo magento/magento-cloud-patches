@@ -128,9 +128,15 @@ class QualityCollectorTest extends TestCase
             ->method('setPath')
             ->with(
                 $this->logicalOr(
-                    $this->equalTo(self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'),
-                    $this->equalTo(self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'),
-                    $this->equalTo(self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch')
+                    $this->equalTo(
+                        self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'
+                    ),
+                    $this->equalTo(
+                        self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'
+                    ),
+                    $this->equalTo(
+                        self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
+                    )
                 )
             );
 
@@ -209,7 +215,6 @@ class QualityCollectorTest extends TestCase
             );
     }
 
-
     /**
      * Tests collecting patches - invalid configuration
      */
@@ -218,7 +223,7 @@ class QualityCollectorTest extends TestCase
         $config = require __DIR__ . '/Fixture/quality_config_invalid.php';
 
         $expectedExceptionMessage = 'Patch MDVA-2033 has invalid configuration:' .
-            PHP_EOL . ' - Property \'file\' is not found in \'2.2.0 - 2.2.5\'' .
+            PHP_EOL . ' - Property \'file\' is not found in \'2.2.0 - 2.2.5\' ' .
             PHP_EOL . ' - Property \'require\' from \'2.2.0 - 2.2.5\' should have an array type' .
             PHP_EOL . ' - Property \'replaced-with\' from \'2.2.0 - 2.2.5\' should have a string type' .
             PHP_EOL . ' - Property \'deprecated\' from \'2.2.0 - 2.2.5\' should have a boolean type';
