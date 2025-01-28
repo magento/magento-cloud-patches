@@ -148,17 +148,11 @@ class CloudCollectorTest extends TestCase
 
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setType')
-            ->willReturnCallback(function() use ($expectedType1, $expectedType2, $expectedType3) {
-                static $callCount = 0;
-                $expectedType = [$expectedType1, $expectedType2, $expectedType3];
-
-                if ($patch === $expectedType[$callCount]) {
-                    $callCount++;
-                    return true;
-                }
-
-                return false;
-            });
+            ->with($this->logicalOr(
+                $this->equalTo($expectedType),
+                $this->equalTo($expectedType),
+                $this->equalTo($expectedType)
+            ));
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPackageName')
             ->willReturnCallback(function ($args) {

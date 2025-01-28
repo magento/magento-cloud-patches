@@ -91,129 +91,116 @@ class QualityCollectorTest extends TestCase
                 ['magento/magento2-base', '2.1.4 - 2.1.14', false],
                 ['magento/magento2-base', '2.2.0 - 2.2.5', true],
                 ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
-             ]);
-
-        $this->package->method('matchConstraint')
-            ->willReturnMap([
-                ['magento/magento2-base', '2.1.4 - 2.1.14', false],
-                ['magento/magento2-base', '2.2.0 - 2.2.5', true],
-                ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
             ]);
 
+        // Replacing withConsecutive with with() and logicalOr
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setId')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    'MDVA-2470', 'MDVA-2470', 'MDVA-2033'
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('MDVA-2470'),
+                    $this->equalTo('MDVA-2470'),
+                    $this->equalTo('MDVA-2033')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setTitle')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    'Fix asset locker race condition when using Redis',
-                    'Fix asset locker race condition when using Redis',
-                    'Allow DB dumps done with the support module to complete'
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('Fix asset locker race condition when using Redis'),
+                    $this->equalTo('Fix asset locker race condition when using Redis'),
+                    $this->equalTo('Allow DB dumps done with the support module to complete')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setFilename')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
-                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
-                    'MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'),
+                    $this->equalTo('MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'),
+                    $this->equalTo('MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPath')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
-                    self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
-                    self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'),
+                    $this->equalTo(self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'),
+                    $this->equalTo(self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setType')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    PatchInterface::TYPE_OPTIONAL,
-                    PatchInterface::TYPE_OPTIONAL,
-                    PatchInterface::TYPE_OPTIONAL
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(PatchInterface::TYPE_OPTIONAL),
+                    $this->equalTo(PatchInterface::TYPE_OPTIONAL),
+                    $this->equalTo(PatchInterface::TYPE_OPTIONAL)
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPackageName')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    'magento/magento2-base',
-                    'magento/magento2-ee-base',
-                    'magento/magento2-ee-base'
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('magento/magento2-base'),
+                    $this->equalTo('magento/magento2-ee-base'),
+                    $this->equalTo('magento/magento2-ee-base')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPackageConstraint')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    '2.2.0 - 2.2.5',
-                    '2.2.0 - 2.2.5',
-                    '2.2.0 - 2.2.5'
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('2.2.0 - 2.2.5'),
+                    $this->equalTo('2.2.0 - 2.2.5'),
+                    $this->equalTo('2.2.0 - 2.2.5')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setRequire')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    [],
-                    [],
-                    ['MC-11111', 'MC-22222']
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo([]),
+                    $this->equalTo([]),
+                    $this->equalTo(['MC-11111', 'MC-22222'])
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setReplacedWith')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    '',
-                    '',
-                    'MC-33333'
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(''),
+                    $this->equalTo(''),
+                    $this->equalTo('MC-33333')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setDeprecated')
-            ->willReturnCallback(function ($args) {
-                static $series = [
-                    false,
-                    false,
-                    true
-                ];
-                $expectedArgs = array_shift($series);
-                $this->assertSame($expectedArgs, $args);
-            });
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(false),
+                    $this->equalTo(false),
+                    $this->equalTo(true)
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('build')
             ->willReturn($this->createMock(Patch::class));
 
         $this->assertTrue(is_array($this->collector->collect()));
     }
+
 
     /**
      * Tests collecting patches - invalid configuration

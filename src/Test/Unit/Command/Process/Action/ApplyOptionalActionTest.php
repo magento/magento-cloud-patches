@@ -124,7 +124,7 @@ class ApplyOptionalActionTest extends TestCase
             ]);
         $this->renderer->expects($this->exactly(3))
         ->method('printPatchInfo')
-        ->willReturnCallback(function() use ($patch1, $patch2, $patch3) {
+        ->willReturnCallback(function($patch, $message) use ($patch1, $patch2, $patch3) {
             static $callCount = 0;
             $expectedPatches = [$patch1, $patch2, $patch3];
             $expectedMessages = [
@@ -261,7 +261,7 @@ class ApplyOptionalActionTest extends TestCase
             });
         $this->conflictProcessor->expects($this->once())
             ->method('process')
-            ->willReturnCallback(function() use ($patch1, $patch2, $patch3) {
+            ->willReturnCallback(function($patch, $message) use ($patch1, $patch2, $patch3) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [
