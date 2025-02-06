@@ -49,7 +49,7 @@ class ProcessFactory
      * @return Process
      * @throws PackageNotFoundException
      */
-    public function create(array $cmd, string $input = null): Process
+    public function create(array $cmd, ?string $input = null): Process
     {
         return new Process(
             $this->processSupportsArrayParam() ? $cmd : implode(' ', $cmd),

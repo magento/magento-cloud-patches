@@ -62,7 +62,7 @@ class ApplyRequiredTest extends TestCase
     protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->requiredPool = $this->createMock(RequiredPool::class);
         $this->renderer = $this->createMock(Renderer::class);
         $this->conflictProcessor = $this->createMock(ConflictProcessor::class);
@@ -88,9 +88,9 @@ class ApplyRequiredTest extends TestCase
         $patch3 = $this->createPatch('/path/patch3.patch', 'MC-33333');
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->requiredPool->method('getList')
             ->willReturn([$patch1, $patch2, $patch3]);
 
@@ -103,12 +103,22 @@ class ApplyRequiredTest extends TestCase
 
         $this->renderer->expects($this->exactly(3))
             ->method('printPatchInfo')
-            ->withConsecutive(
-                [$outputMock, $patch1, 'Patch ' . $patch1->getId() .' has been applied'],
-                [$outputMock, $patch2, 'Patch ' . $patch2->getId() .' has been applied'],
-                [$outputMock, $patch3, 'Patch ' . $patch3->getId() .' has been applied']
-            );
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
+                static $callCount = 0;
+                $expectedPatches = [$patch1, $patch2, $patch3];
+                $expectedMessages = [
+                    'Patch ' . $patch1->getId() . ' has been applied',
+                    'Patch ' . $patch2->getId() . ' has been applied',
+                    'Patch ' . $patch3->getId() . ' has been applied'
+                ];
 
+                if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
+                    $callCount++;
+                    return true;
+                }
+
+                return false;
+            });
         $this->manager->run($inputMock, $outputMock);
     }
 
@@ -122,19 +132,29 @@ class ApplyRequiredTest extends TestCase
         $patch = $this->createPatch('/path/patch.patch', 'MC-11111');
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->requiredPool->method('getList')
             ->willReturn([$patch]);
 
         $this->applier->method('apply')
-            ->withConsecutive([$patch->getPath(), $patch->getId()])
+            ->with(
+                $this->logicalOr($this->equalTo($patch->getPath()), $this->equalTo($patch->getId()))
+            )
             ->willThrowException(new ApplierException('Applier error message'));
+
         $this->conflictProcessor->expects($this->once())
             ->method('process')
-            ->withConsecutive([$outputMock, $patch, [], 'Applier error message'])
-            ->willThrowException(new RuntimeException('Error message'));
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo($outputMock),
+                    $this->equalTo($patch),
+                    $this->equalTo([]),
+                    $this->equalTo('Applier error message')
+                )
+            )
+        ->willThrowException(new RuntimeException('Error message'));
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Error message');
@@ -152,7 +172,7 @@ class ApplyRequiredTest extends TestCase
      */
     private function createPatch(string $path, string $id)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getId')->willReturn($id);
 

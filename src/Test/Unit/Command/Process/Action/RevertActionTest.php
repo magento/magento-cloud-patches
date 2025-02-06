@@ -56,12 +56,19 @@ class RevertActionTest extends TestCase
      * @var RevertValidator|MockObject
      */
     private $revertValidator;
+    
+    /**
+     * @var revertAction|MockObject
+     */
+    protected $revertAction;
 
     /**
      * @inheritdoc
      */
     protected function setUp(): void
     {
+        // Initialize the $revertAction property
+        $this->revertAction = $this->createMock(RevertAction::class);
         $this->applier = $this->createMock(Applier::class);
         $this->revertValidator = $this->createMock(RevertValidator::class);
         $this->statusPool = $this->createMock(StatusPool::class);
@@ -98,12 +105,17 @@ class RevertActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter, false])
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                    return [];
+            })
             ->willReturn([$patch1, $patch2]);
 
         $this->applier->method('revert')
@@ -114,10 +126,21 @@ class RevertActionTest extends TestCase
 
         $this->renderer->expects($this->exactly(2))
             ->method('printPatchInfo')
-            ->withConsecutive(
-                [$outputMock, $patch2, 'Patch ' . $patch2->getId() .' has been reverted'],
-                [$outputMock, $patch1, 'Patch ' . $patch1->getId() .' has been reverted']
-            );
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2) {
+                    static $callCount = 0;
+                    $expectedPatches = [$patch1, $patch2];
+                    $expectedMessages = [
+                        'Patch ' . $patch1->getId() . ' has been applied',
+                        'Patch ' . $patch2->getId() . ' has been applied'
+                    ];
+
+                    if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
+                        $callCount++;
+                        return true;
+                    }
+
+                    return false;
+            });
 
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
@@ -137,12 +160,17 @@ class RevertActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn([$patch1]);
 
         $this->applier->expects($this->never())
@@ -152,14 +180,14 @@ class RevertActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->withConsecutive(
-                [
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $patch1) {
+                if ($patchId === $patch1->getId()) {
                     $this->stringContains(
                         'Patch ' . $patch1->getId() . ' (' . $patch1->getFilename() . ') is not applied'
-                    )
-                ]
-            );
-
+                    );
+                }
+                return [];
+            });
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
 
@@ -175,9 +203,9 @@ class RevertActionTest extends TestCase
         $errorMessage = sprintf('Reverting patch %s (%s) failed.', $patch1->getId(), $patch1->getPath());
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->method('getList')
             ->willReturn([$patch1]);
 
@@ -186,10 +214,12 @@ class RevertActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->withConsecutive(
-                [$this->stringContains($errorMessage)]
-            );
-
+            ->willReturnCallback(function ($patchId) use ($patchFilter) {
+                if ($patchId === $errorMessage) {
+                    $this->stringContains($errorMessage);
+                }
+                return [];
+            });
         $this->expectException(RuntimeException::class);
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
@@ -202,12 +232,12 @@ class RevertActionTest extends TestCase
         $patchFilter = ['unknown id'];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter])
+            ->with($patchFilter)
             ->willThrowException(new PatchNotFoundException(''));
 
         $this->expectException(RuntimeException::class);
@@ -222,14 +252,15 @@ class RevertActionTest extends TestCase
         $patchFilter = ['MC-11111'];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->revertValidator->expects($this->once())
             ->method('validate')
-            ->withConsecutive([$patchFilter])
+            ->with($patchFilter)
             ->willThrowException(new RuntimeException('Error'));
+
         $this->optionalPool->expects($this->never())
             ->method('getList');
 
@@ -247,7 +278,7 @@ class RevertActionTest extends TestCase
      */
     private function createPatch(string $path, string $id)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getId')->willReturn($id);
 

@@ -319,15 +319,15 @@ class OptionalPoolTest extends TestCase
      */
     private function createPatch(string $id, array $require = [], string $replacedWith = '')
     {
+
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getRequire')->willReturn($require);
         $patch->method('getReplacedWith')->willReturn($replacedWith);
         $patch->method('getOrigin')->willReturn(SupportCollector::ORIGIN);
 
-        // To make mock object unique for assertions and array operations.
-        $patch->id = microtime();
-        $patch->method('__toString')->willReturn($patch->id);
+        // To avoid dynamically adding properties, use __toString method instead
+        $patch->method('__toString')->willReturn($id);
 
         return $patch;
     }

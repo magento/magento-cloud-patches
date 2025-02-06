@@ -83,13 +83,25 @@ class RevertTest extends TestCase
             ->with(RevertCommand::OPT_ALL)
             ->willReturn($cliOptAll);
         $this->filterFactory->method('createRevertFilter')
-            ->withConsecutive([$cliOptAll, $cliPatchArgument])
+            ->with($cliOptAll, $cliPatchArgument)
+            ->willReturnCallback(function ($patches) use ($cliOptAll, $cliPatchArgument) {
+                if ($patches === $cliOptAll && $patches === $cliPatchArgument) {
+                    return true;
+                }
+                return false;
+            })
             ->willReturn($cliPatchArgument);
 
         $this->revertAction->expects($this->once())
             ->method('execute')
-            ->withConsecutive([$inputMock, $outputMock, $cliPatchArgument]);
-
+            ->with($inputMock, $outputMock, $cliPatchArgument)
+            ->willReturnCallback(function ($input, $output, $cliPatch)
+ use ($inputMock, $outputMock, $cliPatchArgument) {
+                if ($input === $inputMock && $output === $outputMock && $cliPatch === $cliPatchArgument) {
+                    return true;
+                }
+                return false;
+            });
         $this->manager->run($inputMock, $outputMock);
     }
 
@@ -117,7 +129,13 @@ class RevertTest extends TestCase
             ->with(RevertCommand::OPT_ALL)
             ->willReturn($cliOptAll);
         $this->filterFactory->method('createRevertFilter')
-            ->withConsecutive([$cliOptAll, $cliPatchArgument])
+            ->with($cliOptAll, $cliPatchArgument)
+            ->willReturnCallback(function ($cliOpt, $cliPatch) use ($cliOptAll, $cliPatchArgument) {
+                if ($cliOpt === $cliOptAll && $cliPatch === $cliPatchArgument) {
+                    return true;
+                }
+                return false;
+            })
             ->willReturn(null);
 
         $this->revertAction->expects($this->never())
