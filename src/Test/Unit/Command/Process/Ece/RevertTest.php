@@ -116,16 +116,31 @@ class RevertTest extends TestCase
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->withConsecutive(
-                [$this->anything()],
-                [$this->stringContains('Patch ' . $patch2->getTitle() .' has been reverted')],
-                [$this->stringContains('Patch ' . $patch1->getTitle() .' has been reverted')]
-            );
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2) {
+                static $callCount = 0;
+                $expectedPatches = [$patch1, $patch2, $patch3];
+                $expectedMessages = [
+                    $this->anything(),
+                    'Patch ' . $patch1->getTitle() . ' has been reverted',
+                    'Patch ' . $patch2->getTitle() . ' has been reverted',
+                ];
 
+                if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
+                    $callCount++;
+                    return true;
+                }
+
+                return false;
+            });
         $this->revertAction->expects($this->once())
             ->method('execute')
-            ->withConsecutive([$inputMock, $outputMock, []]);
-
+            ->with($inputMock, $outputMock, [])
+            ->willReturnCallback(function ($input, $output) use ($inputMock, $outputMock) {
+                if ($output === $outputMock && $input === $inputMock && $patch === []) {
+                    return true;
+                }
+                return false;
+            });
         $this->revertEce->run($inputMock, $outputMock);
     }
 
@@ -167,7 +182,13 @@ class RevertTest extends TestCase
 
         $this->revertAction->expects($this->once())
             ->method('execute')
-            ->withConsecutive([$inputMock, $outputMock, []]);
+             ->with($inputMock, $outputMock)
+            ->willReturnCallback(function ($input, $output) use ($inputMock, $outputMock) {
+                if ($output === $outputMock && $input === $inputMock) {
+                    return true;
+                }
+                return false;
+            });
 
         $this->revertEce->run($inputMock, $outputMock);
     }

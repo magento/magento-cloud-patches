@@ -82,8 +82,7 @@ class ApplyOptionalTest extends TestCase
 
         $this->actionPool->expects($this->once())
             ->method('execute')
-            ->withConsecutive([$inputMock, $outputMock, $cliPatchArgument]);
-
+            ->with($inputMock, $outputMock, $cliPatchArgument);
         $this->applyOptional->run($inputMock, $outputMock);
     }
 
