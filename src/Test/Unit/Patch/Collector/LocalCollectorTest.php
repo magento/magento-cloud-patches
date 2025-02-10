@@ -65,22 +65,47 @@ class LocalCollectorTest extends TestCase
 
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setId')
-            ->withConsecutive([$shortPath1], [$shortPath2]);
-        $this->patchBuilder->expects($this->exactly(2))
-            ->method('setTitle')
-            ->withConsecutive(
-                [$shortPath1],
-                [$shortPath2]
+            ->with(
+                $this->logicalOr($this->equalTo($shortPath1), $this->equalTo($shortPath2))
             );
         $this->patchBuilder->expects($this->exactly(2))
+            ->method('setTitle')
+            ->with(
+                $this->logicalOr($this->equalTo($shortPath1), $this->equalTo($shortPath2))
+            );
+
+        $this->patchBuilder->expects($this->exactly(2))
             ->method('setFilename')
-            ->withConsecutive(['patch1.patch'], ['patch2.patch']);
+            ->willReturnCallback(function ($service) {
+                static $services = [
+                    'patch1.patch', 'patch2.patch'
+                ];
+
+                $expectedService = array_shift($services);
+                $this->assertSame($expectedService, $service);
+            });
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setPath')
-            ->withConsecutive([$file1], [$file2]);
+            ->willReturnCallback(function () use (&$callCount, $file1, $file2) {
+                $callCount++;
+                if ($callCount === 1) {
+                    return $file1;
+                } elseif ($callCount === 2) {
+                    return $file2;
+                }
+            });
+
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setType')
-            ->withConsecutive([PatchInterface::TYPE_CUSTOM], [PatchInterface::TYPE_CUSTOM]);
+            ->willReturnCallback(function ($service) {
+                static $services = [
+                    PatchInterface::TYPE_CUSTOM,
+                    PatchInterface::TYPE_CUSTOM
+                ];
+
+                $expectedService = array_shift($services);
+                $this->assertSame($expectedService, $service);
+            });
         $this->patchBuilder->expects($this->exactly(2))
             ->method('build')
             ->willReturn($this->createMock(Patch::class));

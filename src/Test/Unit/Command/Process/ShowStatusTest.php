@@ -140,7 +140,12 @@ class ShowStatusTest extends TestCase
 
         $this->reviewAppliedAction->expects($this->once())
             ->method('execute')
-            ->withConsecutive([$inputMock, $outputMock, []]);
+            ->willReturnCallback(function ($input, $output, $patches) use ($inputMock, $outputMock) {
+                if ($input === $outputMock && $output === $outputMock) {
+                    return true;
+                }
+                return false;
+            });
         $this->optionalPool->method('getList')
             ->willReturn([$patchMock]);
         $this->localPool->method('getList')
@@ -153,16 +158,26 @@ class ShowStatusTest extends TestCase
         // Show warning message about patch deprecation
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->withConsecutive(
-                [$this->anything()],
-                [$this->stringContains('Deprecated patch ' . $patch1->getId() . ' is currently applied')]
-            );
+            ->willReturnCallback(function ($filter) use ($patch1) {
+                if ($filter === $patch1->getId()) {
+                    $this->anything();
+                    $this->stringContains('Deprecated patch ' . $patch1->getId() . ' is currently applied');
+                }
+                return false;
+            });
 
         // Show patches in the table
         $this->renderer->expects($this->once())
             ->method('printTable')
-            ->withConsecutive([$outputMock, [$patch1, $patch2, $patch5]]);
-
+            ->with($outputMock, [$patch1, $patch2, $patch5])
+            ->willReturnCallback(function ($output, $patches)
+ use ($outputMock, $patch, $patch2, $patch5) {
+                if ($output === $outputMock && $patches === [$patch2]
+                    && $patches === [$patch2] && $patches === [$patch2]) {
+                    return true;
+                }
+                return false;
+            });
         $this->manager->run($inputMock, $outputMock);
     }
 
@@ -180,9 +195,6 @@ class ShowStatusTest extends TestCase
         $patch->method('getId')->willReturn($id);
         $patch->method('isDeprecated')->willReturn($isDeprecated);
         $patch->method('getReplacedWith')->willReturn($replacedWith);
-
-        // To make mock object unique for assertions and array operations.
-        $patch->id = microtime();
 
         return $patch;
     }

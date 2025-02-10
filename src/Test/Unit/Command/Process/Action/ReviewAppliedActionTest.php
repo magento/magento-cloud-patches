@@ -54,7 +54,7 @@ class ReviewAppliedActionTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->statusPool = $this->createMock(StatusPool::class);
         $this->optionalPool = $this->createMock(OptionalPool::class);
 
@@ -82,9 +82,9 @@ class ReviewAppliedActionTest extends TestCase
         }
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->statusPool->method('isApplied')
             ->willReturn(true);
@@ -95,7 +95,7 @@ class ReviewAppliedActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->withConsecutive([$this->stringContains('error')]);
+            ->with($this->stringContains('error'));
 
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
@@ -111,9 +111,9 @@ class ReviewAppliedActionTest extends TestCase
         }
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->statusPool->method('isApplied')
             ->willReturn(true);
@@ -137,7 +137,7 @@ class ReviewAppliedActionTest extends TestCase
      */
     private function createPatch(string $id)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);
 
         return $patch;
