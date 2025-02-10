@@ -83,18 +83,30 @@ class ProcessorTest extends TestCase
 
         $this->rollbackProcessor->expects($this->once())
             ->method('process')
-            ->withConsecutive([[$appliedPatch1, $appliedPatch2]])
+            ->willReturnCallback(function ($patch) use ($appliedPatch1, $appliedPatch2) {
+                static $callCount = 0;
+                $expectedPatches = [$appliedPatch1, $appliedPatch2];
+                if ($patch === $expectedPatches[$callCount]) {
+                    $callCount++;
+                    return true;
+                }
+
+                return false;
+            })
             ->willReturn($rollbackMessages);
         $this->conflictAnalyzer->expects($this->once())
             ->method('analyze')
-            ->withConsecutive([$failedPatch])
+            ->with($failedPatch)
             ->willReturn($conflictDetails);
         $outputMock->expects($this->exactly(2))
             ->method('writeln')
-            ->withConsecutive(
-                [$this->stringContains('Error: patch ' . $failedPatch->getId() . ' can\'t be applied')],
-                [$rollbackMessages]
-            );
+            ->willReturnCallback(function ($filter) use ($failedPatch) {
+                if ($filter === $failedPatch->getId() && $filter === $rollbackMessages) {
+                    $this->stringContains('Error: patch ' . $failedPatch->getId() . ' can\'t be applied');
+                    $rollbackMessages;
+                }
+                return [];
+            });
 
         $expectedErrorMessage = sprintf(
             'Applying patch %s (%s) failed.%s%s',

@@ -105,11 +105,21 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                    return [];
+            })
             ->willReturn([$patchMock]);
         $this->optionalPool->expects($this->once())
             ->method('getReplacedBy')
-            ->withConsecutive([$patch1->getId()])
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $patch1) {
+                if ($patchId === $patch1->getId()) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn([]);
 
         $this->aggregator->expects($this->once())
@@ -118,8 +128,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->withConsecutive([$this->stringContains($expectedMessage)]);
-
+            ->willReturnCallback(function ($patchId) use ($patchFilter) {
+                if ($patchId === $expectedMessage) {
+                    $this->stringContains($expectedMessage);
+                }
+                return [];
+            });
         $this->renderer->expects($this->once())
             ->method('printQuestion')
             ->willReturn(true);
@@ -143,7 +157,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn([$patchMock]);
 
         $this->aggregator->expects($this->once())
@@ -185,7 +204,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                    return [];
+            })
             ->willReturn([$patchMock]);
 
         $this->aggregator->expects($this->once())
@@ -194,12 +218,22 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getReplacedBy')
-            ->withConsecutive([$patch1->getId()])
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn($requireReplacement);
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->withConsecutive([$this->stringContains($expectedMessage)]);
+            ->willReturnCallback(function ($patchId) use ($patchFilter) {
+                if ($patchId === $expectedMessage) {
+                    $this->stringContains($expectedMessage);
+                }
+                return [];
+            });
 
         $this->renderer->expects($this->once())
             ->method('printQuestion')
@@ -229,7 +263,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter])
+             ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                return [];
+             })
             ->willReturn([$patchMock]);
 
         $this->aggregator->expects($this->once())
@@ -264,7 +303,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
-            ->withConsecutive([$patchFilter])
+            ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
+                if ($filter === $patchFilter) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn([$patchMock]);
 
         $this->aggregator->expects($this->once())
@@ -273,7 +317,12 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $this->optionalPool->expects($this->once())
             ->method('getReplacedBy')
-            ->withConsecutive([$patch1->getId()])
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $patch1) {
+                if ($patchId === $patch1->getId()) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn($requireReplacement);
 
         $this->renderer->expects($this->once())

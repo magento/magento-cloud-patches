@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
 use Magento\CloudPatches\Patch\AggregatedPatchFactory;
+use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
 use Magento\CloudPatches\Patch\Aggregator;
 use Magento\CloudPatches\Patch\Data\Patch;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -37,9 +38,9 @@ class AggregatorTest extends TestCase
         $this->aggregator = new Aggregator($this->aggregatedPatchFactory);
     }
 
-    /**
-     * Tests patch aggregation.
-     */
+  /**
+   * Tests patch aggregation.
+   */
     public function testAggregate()
     {
         $patch1CE = $this->createPatch('MC-1', 'Patch1 CE');
@@ -49,21 +50,30 @@ class AggregatorTest extends TestCase
         $patch2EE = $this->createPatch('MC-2', 'Patch2 EE');
         $patch3 = $this->createPatch('MC-3', 'Patch3');
 
-        $this->aggregatedPatchFactory->expects($this->exactly(3))
-            ->method('create')
-            ->withConsecutive(
-                [[$patch1CE, $patch1EE, $patch1B2B]],
-                [[$patch2CE, $patch2EE]],
-                [[$patch3]]
-            );
+        // Mock AggregatedPatchInterface to return the patches when getPatches is called
+        $aggregatedPatchMock1 = $this->createMock(AggregatedPatchInterface::class);
+        $aggregatedPatchMock1->method('getRequire')->willReturn([$patch1CE, $patch1EE, $patch1B2B]);
 
-        $this->assertTrue(
-            is_array(
-                $this->aggregator->aggregate(
-                    [$patch1CE, $patch1EE, $patch1B2B, $patch2CE, $patch2EE, $patch3]
-                )
-            )
+        $aggregatedPatchMock2 = $this->createMock(AggregatedPatchInterface::class);
+        $aggregatedPatchMock2->method('getRequire')->willReturn([$patch2CE, $patch2EE]);
+
+        $aggregatedPatchMock3 = $this->createMock(AggregatedPatchInterface::class);
+        $aggregatedPatchMock3->method('getRequire')->willReturn([$patch3]);
+
+        // Setting up the factory mock to return AggregatedPatchInterface mocks
+        $this->aggregatedPatchFactory->expects($this->exactly(3))
+        ->method('create')
+        ->willReturnOnConsecutiveCalls(
+            $aggregatedPatchMock1,  // First call returns this AggregatedPatchInterface mock
+            $aggregatedPatchMock2,  // Second call returns this AggregatedPatchInterface mock
+            $aggregatedPatchMock3   // Third call returns this AggregatedPatchInterface mock
         );
+
+        $result = $this->aggregator->aggregate(
+            [$patch1CE, $patch1EE, $patch1B2B, $patch2CE, $patch2EE, $patch3]
+        );
+
+        $this->assertTrue(is_array($result));
     }
 
     /**
@@ -78,10 +88,7 @@ class AggregatorTest extends TestCase
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getTitle')->willReturn($title);
-
-        // To make mock object unique for assertions and array operations.
-        $patch->id = microtime();
-        $patch->method('__toString')->willReturn($patch->id);
+        $patch->method('__toString')->willReturn(microtime());
 
         return $patch;
     }

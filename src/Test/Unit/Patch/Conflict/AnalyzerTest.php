@@ -107,7 +107,7 @@ class AnalyzerTest extends TestCase
     /**
      * @return array
      */
-    public function analyzeDataProvider(): array
+    public static function analyzeDataProvider(): array
     {
         return [
             [
