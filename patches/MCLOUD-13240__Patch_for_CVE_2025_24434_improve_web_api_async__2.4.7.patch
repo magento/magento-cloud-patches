@@ -1,5 +1,5 @@
 diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-index 5b5c8ce1fc0ca..295b33d2db14a 100644
+index 5b5c8ce1fc0c..295b33d2db14 100644
 --- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
 +++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
 @@ -9,7 +9,6 @@
@@ -37,7 +37,7 @@ index 5b5c8ce1fc0ca..295b33d2db14a 100644
              foreach ($entityParams as $entity) {
                  if ($entity instanceof CustomerInterface) {
 diff --git a/vendor/magento/module-quote/etc/webapi.xml b/vendor/magento/module-quote/etc/webapi.xml
-index 79d98968ea198..a7cce5b03a26d 100644
+index 79d98968ea19..a7cce5b03a26 100644
 --- a/vendor/magento/module-quote/etc/webapi.xml
 +++ b/vendor/magento/module-quote/etc/webapi.xml
 @@ -98,6 +98,9 @@
@@ -51,7 +51,7 @@ index 79d98968ea198..a7cce5b03a26d 100644
      <route url="/V1/guest-carts/:cartId/order" method="PUT">
          <service class="Magento\Quote\Api\GuestCartManagementInterface" method="placeOrder"/>
 diff --git a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-index 6718087888bc5..7be0b259c251e 100644
+index 6718087888bc..6e159eaddf16 100644
 --- a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
 +++ b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
 @@ -8,10 +8,12 @@
@@ -76,7 +76,7 @@ index 6718087888bc5..7be0b259c251e 100644
   */
  class InputParamsResolver
  {
-@@ -61,6 +65,16 @@ class InputParamsResolver
+@@ -61,6 +65,11 @@ class InputParamsResolver
       */
      private $inputArraySizeLimitValue;
  
@@ -85,15 +85,10 @@ index 6718087888bc5..7be0b259c251e 100644
 +     */
 +    private $methodsMap;
 +
-+    /**
-+     * @var array
-+     */
-+    private array $inputData = [];
-+
      /**
       * Initialize dependencies.
       *
-@@ -72,6 +86,7 @@ class InputParamsResolver
+@@ -72,6 +81,7 @@ class InputParamsResolver
       * @param WebapiInputParamsResolver $inputParamsResolver
       * @param bool $isBulk
       * @param InputArraySizeLimitValue|null $inputArraySizeLimitValue
@@ -101,7 +96,7 @@ index 6718087888bc5..7be0b259c251e 100644
       */
      public function __construct(
          RestRequest $request,
-@@ -81,7 +96,8 @@ public function __construct(
+@@ -81,7 +91,8 @@ public function __construct(
          RequestValidator $requestValidator,
          WebapiInputParamsResolver $inputParamsResolver,
          bool $isBulk = false,
@@ -111,7 +106,7 @@ index 6718087888bc5..7be0b259c251e 100644
      ) {
          $this->request = $request;
          $this->paramsOverrider = $paramsOverrider;
-@@ -92,6 +108,8 @@ public function __construct(
+@@ -92,6 +103,8 @@ public function __construct(
          $this->isBulk = $isBulk;
          $this->inputArraySizeLimitValue = $inputArraySizeLimitValue ?? ObjectManager::getInstance()
                  ->get(InputArraySizeLimitValue::class);
@@ -120,7 +115,7 @@ index 6718087888bc5..7be0b259c251e 100644
      }
  
      /**
-@@ -119,7 +137,13 @@ public function resolve()
+@@ -119,7 +132,13 @@ public function resolve()
          $routeServiceMethod = $route->getServiceMethod();
          $this->inputArraySizeLimitValue->set($route->getInputArraySizeLimit());
  
@@ -134,20 +129,7 @@ index 6718087888bc5..7be0b259c251e 100644
              $webapiResolvedParams[$key] = $this->resolveBulkItemParams(
                  $singleEntityParams,
                  $routeServiceClass,
-@@ -137,17 +161,36 @@ public function resolve()
-      */
-     public function getInputData()
-     {
-+        if (!empty($this->inputData)) {
-+            return $this->inputData;
-+        }
-+
-         if ($this->isBulk === false) {
--            return [$this->inputParamsResolver->getInputData()];
-+            $this->inputData = [$this->inputParamsResolver->getInputData()];
-+
-+            return $this->inputData;
-         }
+@@ -143,11 +162,22 @@ public function getInputData()
          $inputData = $this->request->getRequestData();
  
          $httpMethod = $this->request->getHttpMethod();
@@ -158,7 +140,7 @@ index 6718087888bc5..7be0b259c251e 100644
          }
 -        return $inputData;
 +
-+        $this->inputData = array_map(function ($singleEntityParams) {
++        return array_map(function ($singleEntityParams) {
 +            if (is_array($singleEntityParams)) {
 +                $singleEntityParams = $this->filterInputData($singleEntityParams);
 +                $singleEntityParams = $this->paramsOverrider->override(
@@ -169,12 +151,10 @@ index 6718087888bc5..7be0b259c251e 100644
 +
 +            return $singleEntityParams;
 +        }, $inputData);
-+        
-+        return $this->inputData;
      }
  
      /**
-@@ -180,4 +223,65 @@ private function resolveBulkItemParams(array $inputData, string $serviceClass, s
+@@ -180,4 +210,65 @@ private function resolveBulkItemParams(array $inputData, string $serviceClass, s
      {
          return $this->serviceInputProcessor->process($serviceClass, $serviceMethod, $inputData);
      }
@@ -240,3 +220,26 @@ index 6718087888bc5..7be0b259c251e 100644
 +        }
 +    }
  }
+diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
+index 68cc2c2b2315..6f08b21f3812 100644
+--- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
++++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
+@@ -354,7 +354,7 @@ public function testPlaceOrder()
+     public function testAssignCustomerByGuestUser()
+     {
+         $this->expectException(\Exception::class);
+-        $this->expectExceptionMessage('You don\'t have the correct permissions to assign the customer to the cart.');
++        $this->expectExceptionMessage('Enter and try again.');
+ 
+         /** @var $quote \Magento\Quote\Model\Quote */
+         $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load('test01', 'reserved_order_id');
+diff --git a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
+index 08ba4bba28c6..c9d07aa2abed 100644
+--- a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
++++ b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
+@@ -111,3 +111,4 @@ app/code/Magento/ConfigurableProduct/view/adminhtml/templates/catalog/product/ed
+ app/code/Magento/GoogleGtag
+ app/code/Magento/AdminAdobeIms/Observer/AuthObserver
+ app/code/Magento/OpenSearch/SearchAdapter/Adapter
++app/code/Magento/WebapiAsync/Controller/Rest/Asynchronous/InputParamsResolver.php
+
