@@ -394,6 +394,9 @@
     },
     "Fixes the issue where the file generated after Requisition List export is not removed from the var/ directory": {
       ">=1.3.1 <1.3.6": "MCLOUD-11623__requisition_list_exports_saved_to_var_directory__2.4.5-p1.patch"
+    },
+    "Fixes the issue where an SQL syntax error occurs due to the non-existence of the REGEXP_LIKE function when attempting to update the company_structure table.": {
+      "1.5.2": "MCLOUD-13605__B2B_SQL_syntax_error_due_to_the_REGEXP_LIKE_function__1.5.2.patch"
     }
   },
   "magento/magento2-ee-base": {
