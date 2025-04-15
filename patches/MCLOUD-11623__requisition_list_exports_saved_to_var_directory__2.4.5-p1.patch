@@ -1,0 +1,22 @@
+diff --git a/vendor/magento/module-requisition-list/Controller/Requisition/Export.php b/vendor/magento/module-requisition-list/Controller/Requisition/Export.php
+index e8332a7f1091..7eee2f51b7f4 100644
+--- a/vendor/magento/module-requisition-list/Controller/Requisition/Export.php
++++ b/vendor/magento/module-requisition-list/Controller/Requisition/Export.php
+@@ -101,9 +101,15 @@ public function execute()
+ 
+         $fileName = "{$requisitionList->getName()}.{$writer->getFileExtension()}";
+ 
++        $content = [
++            'type'  => "string",
++            'value' => $this->requisitionListExport->export(),
++            'rm'    => true,
++        ];
++
+         return $this->fileFactory->create(
+             $fileName,
+-            $this->requisitionListExport->export(),
++            $content,
+             DirectoryList::VAR_DIR,
+             $writer->getContentType()
+         );
+

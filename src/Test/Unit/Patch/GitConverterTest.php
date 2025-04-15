@@ -47,7 +47,7 @@ class GitConverterTest extends TestCase
      * phpcs:disable
      * @return array
      */
-    public function convertDataProvider()
+    public static function convertDataProvider()
     {
         return [
             [

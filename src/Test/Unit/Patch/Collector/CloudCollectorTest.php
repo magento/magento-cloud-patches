@@ -105,49 +105,76 @@ class CloudCollectorTest extends TestCase
 
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setId')
-            ->withConsecutive(['MDVA-2470'], ['MDVA-2470'], ['MAGECLOUD-2033']);
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'MDVA-2470', 'MDVA-2470', 'MAGECLOUD-2033'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setTitle')
-            ->withConsecutive(
-                ['Fix asset locker race condition when using Redis'],
-                ['Fix asset locker race condition when using Redis EE'],
-                ['Allow DB dumps done with the support module to complete']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'Fix asset locker race condition when using Redis',
+                    'Fix asset locker race condition when using Redis EE',
+                    'Allow DB dumps done with the support module to complete'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setFilename')
-            ->withConsecutive(
-                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
-                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
-                ['MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
+                    'MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
+                    'MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPath')
-            ->withConsecutive(
-                [self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
-                [self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
-                [self::CLOUD_PATCH_DIR . '/MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch',
+                    self::CLOUD_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch',
+                    self::CLOUD_PATCH_DIR . '/MAGECLOUD-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setType')
-            ->withConsecutive(
-                [$expectedType],
-                [$expectedType],
-                [$expectedType]
-            );
+            ->with($this->logicalOr(
+                $this->equalTo($expectedType),
+                $this->equalTo($expectedType),
+                $this->equalTo($expectedType)
+            ));
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPackageName')
-            ->withConsecutive(
-                ['magento/magento2-base'],
-                ['magento/magento2-ee-base'],
-                ['magento/magento2-ee-base']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    'magento/magento2-base',
+                    'magento/magento2-ee-base',
+                    'magento/magento2-ee-base'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setPackageConstraint')
-            ->withConsecutive(
-                ['2.2.0 - 2.2.5'],
-                ['2.2.0 - 2.2.5'],
-                ['2.2.0 - 2.2.5']
-            );
+            ->willReturnCallback(function ($args) {
+                static $series = [
+                    '2.2.0 - 2.2.5',
+                    '2.2.0 - 2.2.5',
+                    '2.2.0 - 2.2.5'
+                ];
+                $expectedArgs = array_shift($series);
+                $this->assertSame($expectedArgs, $args);
+            });
         $this->patchBuilder->expects($this->exactly(3))
             ->method('build')
             ->willReturn($this->createMock(Patch::class));
@@ -158,7 +185,7 @@ class CloudCollectorTest extends TestCase
     /**
      * @return array
      */
-    public function collectDataProvider(): array
+    public static function collectDataProvider(): array
     {
         return [
             ['isCloud' => false, 'expectedType' => PatchInterface::TYPE_OPTIONAL],
@@ -188,13 +215,13 @@ class CloudCollectorTest extends TestCase
     /**
      * @return array
      */
-    public function invalidPatchFilenameDataProvider(): array
+    public static function invalidPatchFilenameDataProvider(): array
     {
         return [
-            [$this->createConfig('fix_asset_locking_race_condition__2.1.4.patch')],
-            [$this->createConfig('MDVA-2470__fix_asset_locking_race_condition.patch')],
-            [$this->createConfig('MDVA-2470_fix_asset_locking_race_condition__2.1.4.patch')],
-            [$this->createConfig('MDVA-2470__fix_asset_locking_race_condition_2.1.4.patch')],
+            [self::createConfig('fix_asset_locking_race_condition__2.1.4.patch')],
+            [self::createConfig('MDVA-2470__fix_asset_locking_race_condition.patch')],
+            [self::createConfig('MDVA-2470_fix_asset_locking_race_condition__2.1.4.patch')],
+            [self::createConfig('MDVA-2470__fix_asset_locking_race_condition_2.1.4.patch')],
         ];
     }
 
@@ -204,7 +231,7 @@ class CloudCollectorTest extends TestCase
      * @param string $filename
      * @return array
      */
-    private function createConfig(string $filename): array
+    private static function createConfig(string $filename): array
     {
         return [
             'magento/magento2-base' => [
@@ -237,7 +264,7 @@ class CloudCollectorTest extends TestCase
     /**
      * @return array
      */
-    public function invalidTitleSectionDataProvider(): array
+    public static function invalidTitleSectionDataProvider(): array
     {
         return [
             [
