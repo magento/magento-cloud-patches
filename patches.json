@@ -292,6 +292,12 @@
       ">=2.4.5 <2.4.5-p9": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.5.patch",
       ">=2.4.6 <2.4.6-p7": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.6.patch",
       ">=2.4.7 <2.4.7-p2": "MCLOUD-12969__Patch_for_CVE_2024_34102_KeyRotation__2.4.7.patch"
+    },
+    "Patch for CVE-2025-24434 - Improve-web-api-async": {
+      ">=2.4.4 <2.4.4-p12": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.4.patch",
+      ">=2.4.5 <2.4.5-p11": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.5.patch",
+      ">=2.4.6 <2.4.6-p9": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.6.patch",
+      ">=2.4.7 <2.4.7-p4": "MCLOUD-13240__Patch_for_CVE_2025_24434_improve_web_api_async__2.4.7.patch"
     }
   },
   "magento/module-paypal": {
@@ -385,6 +391,12 @@
     },
     "Fields hydration on company account create request": {
       ">=1.3.3 <1.3.3-p11 || >=1.3.4 <1.3.4-p10 || >=1.3.5 <1.3.5-p8 || >=1.4.2 <1.4.2-p3": "B2B-4051__fields_hydration_company_account_create_request__1.3.3.patch"
+    },
+    "Fixes the issue where the file generated after Requisition List export is not removed from the var/ directory": {
+      ">=1.3.1 <1.3.6": "MCLOUD-11623__requisition_list_exports_saved_to_var_directory__2.4.5-p1.patch"
+    },
+    "Fixes the issue where an SQL syntax error occurs due to the non-existence of the REGEXP_LIKE function when attempting to update the company_structure table.": {
+      "1.5.2": "MCLOUD-13605__B2B_SQL_syntax_error_due_to_the_REGEXP_LIKE_function__1.5.2.patch"
     }
   },
   "magento/magento2-ee-base": {

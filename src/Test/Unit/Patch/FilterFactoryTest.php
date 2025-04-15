@@ -46,7 +46,7 @@ class FilterFactoryTest extends TestCase
     /**
      * @return array
      */
-    public function createApplyFilterDataProvider(): array
+    public static function createApplyFilterDataProvider(): array
     {
         return [
             ['inputArgument' => [], 'expectedValue' => null],
@@ -75,7 +75,7 @@ class FilterFactoryTest extends TestCase
     /**
      * @return array
      */
-    public function createRevertFilterDataProvider(): array
+    public static function createRevertFilterDataProvider(): array
     {
         return [
             ['inputArgument' => [], 'optAll' => false, 'expectedValue' => null],

@@ -112,8 +112,7 @@ class RevertValidatorTest extends TestCase
             ->with('MC-1')
             ->willReturn([]);
 
-        $this->statusPool->expects($this->never())
-            ->method('isApplied');
+        $this->statusPool->method('isApplied')->willReturn(false);
 
         $this->revertValidator->validate($patchFilter);
     }

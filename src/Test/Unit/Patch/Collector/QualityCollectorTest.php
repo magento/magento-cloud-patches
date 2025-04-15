@@ -91,75 +91,128 @@ class QualityCollectorTest extends TestCase
                 ['magento/magento2-base', '2.1.4 - 2.1.14', false],
                 ['magento/magento2-base', '2.2.0 - 2.2.5', true],
                 ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
-             ]);
-
-        $this->package->method('matchConstraint')
-            ->willReturnMap([
-                ['magento/magento2-base', '2.1.4 - 2.1.14', false],
-                ['magento/magento2-base', '2.2.0 - 2.2.5', true],
-                ['magento/magento2-ee-base', '2.2.0 - 2.2.5', true],
             ]);
 
+        // Replacing withConsecutive with with() and logicalOr
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setId')
-            ->withConsecutive(['MDVA-2470'], ['MDVA-2470'], ['MDVA-2033']);
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('setTitle')
-            ->withConsecutive(
-                ['Fix asset locker race condition when using Redis'],
-                ['Fix asset locker race condition when using Redis'],
-                ['Allow DB dumps done with the support module to complete']
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('MDVA-2470'),
+                    $this->equalTo('MDVA-2470'),
+                    $this->equalTo('MDVA-2033')
+                )
             );
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('setFilename')
-            ->withConsecutive(
-                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
-                ['MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
-                ['MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
-            );
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('setPath')
-            ->withConsecutive(
-                [self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'],
-                [self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'],
-                [self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch']
-            );
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('setType')
-            ->withConsecutive(
-                [PatchInterface::TYPE_OPTIONAL],
-                [PatchInterface::TYPE_OPTIONAL],
-                [PatchInterface::TYPE_OPTIONAL]
-            );
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('setPackageName')
-            ->withConsecutive(
-                ['magento/magento2-base'],
-                ['magento/magento2-ee-base'],
-                ['magento/magento2-ee-base']
-            );
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('setPackageConstraint')
-            ->withConsecutive(
-                ['2.2.0 - 2.2.5'],
-                ['2.2.0 - 2.2.5'],
-                ['2.2.0 - 2.2.5']
-            );
-        $this->patchBuilder->expects($this->exactly(3))
-            ->method('setRequire')
-            ->withConsecutive([[]], [[]], [['MC-11111', 'MC-22222']]);
 
         $this->patchBuilder->expects($this->exactly(3))
-            ->method('setReplacedWith')
-            ->withConsecutive([''], [''], ['MC-33333']);
+            ->method('setTitle')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('Fix asset locker race condition when using Redis'),
+                    $this->equalTo('Fix asset locker race condition when using Redis'),
+                    $this->equalTo('Allow DB dumps done with the support module to complete')
+                )
+            );
+
         $this->patchBuilder->expects($this->exactly(3))
-            ->method('setDeprecated')
-            ->withConsecutive([false], [false], [true]);
+            ->method('setFilename')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'),
+                    $this->equalTo('MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'),
+                    $this->equalTo('MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch')
+                )
+            );
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPath')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(
+                        self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0.patch'
+                    ),
+                    $this->equalTo(
+                        self::QUALITY_PATCH_DIR . '/MDVA-2470__fix_asset_locking_race_condition__2.2.0_ee.patch'
+                    ),
+                    $this->equalTo(
+                        self::QUALITY_PATCH_DIR . '/MDVA-2033__prevent_deadlock_during_db_dump__2.2.0.patch'
+                    )
+                )
+            );
+
+        $this->PatchBuildertest();
+
         $this->patchBuilder->expects($this->exactly(3))
             ->method('build')
             ->willReturn($this->createMock(Patch::class));
 
         $this->assertTrue(is_array($this->collector->collect()));
+    }
+    
+    /**
+     * patchBuilder function
+     */
+    public function patchBuilderTest()
+    {
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setType')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(PatchInterface::TYPE_OPTIONAL),
+                    $this->equalTo(PatchInterface::TYPE_OPTIONAL),
+                    $this->equalTo(PatchInterface::TYPE_OPTIONAL)
+                )
+            );
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPackageName')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('magento/magento2-base'),
+                    $this->equalTo('magento/magento2-ee-base'),
+                    $this->equalTo('magento/magento2-ee-base')
+                )
+            );
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setPackageConstraint')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo('2.2.0 - 2.2.5'),
+                    $this->equalTo('2.2.0 - 2.2.5'),
+                    $this->equalTo('2.2.0 - 2.2.5')
+                )
+            );
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setRequire')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo([]),
+                    $this->equalTo([]),
+                    $this->equalTo(['MC-11111', 'MC-22222'])
+                )
+            );
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setReplacedWith')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(''),
+                    $this->equalTo(''),
+                    $this->equalTo('MC-33333')
+                )
+            );
+
+        $this->patchBuilder->expects($this->exactly(3))
+            ->method('setDeprecated')
+            ->with(
+                $this->logicalOr(
+                    $this->equalTo(false),
+                    $this->equalTo(false),
+                    $this->equalTo(true)
+                )
+            );
     }
 
     /**

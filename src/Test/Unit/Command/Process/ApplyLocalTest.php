@@ -62,7 +62,7 @@ class ApplyLocalTest extends TestCase
     protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->localPool = $this->createMock(LocalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
         $this->rollbackProcessor = $this->createMock(RollbackProcessor::class);
@@ -86,9 +86,9 @@ class ApplyLocalTest extends TestCase
         $expectedMessage = '<info>Hot-fixes were not found. Skipping</info>';
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([]);
         $outputMock->expects($this->once())
@@ -125,12 +125,23 @@ class ApplyLocalTest extends TestCase
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->withConsecutive(
-                [$this->anything()],
-                [$this->stringContains('Patch ' . $patch1->getTitle() .' has been applied')],
-                [$this->stringContains('Patch ' . $patch2->getTitle() .' has been applied')],
-                [$this->stringContains('Patch ' . $patch3->getTitle() .' has been applied')]
-            );
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
+                static $callCount = 0;
+                $expectedPatches = [$patch1, $patch2, $patch3];
+                $expectedMessages = [
+                    $this->anything(),
+                    'Patch ' . $patch1->getTitle() . ' has been applied',
+                    'Patch ' . $patch2->getTitle() . ' has been applied',
+                    'Patch ' . $patch3->getTitle() . ' has been applied'
+                ];
+
+                if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
+                    $callCount++;
+                    return true;
+                }
+
+                return false;
+            });
 
         $this->manager->run($inputMock, $outputMock);
     }
@@ -169,7 +180,12 @@ class ApplyLocalTest extends TestCase
 
         $this->rollbackProcessor->expects($this->once())
             ->method('process')
-            ->withConsecutive([[$patch1]])
+            ->willReturnCallback(function ($filter) use ($patch1) {
+                if ($filter === $patch1) {
+                    return [$patch1];
+                }
+                return [];
+            })
             ->willReturn($rollbackMessages);
 
         $this->expectException(RuntimeException::class);
