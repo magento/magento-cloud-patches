@@ -1,22 +1,5 @@
-
- ignores group_id
-
----
- .../Customer/Model/AccountManagement.php      |   5 -
- .../Customer/Model/AccountManagementApi.php   | 132 ++++++
- ...AsyncRequestCustomerGroupAuthorization.php |  78 ++++
- .../Unit/Model/AccountManagementApiTest.php   | 421 ++++++++++++++++++
- .../Test/Unit/Model/AccountManagementTest.php |   4 -
- ...cRequestCustomerGroupAuthorizationTest.php | 112 +++++
- app/code/Magento/Customer/composer.json       |   3 +-
- app/code/Magento/Customer/etc/di.xml          |   5 +
- 8 files changed, 750 insertions(+), 10 deletions(-)
- create mode 100644 app/code/Magento/Customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
- create mode 100644 app/code/Magento/Customer/Test/Unit/Model/AccountManagementApiTest.php
- create mode 100644 app/code/Magento/Customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
-
 diff --git a/vendor/magento/module-customer/Model/AccountManagement.php b/vendor/magento/module-customer/Model/AccountManagement.php
-index 6e0aac11d8e98..27c2bf4051ccc 100644
+index 6e0aac11d8e9..27c2bf4051cc 100644
 --- a/vendor/magento/module-customer/Model/AccountManagement.php
 +++ b/vendor/magento/module-customer/Model/AccountManagement.php
 @@ -876,11 +876,6 @@ public function getConfirmationStatus($customerId)
@@ -32,7 +15,7 @@ index 6e0aac11d8e98..27c2bf4051ccc 100644
              $this->checkPasswordStrength($password);
              $customerEmail = $customer->getEmail();
 diff --git a/vendor/magento/module-customer/Model/AccountManagementApi.php b/vendor/magento/module-customer/Model/AccountManagementApi.php
-index 02a05705b57ef..8b4f78ab26c77 100644
+index 02a05705b57e..8b4f78ab26c7 100644
 --- a/vendor/magento/module-customer/Model/AccountManagementApi.php
 +++ b/vendor/magento/module-customer/Model/AccountManagementApi.php
 @@ -6,16 +6,127 @@
@@ -196,10 +179,10 @@ index 02a05705b57ef..8b4f78ab26c77 100644
  }
 diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
 new file mode 100644
-index 0000000000000..5b5c8ce1fc0ca
+index 000000000000..295b33d2db14
 --- /dev/null
 +++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,89 @@
 +<?php
 +/**
 + * Copyright © Magento, Inc. All rights reserved.
@@ -211,7 +194,6 @@ index 0000000000000..5b5c8ce1fc0ca
 +namespace Magento\Customer\Plugin;
 +
 +use Magento\Customer\Api\Data\CustomerInterface;
-+use Magento\Framework\App\ObjectManager;
 +use Magento\Framework\AuthorizationInterface;
 +use Magento\Framework\Exception\AuthorizationException;
 +use Magento\AsynchronousOperations\Model\MassSchedule;
@@ -227,6 +209,13 @@ index 0000000000000..5b5c8ce1fc0ca
 +     * @see _isAllowed()
 +     */
 +    public const ADMIN_RESOURCE = 'Magento_Customer::manage';
++
++    /**
++     * account create topic name
++     *
++     * @var string
++     */
++    private const TOPIC_NAME = 'async.magento.customer.api.accountmanagementinterface.createaccount.post';
 +
 +    /**
 +     * @var AuthorizationInterface
@@ -262,6 +251,11 @@ index 0000000000000..5b5c8ce1fc0ca
 +        string       $groupId = null,
 +        string       $userId = null
 +    ) {
++        // only apply the plugin on account create.
++        if ($topic !== self::TOPIC_NAME) {
++            return;
++        }
++
 +        foreach ($entitiesArray as $entityParams) {
 +            foreach ($entityParams as $entity) {
 +                if ($entity instanceof CustomerInterface) {
@@ -280,7 +274,7 @@ index 0000000000000..5b5c8ce1fc0ca
 +}
 diff --git a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php
 new file mode 100644
-index 0000000000000..074d40021a184
+index 000000000000..074d40021a18
 --- /dev/null
 +++ b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php
 @@ -0,0 +1,421 @@
@@ -706,7 +700,7 @@ index 0000000000000..074d40021a184
 +    }
 +}
 diff --git a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
-index 8ff6a8585212f..cbe0a18e4b178 100644
+index 8ff6a8585212..cbe0a18e4b17 100644
 --- a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
 +++ b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
 @@ -1222,7 +1222,6 @@ public function testCreateAccountWithGroupId(): void
@@ -729,7 +723,7 @@ index 8ff6a8585212f..cbe0a18e4b178 100644
              ->willReturnOnConsecutiveCalls(null, $defaultGroupId);
 diff --git a/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php b/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
 new file mode 100644
-index 0000000000000..107df2c2863ef
+index 000000000000..107df2c2863e
 --- /dev/null
 +++ b/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
 @@ -0,0 +1,112 @@
@@ -846,7 +840,7 @@ index 0000000000000..107df2c2863ef
 +    }
 +}
 diff --git a/vendor/magento/module-customer/composer.json b/vendor/magento/module-customer/composer.json
-index 2d76da56bff7d..ff34d423c2da5 100644
+index 2d76da56bff7..ff34d423c2da 100644
 --- a/vendor/magento/module-customer/composer.json
 +++ b/vendor/magento/module-customer/composer.json
 @@ -29,5 +29,6 @@
@@ -858,7 +852,7 @@ index 2d76da56bff7d..ff34d423c2da5 100644
 +        "magento/module-asynchronous-operations": "100.4.*"
      },
 diff --git a/vendor/magento/module-customer/etc/di.xml b/vendor/magento/module-customer/etc/di.xml
-index 156986b7b4a3c..120a8dda8aece 100644
+index 156986b7b4a3..120a8dda8aec 100644
 --- a/vendor/magento/module-customer/etc/di.xml
 +++ b/vendor/magento/module-customer/etc/di.xml
 @@ -560,4 +560,9 @@
@@ -871,41 +865,8 @@ index 156986b7b4a3c..120a8dda8aece 100644
 +        />
 +    </type>
  </config>
-
-
----
- ...AsyncRequestCustomerGroupAuthorization.php |  6 +-
- app/code/Magento/Quote/etc/webapi.xml         |  3 +
- .../Rest/Asynchronous/InputParamsResolver.php | 99 ++++++++++++++++++-
- .../Quote/Api/GuestCartManagementTest.php     |  2 +-
- 4 files changed, 104 insertions(+), 6 deletions(-)
-
-diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-index 5b5c8ce1fc0ca..0aa2b8bfb1d18 100644
---- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-+++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-@@ -9,7 +9,6 @@
- namespace Magento\Customer\Plugin;
-
- use Magento\Customer\Api\Data\CustomerInterface;
--use Magento\Framework\App\ObjectManager;
- use Magento\Framework\AuthorizationInterface;
- use Magento\Framework\Exception\AuthorizationException;
- use Magento\AsynchronousOperations\Model\MassSchedule;
-@@ -60,6 +59,11 @@ public function beforePublishMass(
-         string       $groupId = null,
-         string       $userId = null
-     ) {
-+        // only apply the plugin on account create.
-+        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
-+            return;
-+        }
-+
-         foreach ($entitiesArray as $entityParams) {
-             foreach ($entityParams as $entity) {
-                 if ($entity instanceof CustomerInterface) {
 diff --git a/vendor/magento/module-quote/etc/webapi.xml b/vendor/magento/module-quote/etc/webapi.xml
-index 79d98968ea198..a7cce5b03a26d 100644
+index 79d98968ea19..a7cce5b03a26 100644
 --- a/vendor/magento/module-quote/etc/webapi.xml
 +++ b/vendor/magento/module-quote/etc/webapi.xml
 @@ -98,6 +98,9 @@
@@ -919,7 +880,7 @@ index 79d98968ea198..a7cce5b03a26d 100644
      <route url="/V1/guest-carts/:cartId/order" method="PUT">
          <service class="Magento\Quote\Api\GuestCartManagementInterface" method="placeOrder"/>
 diff --git a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-index 8601e5011bda7..93555559ac9a1 100644
+index 8601e5011bda..93555559ac9a 100644
 --- a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
 +++ b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
 @@ -8,10 +8,12 @@
@@ -1095,27 +1056,7 @@ index 8601e5011bda7..93555559ac9a1 100644
 +    }
  }
 diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-index ce9e4ee941785..44533303c632d 100644
---- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-+++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-@@ -339,7 +339,7 @@ public function testPlaceOrder()
-     public function testAssignCustomerByGuestUser()
-     {
-         $this->expectException(\Exception::class);
--        $this->expectExceptionMessage('You don\'t have the correct permissions to assign the customer to the cart.');
-+        $this->expectExceptionMessage('Enter and try again.');
-
-         /** @var $quote \Magento\Quote\Model\Quote */
-         $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load('test01', 'reserved_order_id');
-
-
----
- .../Magento/Quote/Api/GuestCartManagementTest.php        | 9 ++++++---
- .../Magento/Test/Php/_files/phpcpd/blacklist/common.txt  | 1 +
- 2 files changed, 7 insertions(+), 3 deletions(-)
-
-diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-index 44533303c632d..e08fe0388cfbe 100644
+index ce9e4ee94178..e08fe0388cfb 100644
 --- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
 +++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
 @@ -10,10 +10,13 @@
@@ -1135,8 +1076,17 @@ index 44533303c632d..e08fe0388cfbe 100644
      protected $createdQuotes = [];
 
      /**
+@@ -339,7 +342,7 @@ public function testPlaceOrder()
+     public function testAssignCustomerByGuestUser()
+     {
+         $this->expectException(\Exception::class);
+-        $this->expectExceptionMessage('You don\'t have the correct permissions to assign the customer to the cart.');
++        $this->expectExceptionMessage('Enter and try again.');
+
+         /** @var $quote \Magento\Quote\Model\Quote */
+         $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load('test01', 'reserved_order_id');
 diff --git a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
-index efc7e669b3605..18ffe842c794c 100644
+index efc7e669b360..18ffe842c794 100644
 --- a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
 +++ b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
 @@ -109,3 +109,4 @@ app/code/Magento/Elasticsearch/Elasticsearch5/Model/Adapter/FieldMapper/Product/
@@ -1144,36 +1094,3 @@ index efc7e669b3605..18ffe842c794c 100644
  app/code/Magento/Newsletter/Model/Queue/TransportBuilder.php
  app/code/Magento/ConfigurableProduct/view/adminhtml/templates/catalog/product/edit/attribute/steps/bulk.phtml
 +app/code/Magento/WebapiAsync/Controller/Rest/Asynchronous/InputParamsResolver.php
-
-
----
- .../Plugin/AsyncRequestCustomerGroupAuthorization.php    | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-index 0aa2b8bfb1d18..295b33d2db14a 100644
---- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-+++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-@@ -25,6 +25,13 @@ class AsyncRequestCustomerGroupAuthorization
-      */
-     public const ADMIN_RESOURCE = 'Magento_Customer::manage';
-
-+    /**
-+     * account create topic name
-+     *
-+     * @var string
-+     */
-+    private const TOPIC_NAME = 'async.magento.customer.api.accountmanagementinterface.createaccount.post';
-+
-     /**
-      * @var AuthorizationInterface
-      */
-@@ -60,7 +67,7 @@ public function beforePublishMass(
-         string       $userId = null
-     ) {
-         // only apply the plugin on account create.
--        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
-+        if ($topic !== self::TOPIC_NAME) {
-             return;
-         }
-

@@ -1,221 +1,5 @@
- vendor/magento/module-quote/etc/webapi.xml         |  3 +
- .../Rest/Asynchronous/InputParamsResolver.php | 96 ++++++++++++++++++-
- .../Quote/Api/GuestCartManagementTest.php     |  2 +-
- 3 files changed, 97 insertions(+), 4 deletions(-)
-
-diff --git a/vendor/magento/module-quote/etc/webapi.xml b/vendor/magento/module-quote/etc/webapi.xml
-index 79d98968ea198..a7cce5b03a26d 100644
---- a/vendor/magento/module-quote/etc/webapi.xml
-+++ b/vendor/magento/module-quote/etc/webapi.xml
-@@ -98,6 +98,9 @@
-         <resources>
-             <resource ref="self" />
-         </resources>
-+        <data>
-+            <parameter name="customerId" force="true">%customer_id%</parameter>
-+        </data>
-     </route>
-     <route url="/V1/guest-carts/:cartId/order" method="PUT">
-         <service class="Magento\Quote\Api\GuestCartManagementInterface" method="placeOrder"/>
-diff --git a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-index 6718087888bc5..93555559ac9a1 100644
---- a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-+++ b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-@@ -8,10 +8,12 @@
- 
- namespace Magento\WebapiAsync\Controller\Rest\Asynchronous;
- 
-+use Magento\Framework\Api\SimpleDataObjectConverter;
- use Magento\Framework\App\ObjectManager;
- use Magento\Framework\Exception\AuthorizationException;
- use Magento\Framework\Exception\InputException;
- use Magento\Framework\Exception\LocalizedException;
-+use Magento\Framework\Reflection\MethodsMap;
- use Magento\Framework\Webapi\Exception;
- use Magento\Framework\Webapi\Rest\Request as RestRequest;
- use Magento\Framework\Webapi\ServiceInputProcessor;
-@@ -24,6 +26,8 @@
- 
- /**
-  * This class is responsible for retrieving resolved input data
-+ *
-+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
-  */
- class InputParamsResolver
- {
-@@ -61,6 +65,11 @@ class InputParamsResolver
-      */
-     private $inputArraySizeLimitValue;
- 
-+    /**
-+     * @var MethodsMap
-+     */
-+    private $methodsMap;
-+
-     /**
-      * Initialize dependencies.
-      *
-@@ -72,6 +81,7 @@ class InputParamsResolver
-      * @param WebapiInputParamsResolver $inputParamsResolver
-      * @param bool $isBulk
-      * @param InputArraySizeLimitValue|null $inputArraySizeLimitValue
-+     * @param MethodsMap|null $methodsMap
-      */
-     public function __construct(
-         RestRequest $request,
-@@ -81,7 +91,8 @@ public function __construct(
-         RequestValidator $requestValidator,
-         WebapiInputParamsResolver $inputParamsResolver,
-         bool $isBulk = false,
--        ?InputArraySizeLimitValue $inputArraySizeLimitValue = null
-+        ?InputArraySizeLimitValue $inputArraySizeLimitValue = null,
-+        ?MethodsMap $methodsMap = null
-     ) {
-         $this->request = $request;
-         $this->paramsOverrider = $paramsOverrider;
-@@ -92,6 +103,8 @@ public function __construct(
-         $this->isBulk = $isBulk;
-         $this->inputArraySizeLimitValue = $inputArraySizeLimitValue ?? ObjectManager::getInstance()
-                 ->get(InputArraySizeLimitValue::class);
-+        $this->methodsMap = $methodsMap ?? ObjectManager::getInstance()
-+            ->get(MethodsMap::class);
-     }
- 
-     /**
-@@ -119,7 +132,13 @@ public function resolve()
-         $routeServiceMethod = $route->getServiceMethod();
-         $this->inputArraySizeLimitValue->set($route->getInputArraySizeLimit());
- 
-+        $this->validateParameters($routeServiceClass, $routeServiceMethod, array_keys($route->getParameters()));
-+
-         foreach ($inputData as $key => $singleEntityParams) {
-+            if (!is_array($singleEntityParams)) {
-+                continue;
-+            }
-+
-             $webapiResolvedParams[$key] = $this->resolveBulkItemParams(
-                 $singleEntityParams,
-                 $routeServiceClass,
-@@ -143,11 +162,22 @@ public function getInputData()
-         $inputData = $this->request->getRequestData();
- 
-         $httpMethod = $this->request->getHttpMethod();
--        if ($httpMethod == RestRequest::HTTP_METHOD_DELETE) {
-+        if ($httpMethod === RestRequest::HTTP_METHOD_DELETE) {
-             $requestBodyParams = $this->request->getBodyParams();
-             $inputData = array_merge($requestBodyParams, $inputData);
-         }
--        return $inputData;
-+
-+        return array_map(function ($singleEntityParams) {
-+            if (is_array($singleEntityParams)) {
-+                $singleEntityParams = $this->filterInputData($singleEntityParams);
-+                $singleEntityParams = $this->paramsOverrider->override(
-+                    $singleEntityParams,
-+                    $this->getRoute()->getParameters()
-+                );
-+            }
-+
-+            return $singleEntityParams;
-+        }, $inputData);
-     }
- 
-     /**
-@@ -180,4 +210,64 @@ private function resolveBulkItemParams(array $inputData, string $serviceClass, s
-     {
-         return $this->serviceInputProcessor->process($serviceClass, $serviceMethod, $inputData);
-     }
-+
-+    /**
-+     * Validates InputData
-+     *
-+     * @param array $inputData
-+     * @return array
-+     */
-+    private function filterInputData(array $inputData): array
-+    {
-+        $result = [];
-+
-+        $data = array_filter($inputData, function ($k) use (&$result) {
-+            $key = is_string($k) ? strtolower(str_replace('_', "", $k)) : $k;
-+            return !isset($result[$key]) && ($result[$key] = true);
-+        }, ARRAY_FILTER_USE_KEY);
-+
-+        return array_map(function ($value) {
-+            return is_array($value) ? $this->filterInputData($value) : $value;
-+        }, $data);
-+    }
-+
-+    /**
-+     * Validate that parameters are really used in the current request.
-+     *
-+     * @param string $serviceClassName
-+     * @param string $serviceMethodName
-+     * @param array $paramOverriders
-+     */
-+    private function validateParameters(
-+        string $serviceClassName,
-+        string $serviceMethodName,
-+        array $paramOverriders
-+    ): void {
-+        $methodParams = $this->methodsMap->getMethodParams($serviceClassName, $serviceMethodName);
-+        foreach ($paramOverriders as $key => $param) {
-+            $arrayKeys = explode('.', $param ?? '');
-+            $value = array_shift($arrayKeys);
-+
-+            foreach ($methodParams as $serviceMethodParam) {
-+                $serviceMethodParamName = $serviceMethodParam[MethodsMap::METHOD_META_NAME];
-+                $serviceMethodType = $serviceMethodParam[MethodsMap::METHOD_META_TYPE];
-+
-+                $camelCaseValue = SimpleDataObjectConverter::snakeCaseToCamelCase($value);
-+                if ($serviceMethodParamName === $value || $serviceMethodParamName === $camelCaseValue) {
-+                    if (count($arrayKeys) > 0) {
-+                        $camelCaseKey = SimpleDataObjectConverter::snakeCaseToCamelCase('set_' . $arrayKeys[0]);
-+                        $this->validateParameters($serviceMethodType, $camelCaseKey, [implode('.', $arrayKeys)]);
-+                    }
-+                    unset($paramOverriders[$key]);
-+                    break;
-+                }
-+            }
-+        }
-+
-+        if (!empty($paramOverriders)) {
-+             $message = 'The current request does not expect the next parameters: '
-+                 . implode(', ', $paramOverriders);
-+             throw new \UnexpectedValueException(__($message)->__toString());
-+        }
-+    }
- }
-diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-index ce9e4ee941785..44533303c632d 100644
---- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-+++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-@@ -339,7 +339,7 @@ public function testPlaceOrder()
-     public function testAssignCustomerByGuestUser()
-     {
-         $this->expectException(\Exception::class);
--        $this->expectExceptionMessage('You don\'t have the correct permissions to assign the customer to the cart.');
-+        $this->expectExceptionMessage('Enter and try again.');
- 
-         /** @var $quote \Magento\Quote\Model\Quote */
-         $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load('test01', 'reserved_order_id');
-
----
- .../Customer/Model/AccountManagement.php      |   5 -
- .../Customer/Model/AccountManagementApi.php   | 132 ++++++
- ...AsyncRequestCustomerGroupAuthorization.php |  78 ++++
- .../Unit/Model/AccountManagementApiTest.php   | 421 ++++++++++++++++++
- .../Test/Unit/Model/AccountManagementTest.php |   4 -
- ...cRequestCustomerGroupAuthorizationTest.php | 112 +++++
- app/code/Magento/Customer/composer.json       |   3 +-
- app/code/Magento/Customer/etc/di.xml          |   5 +
- 8 files changed, 750 insertions(+), 10 deletions(-)
- create mode 100644 app/code/Magento/Customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
- create mode 100644 app/code/Magento/Customer/Test/Unit/Model/AccountManagementApiTest.php
- create mode 100644 app/code/Magento/Customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
-
 diff --git a/vendor/magento/module-customer/Model/AccountManagement.php b/vendor/magento/module-customer/Model/AccountManagement.php
-index 702b6aeb68653..bfebafeb0330b 100644
+index 702b6aeb6865..bfebafeb0330 100644
 --- a/vendor/magento/module-customer/Model/AccountManagement.php
 +++ b/vendor/magento/module-customer/Model/AccountManagement.php
 @@ -882,11 +882,6 @@ public function getConfirmationStatus($customerId)
@@ -231,13 +15,13 @@ index 702b6aeb68653..bfebafeb0330b 100644
              $this->checkPasswordStrength($password);
              $customerEmail = $customer->getEmail();
 diff --git a/vendor/magento/module-customer/Model/AccountManagementApi.php b/vendor/magento/module-customer/Model/AccountManagementApi.php
-index 02a05705b57ef..8b4f78ab26c77 100644
+index 02a05705b57e..8b4f78ab26c7 100644
 --- a/vendor/magento/module-customer/Model/AccountManagementApi.php
 +++ b/vendor/magento/module-customer/Model/AccountManagementApi.php
 @@ -6,16 +6,127 @@
- 
+
  namespace Magento\Customer\Model;
- 
+
 +use Magento\Customer\Api\AddressRepositoryInterface;
 +use Magento\Customer\Api\CustomerMetadataInterface;
 +use Magento\Customer\Api\CustomerRepositoryInterface;
@@ -262,7 +46,7 @@ index 02a05705b57ef..8b4f78ab26c77 100644
 +use Magento\Framework\Stdlib\StringUtils as StringHelper;
 +use Magento\Store\Model\StoreManagerInterface;
 +use Psr\Log\LoggerInterface as PsrLogger;
- 
+
  /**
   * Account Management service implementation for external API access.
 + *
@@ -369,7 +153,7 @@ index 02a05705b57ef..8b4f78ab26c77 100644
 +        $this->validateCustomerRequest($customer);
          $customer = parent::createAccount($customer, $password, $redirectUrl);
          $customer->setConfirmation(null);
- 
+
          return $customer;
      }
 +
@@ -395,10 +179,10 @@ index 02a05705b57ef..8b4f78ab26c77 100644
  }
 diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
 new file mode 100644
-index 0000000000000..5b5c8ce1fc0ca
+index 000000000000..cdda3016694c
 --- /dev/null
 +++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,90 @@
 +<?php
 +/**
 + * Copyright © Magento, Inc. All rights reserved.
@@ -426,6 +210,13 @@ index 0000000000000..5b5c8ce1fc0ca
 +     * @see _isAllowed()
 +     */
 +    public const ADMIN_RESOURCE = 'Magento_Customer::manage';
++
++    /**
++     * account create topic name
++     *
++     * @var string
++     */
++    private const TOPIC_NAME = 'async.magento.customer.api.accountmanagementinterface.createaccount.post';
 +
 +    /**
 +     * @var AuthorizationInterface
@@ -461,6 +252,11 @@ index 0000000000000..5b5c8ce1fc0ca
 +        string       $groupId = null,
 +        string       $userId = null
 +    ) {
++        // only apply the plugin on account create.
++        if ($topic !== self::TOPIC_NAME) {
++            return;
++        }
++
 +        foreach ($entitiesArray as $entityParams) {
 +            foreach ($entityParams as $entity) {
 +                if ($entity instanceof CustomerInterface) {
@@ -479,7 +275,7 @@ index 0000000000000..5b5c8ce1fc0ca
 +}
 diff --git a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php
 new file mode 100644
-index 0000000000000..074d40021a184
+index 000000000000..074d40021a18
 --- /dev/null
 +++ b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementApiTest.php
 @@ -0,0 +1,421 @@
@@ -905,7 +701,7 @@ index 0000000000000..074d40021a184
 +    }
 +}
 diff --git a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
-index 9e68d53fd5949..e2b507f6fe37d 100644
+index 9e68d53fd594..e2b507f6fe37 100644
 --- a/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
 +++ b/vendor/magento/module-customer/Test/Unit/Model/AccountManagementTest.php
 @@ -1222,7 +1222,6 @@ public function testCreateAccountWithGroupId(): void
@@ -913,9 +709,9 @@ index 9e68d53fd5949..e2b507f6fe37d 100644
          $minCharacterSetsNum = 2;
          $defaultGroupId = 1;
 -        $requestedGroupId = 3;
- 
+
          $datetime = $this->prepareDateTimeFactory();
- 
+
 @@ -1299,9 +1298,6 @@ public function testCreateAccountWithGroupId(): void
                      return null;
                  }
@@ -928,7 +724,7 @@ index 9e68d53fd5949..e2b507f6fe37d 100644
              ->willReturnOnConsecutiveCalls(null, $defaultGroupId);
 diff --git a/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php b/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
 new file mode 100644
-index 0000000000000..107df2c2863ef
+index 000000000000..107df2c2863e
 --- /dev/null
 +++ b/vendor/magento/module-customer/Test/Unit/Plugin/AsyncRequestCustomerGroupAuthorizationTest.php
 @@ -0,0 +1,112 @@
@@ -1045,7 +841,7 @@ index 0000000000000..107df2c2863ef
 +    }
 +}
 diff --git a/vendor/magento/module-customer/composer.json b/vendor/magento/module-customer/composer.json
-index ef2047644759b..39c82c20f2ec8 100644
+index ef2047644759..39c82c20f2ec 100644
 --- a/vendor/magento/module-customer/composer.json
 +++ b/vendor/magento/module-customer/composer.json
 @@ -29,5 +29,6 @@
@@ -1057,7 +853,7 @@ index ef2047644759b..39c82c20f2ec8 100644
 +        "magento/module-asynchronous-operations": "100.4.*"
      },
 diff --git a/vendor/magento/module-customer/etc/di.xml b/vendor/magento/module-customer/etc/di.xml
-index b178f51f89199..96fd4b86be702 100644
+index b178f51f8919..96fd4b86be70 100644
 --- a/vendor/magento/module-customer/etc/di.xml
 +++ b/vendor/magento/module-customer/etc/di.xml
 @@ -585,4 +585,9 @@
@@ -1070,39 +866,195 @@ index b178f51f89199..96fd4b86be702 100644
 +        />
 +    </type>
  </config>
+diff --git a/vendor/magento/module-quote/etc/webapi.xml b/vendor/magento/module-quote/etc/webapi.xml
+index 79d98968ea19..a7cce5b03a26 100644
+--- a/vendor/magento/module-quote/etc/webapi.xml
++++ b/vendor/magento/module-quote/etc/webapi.xml
+@@ -98,6 +98,9 @@
+         <resources>
+             <resource ref="self" />
+         </resources>
++        <data>
++            <parameter name="customerId" force="true">%customer_id%</parameter>
++        </data>
+     </route>
+     <route url="/V1/guest-carts/:cartId/order" method="PUT">
+         <service class="Magento\Quote\Api\GuestCartManagementInterface" method="placeOrder"/>
+diff --git a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
+index 6718087888bc..93555559ac9a 100644
+--- a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
++++ b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
+@@ -8,10 +8,12 @@
 
----
- .../Plugin/AsyncRequestCustomerGroupAuthorization.php        | 5 +++++
- 1 file changed, 5 insertions(+)
+ namespace Magento\WebapiAsync\Controller\Rest\Asynchronous;
 
-diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-index 5b5c8ce1fc0ca..d19c48a52a25a 100644
---- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-+++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-@@ -60,6 +60,11 @@ public function beforePublishMass(
-         string       $groupId = null,
-         string       $userId = null
++use Magento\Framework\Api\SimpleDataObjectConverter;
+ use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\Exception\AuthorizationException;
+ use Magento\Framework\Exception\InputException;
+ use Magento\Framework\Exception\LocalizedException;
++use Magento\Framework\Reflection\MethodsMap;
+ use Magento\Framework\Webapi\Exception;
+ use Magento\Framework\Webapi\Rest\Request as RestRequest;
+ use Magento\Framework\Webapi\ServiceInputProcessor;
+@@ -24,6 +26,8 @@
+
+ /**
+  * This class is responsible for retrieving resolved input data
++ *
++ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+  */
+ class InputParamsResolver
+ {
+@@ -61,6 +65,11 @@ class InputParamsResolver
+      */
+     private $inputArraySizeLimitValue;
+
++    /**
++     * @var MethodsMap
++     */
++    private $methodsMap;
++
+     /**
+      * Initialize dependencies.
+      *
+@@ -72,6 +81,7 @@ class InputParamsResolver
+      * @param WebapiInputParamsResolver $inputParamsResolver
+      * @param bool $isBulk
+      * @param InputArraySizeLimitValue|null $inputArraySizeLimitValue
++     * @param MethodsMap|null $methodsMap
+      */
+     public function __construct(
+         RestRequest $request,
+@@ -81,7 +91,8 @@ public function __construct(
+         RequestValidator $requestValidator,
+         WebapiInputParamsResolver $inputParamsResolver,
+         bool $isBulk = false,
+-        ?InputArraySizeLimitValue $inputArraySizeLimitValue = null
++        ?InputArraySizeLimitValue $inputArraySizeLimitValue = null,
++        ?MethodsMap $methodsMap = null
      ) {
-+        // only apply the plugin on account create.
-+        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
-+            return;
+         $this->request = $request;
+         $this->paramsOverrider = $paramsOverrider;
+@@ -92,6 +103,8 @@ public function __construct(
+         $this->isBulk = $isBulk;
+         $this->inputArraySizeLimitValue = $inputArraySizeLimitValue ?? ObjectManager::getInstance()
+                 ->get(InputArraySizeLimitValue::class);
++        $this->methodsMap = $methodsMap ?? ObjectManager::getInstance()
++            ->get(MethodsMap::class);
+     }
+
+     /**
+@@ -119,7 +132,13 @@ public function resolve()
+         $routeServiceMethod = $route->getServiceMethod();
+         $this->inputArraySizeLimitValue->set($route->getInputArraySizeLimit());
+
++        $this->validateParameters($routeServiceClass, $routeServiceMethod, array_keys($route->getParameters()));
++
+         foreach ($inputData as $key => $singleEntityParams) {
++            if (!is_array($singleEntityParams)) {
++                continue;
++            }
++
+             $webapiResolvedParams[$key] = $this->resolveBulkItemParams(
+                 $singleEntityParams,
+                 $routeServiceClass,
+@@ -143,11 +162,22 @@ public function getInputData()
+         $inputData = $this->request->getRequestData();
+
+         $httpMethod = $this->request->getHttpMethod();
+-        if ($httpMethod == RestRequest::HTTP_METHOD_DELETE) {
++        if ($httpMethod === RestRequest::HTTP_METHOD_DELETE) {
+             $requestBodyParams = $this->request->getBodyParams();
+             $inputData = array_merge($requestBodyParams, $inputData);
+         }
+-        return $inputData;
++
++        return array_map(function ($singleEntityParams) {
++            if (is_array($singleEntityParams)) {
++                $singleEntityParams = $this->filterInputData($singleEntityParams);
++                $singleEntityParams = $this->paramsOverrider->override(
++                    $singleEntityParams,
++                    $this->getRoute()->getParameters()
++                );
++            }
++
++            return $singleEntityParams;
++        }, $inputData);
+     }
+
+     /**
+@@ -180,4 +210,64 @@ private function resolveBulkItemParams(array $inputData, string $serviceClass, s
+     {
+         return $this->serviceInputProcessor->process($serviceClass, $serviceMethod, $inputData);
+     }
++
++    /**
++     * Validates InputData
++     *
++     * @param array $inputData
++     * @return array
++     */
++    private function filterInputData(array $inputData): array
++    {
++        $result = [];
++
++        $data = array_filter($inputData, function ($k) use (&$result) {
++            $key = is_string($k) ? strtolower(str_replace('_', "", $k)) : $k;
++            return !isset($result[$key]) && ($result[$key] = true);
++        }, ARRAY_FILTER_USE_KEY);
++
++        return array_map(function ($value) {
++            return is_array($value) ? $this->filterInputData($value) : $value;
++        }, $data);
++    }
++
++    /**
++     * Validate that parameters are really used in the current request.
++     *
++     * @param string $serviceClassName
++     * @param string $serviceMethodName
++     * @param array $paramOverriders
++     */
++    private function validateParameters(
++        string $serviceClassName,
++        string $serviceMethodName,
++        array $paramOverriders
++    ): void {
++        $methodParams = $this->methodsMap->getMethodParams($serviceClassName, $serviceMethodName);
++        foreach ($paramOverriders as $key => $param) {
++            $arrayKeys = explode('.', $param ?? '');
++            $value = array_shift($arrayKeys);
++
++            foreach ($methodParams as $serviceMethodParam) {
++                $serviceMethodParamName = $serviceMethodParam[MethodsMap::METHOD_META_NAME];
++                $serviceMethodType = $serviceMethodParam[MethodsMap::METHOD_META_TYPE];
++
++                $camelCaseValue = SimpleDataObjectConverter::snakeCaseToCamelCase($value);
++                if ($serviceMethodParamName === $value || $serviceMethodParamName === $camelCaseValue) {
++                    if (count($arrayKeys) > 0) {
++                        $camelCaseKey = SimpleDataObjectConverter::snakeCaseToCamelCase('set_' . $arrayKeys[0]);
++                        $this->validateParameters($serviceMethodType, $camelCaseKey, [implode('.', $arrayKeys)]);
++                    }
++                    unset($paramOverriders[$key]);
++                    break;
++                }
++            }
 +        }
 +
-         foreach ($entitiesArray as $entityParams) {
-             foreach ($entityParams as $entity) {
-                 if ($entity instanceof CustomerInterface) {
-
----
- .../Magento/Quote/Api/GuestCartManagementTest.php        | 9 ++++++---
- .../Magento/Test/Php/_files/phpcpd/blacklist/common.txt  | 1 +
- 2 files changed, 7 insertions(+), 3 deletions(-)
-
++        if (!empty($paramOverriders)) {
++             $message = 'The current request does not expect the next parameters: '
++                 . implode(', ', $paramOverriders);
++             throw new \UnexpectedValueException(__($message)->__toString());
++        }
++    }
+ }
 diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-index 44533303c632d..e08fe0388cfbe 100644
+index ce9e4ee94178..e08fe0388cfb 100644
 --- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
 +++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
 @@ -10,10 +10,13 @@
- 
+
  class GuestCartManagementTest extends WebapiAbstract
  {
 -    const SERVICE_VERSION = 'V1';
@@ -1111,15 +1063,24 @@ index 44533303c632d..e08fe0388cfbe 100644
 +    public const SERVICE_VERSION = 'V1';
 +    public const SERVICE_NAME = 'quoteGuestCartManagementV1';
 +    public const RESOURCE_PATH = '/V1/guest-carts/';
- 
+
 +    /**
 +     * @var array List of created quotes
 +     */
      protected $createdQuotes = [];
- 
+
      /**
+@@ -339,7 +342,7 @@ public function testPlaceOrder()
+     public function testAssignCustomerByGuestUser()
+     {
+         $this->expectException(\Exception::class);
+-        $this->expectExceptionMessage('You don\'t have the correct permissions to assign the customer to the cart.');
++        $this->expectExceptionMessage('Enter and try again.');
+
+         /** @var $quote \Magento\Quote\Model\Quote */
+         $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load('test01', 'reserved_order_id');
 diff --git a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
-index 80fe4ec247a64..50285d7492e86 100644
+index 80fe4ec247a6..50285d7492e8 100644
 --- a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
 +++ b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
 @@ -111,3 +111,4 @@ app/code/Magento/ConfigurableProduct/view/adminhtml/templates/catalog/product/ed
@@ -1127,35 +1088,3 @@ index 80fe4ec247a64..50285d7492e86 100644
  app/code/Magento/AdminAdobeIms/Observer/AuthObserver
  app/code/Magento/OpenSearch/SearchAdapter/Adapter
 +app/code/Magento/WebapiAsync/Controller/Rest/Asynchronous/InputParamsResolver.php
-
----
- .../Plugin/AsyncRequestCustomerGroupAuthorization.php    | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-index d19c48a52a25a..cdda3016694ca 100644
---- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-+++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-@@ -26,6 +26,13 @@ class AsyncRequestCustomerGroupAuthorization
-      */
-     public const ADMIN_RESOURCE = 'Magento_Customer::manage';
- 
-+    /**
-+     * account create topic name
-+     *
-+     * @var string
-+     */
-+    private const TOPIC_NAME = 'async.magento.customer.api.accountmanagementinterface.createaccount.post';
-+
-     /**
-      * @var AuthorizationInterface
-      */
-@@ -61,7 +68,7 @@ public function beforePublishMass(
-         string       $userId = null
-     ) {
-         // only apply the plugin on account create.
--        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
-+        if ($topic !== self::TOPIC_NAME) {
-             return;
-         }
- 
