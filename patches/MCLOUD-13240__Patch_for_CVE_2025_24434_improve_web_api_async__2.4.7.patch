@@ -1,12 +1,5 @@
----
- ...AsyncRequestCustomerGroupAuthorization.php |  6 +-
- app/code/Magento/Quote/etc/webapi.xml         |  3 +
- .../Rest/Asynchronous/InputParamsResolver.php | 96 ++++++++++++++++++-
- .../Quote/Api/GuestCartManagementTest.php     |  2 +-
- 4 files changed, 102 insertions(+), 5 deletions(-)
-
 diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-index 5b5c8ce1fc0ca..0aa2b8bfb1d18 100644
+index 5b5c8ce1fc0c..295b33d2db14 100644
 --- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
 +++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
 @@ -9,7 +9,6 @@
@@ -17,12 +10,26 @@ index 5b5c8ce1fc0ca..0aa2b8bfb1d18 100644
  use Magento\Framework\AuthorizationInterface;
  use Magento\Framework\Exception\AuthorizationException;
  use Magento\AsynchronousOperations\Model\MassSchedule;
-@@ -60,6 +59,11 @@ public function beforePublishMass(
+@@ -26,6 +25,13 @@ class AsyncRequestCustomerGroupAuthorization
+      */
+     public const ADMIN_RESOURCE = 'Magento_Customer::manage';
+ 
++    /**
++     * account create topic name
++     *
++     * @var string
++     */
++    private const TOPIC_NAME = 'async.magento.customer.api.accountmanagementinterface.createaccount.post';
++
+     /**
+      * @var AuthorizationInterface
+      */
+@@ -60,6 +66,11 @@ public function beforePublishMass(
          string       $groupId = null,
          string       $userId = null
      ) {
 +        // only apply the plugin on account create.
-+        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
++        if ($topic !== self::TOPIC_NAME) {
 +            return;
 +        }
 +
@@ -30,7 +37,7 @@ index 5b5c8ce1fc0ca..0aa2b8bfb1d18 100644
              foreach ($entityParams as $entity) {
                  if ($entity instanceof CustomerInterface) {
 diff --git a/vendor/magento/module-quote/etc/webapi.xml b/vendor/magento/module-quote/etc/webapi.xml
-index 79d98968ea198..a7cce5b03a26d 100644
+index 79d98968ea19..a7cce5b03a26 100644
 --- a/vendor/magento/module-quote/etc/webapi.xml
 +++ b/vendor/magento/module-quote/etc/webapi.xml
 @@ -98,6 +98,9 @@
@@ -44,7 +51,7 @@ index 79d98968ea198..a7cce5b03a26d 100644
      <route url="/V1/guest-carts/:cartId/order" method="PUT">
          <service class="Magento\Quote\Api\GuestCartManagementInterface" method="placeOrder"/>
 diff --git a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-index 6718087888bc5..93555559ac9a1 100644
+index 6718087888bc..6e159eaddf16 100644
 --- a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
 +++ b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
 @@ -8,10 +8,12 @@
@@ -147,7 +154,7 @@ index 6718087888bc5..93555559ac9a1 100644
      }
  
      /**
-@@ -180,4 +210,64 @@ private function resolveBulkItemParams(array $inputData, string $serviceClass, s
+@@ -180,4 +210,65 @@ private function resolveBulkItemParams(array $inputData, string $serviceClass, s
      {
          return $this->serviceInputProcessor->process($serviceClass, $serviceMethod, $inputData);
      }
@@ -184,6 +191,7 @@ index 6718087888bc5..93555559ac9a1 100644
 +        string $serviceMethodName,
 +        array $paramOverriders
 +    ): void {
++        //phpcs:ignore CopyPaste
 +        $methodParams = $this->methodsMap->getMethodParams($serviceClassName, $serviceMethodName);
 +        foreach ($paramOverriders as $key => $param) {
 +            $arrayKeys = explode('.', $param ?? '');
@@ -213,7 +221,7 @@ index 6718087888bc5..93555559ac9a1 100644
 +    }
  }
 diff --git a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
-index 68cc2c2b2315d..6f08b21f38127 100644
+index 68cc2c2b2315..6f08b21f3812 100644
 --- a/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
 +++ b/dev/tests/api-functional/testsuite/Magento/Quote/Api/GuestCartManagementTest.php
 @@ -354,7 +354,7 @@ public function testPlaceOrder()
@@ -225,26 +233,8 @@ index 68cc2c2b2315d..6f08b21f38127 100644
  
          /** @var $quote \Magento\Quote\Model\Quote */
          $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load('test01', 'reserved_order_id');
-
----
- .../Controller/Rest/Asynchronous/InputParamsResolver.php         | 1 +
- .../Magento/Test/Php/_files/phpcpd/blacklist/common.txt          | 1 +
- 2 files changed, 2 insertions(+)
-
-diff --git a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-index 93555559ac9a1..6e159eaddf162 100644
---- a/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-+++ b/vendor/magento/module-webapi-async/Controller/Rest/Asynchronous/InputParamsResolver.php
-@@ -243,6 +243,7 @@ private function validateParameters(
-         string $serviceMethodName,
-         array $paramOverriders
-     ): void {
-+        //phpcs:ignore CopyPaste
-         $methodParams = $this->methodsMap->getMethodParams($serviceClassName, $serviceMethodName);
-         foreach ($paramOverriders as $key => $param) {
-             $arrayKeys = explode('.', $param ?? '');
 diff --git a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
-index 08ba4bba28c62..c9d07aa2abedf 100644
+index 08ba4bba28c6..c9d07aa2abed 100644
 --- a/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
 +++ b/dev/tests/static/testsuite/Magento/Test/Php/_files/phpcpd/blacklist/common.txt
 @@ -111,3 +111,4 @@ app/code/Magento/ConfigurableProduct/view/adminhtml/templates/catalog/product/ed
@@ -253,34 +243,3 @@ index 08ba4bba28c62..c9d07aa2abedf 100644
  app/code/Magento/OpenSearch/SearchAdapter/Adapter
 +app/code/Magento/WebapiAsync/Controller/Rest/Asynchronous/InputParamsResolver.php
 
----
- .../Plugin/AsyncRequestCustomerGroupAuthorization.php    | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-index 0aa2b8bfb1d18..295b33d2db14a 100644
---- a/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-+++ b/vendor/magento/module-customer/Plugin/AsyncRequestCustomerGroupAuthorization.php
-@@ -25,6 +25,13 @@ class AsyncRequestCustomerGroupAuthorization
-      */
-     public const ADMIN_RESOURCE = 'Magento_Customer::manage';
- 
-+    /**
-+     * account create topic name
-+     *
-+     * @var string
-+     */
-+    private const TOPIC_NAME = 'async.magento.customer.api.accountmanagementinterface.createaccount.post';
-+
-     /**
-      * @var AuthorizationInterface
-      */
-@@ -60,7 +67,7 @@ public function beforePublishMass(
-         string       $userId = null
-     ) {
-         // only apply the plugin on account create.
--        if ($topic !== 'async.magento.customer.api.accountmanagementinterface.createaccount.post') {
-+        if ($topic !== self::TOPIC_NAME) {
-             return;
-         }
- 
