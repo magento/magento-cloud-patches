@@ -71,7 +71,7 @@ class Revert extends AbstractCommand
     /**
      * {@inheritDoc}
      */
-    public function execute(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->logger->info($this->magentoVersion->get());
 
