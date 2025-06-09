@@ -304,6 +304,9 @@
     },
     "Patch for CVE-2025-47109 - Improve-category-view": {
       "2.4.8": "MCLOUD-13752__Patch_for_CVE-2025-47109_Improve_category_view__2.4.8.patch"
+    },
+    "Patch for CVE-2025-47110 - Improve-admin-cache-efficiency": {
+      ">=2.4.4 <2.4.4-p14 || >=2.4.5 <2.4.5-p13 || >=2.4.6 <2.4.6-p11 || >=2.4.7 <2.4.7-p6 || 2.4.8": "MCLOUD-13753__Patch_for_CVE-2025-47110_improve-admin-cache-efficiency__2.4.x.patch"
     }
   },
   "magento/module-paypal": {

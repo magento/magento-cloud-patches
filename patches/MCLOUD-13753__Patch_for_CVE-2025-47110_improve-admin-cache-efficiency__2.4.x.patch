@@ -1,0 +1,25 @@
+diff --git a/vendor/magento/module-email/Model/Template/Filter.php b/vendor/magento/module-email/Model/Template/Filter.php
+index f5b69484285cc..f86deacad3b4e 100644
+--- a/vendor/magento/module-email/Model/Template/Filter.php
++++ b/vendor/magento/module-email/Model/Template/Filter.php
+@@ -1,7 +1,7 @@
+ <?php
+ /**
+- * Copyright © Magento, Inc. All rights reserved.
+- * See COPYING.txt for license details.
++ * Copyright 2011 Adobe
++ * All Rights Reserved.
+  */
+ declare(strict_types=1);
+ 
+@@ -432,6 +432,10 @@ public function blockDirective($construction)
+             $block->setDataUsingMethod($k, $v);
+         }
+ 
++        if (!$block->hasData('cache_key')) {
++            $block->setDataUsingMethod('cache_key', $block->getCacheKey());
++        }
++
+         if (isset($blockParameters['output'])) {
+             $method = $blockParameters['output'];
+         }
