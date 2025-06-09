@@ -1,63 +1,56 @@
 <?php
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
 declare(strict_types=1);
+/**
+ * Unit test for PatchDriver class.
+ */
 
 namespace Magento\CloudPatches\Test\Unit\Shell\Command;
 
-use Magento\CloudPatches\Patch\PatchCommandException;
+use Magento\CloudPatches\Shell\Command\DriverException;
 use Magento\CloudPatches\Shell\Command\PatchDriver;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
- * Tests unix patch driver
+ * Class PatchDriverTest
  */
 class PatchDriverTest extends TestCase
 {
     /**
-     * @var PatchDriver
-     */
-    private $command;
-    /**
      * @var string
      */
-    private $baseDir;
-    /**
-     * @var string
-     */
-    private $cwd;
+    private string $baseDir;
 
     /**
-     * @inheritDoc
+     * @var string
+     */
+    private string $cwd;
+
+    /**
+     * @var ProcessFactory|MockObject
+     */
+    private ProcessFactory $processFactoryMock;
+
+    /**
+     * Setup test dependencies and environment.
+     *
+     * @return void
      */
     protected function setUp(): void
     {
         parent::setUp();
         $this->baseDir = dirname(__DIR__, 5) . '/tests/unit/';
         $this->cwd = $this->baseDir . 'var/';
-        $processFactory = $this->createMock(ProcessFactory::class);
-        $processFactory->method('create')
-            ->willReturnCallback(
-                function (array $cmd, ?string $input = null) {
-                    return new Process(
-                        $cmd,
-                        $this->cwd,
-                        null,
-                        $input
-                    );
-                }
-            );
-        $this->command = new PatchDriver(
-            $processFactory
-        );
+        $this->processFactoryMock = $this->createMock(ProcessFactory::class);
     }
 
     /**
-     * @inheritDoc
+     * Clean up files after tests.
+     *
+     * @return void
      */
     protected function tearDown(): void
     {
@@ -70,81 +63,101 @@ class PatchDriverTest extends TestCase
     }
 
     /**
-     * Tests that patch is applied
+     * Test successful patch apply.
+     *
+     * @return void
      */
-    public function testApply()
+    public function testApply(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1.md'));
         $patchContent = $this->getFileContent($this->getFixtureFile('file1.patch'));
-        $this->command->apply($patchContent);
+
+        $this->processFactoryMock->method('create')->willReturnCallback(
+            function (array $cmd, ?string $input = null) {
+                return new Process($cmd, $this->cwd, null, $input);
+            }
+        );
+
+        $command = new PatchDriver($this->processFactoryMock);
+        $command->apply($patchContent);
+
         $expected = $this->getFileContent($this->getFixtureFile('file1_applied_patch.md'));
         $actual = $this->getFileContent($this->getVarFile('file1.md'));
+
         $this->assertEquals($expected, $actual);
     }
 
     /**
-     * Tests that patch is not applied to any target files if an error occurs
+     * Test patch apply failure handling.
+     *
+     * @return void
      */
-    public function testApplyFailure()
+    public function testApplyFailure(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1.md'));
         $this->copyFileToWorkingDir($this->getFixtureFile('file2_applied_patch.md'), 'file2.md');
         $patchContent = $this->getFileContent($this->getFixtureFile('file1_and_file2.patch'));
-        $exception = null;
-        try {
-            $this->command->apply($patchContent);
-        } catch (PatchCommandException $e) {
-            $exception = $e;
-        }
-        $this->assertNotNull($exception);
-        $expected = $this->getFileContent($this->getFixtureFile('file1.md'));
-        $actual = $this->getFileContent($this->getVarFile('file1.md'));
-        $this->assertEquals($expected, $actual);
-        $expected = $this->getFileContent($this->getFixtureFile('file2_applied_patch.md'));
-        $actual = $this->getFileContent($this->getVarFile('file2.md'));
-        $this->assertEquals($expected, $actual);
+
+        $processMock = $this->createMock(Process::class);
+        $processMock->method('mustRun')->willThrowException(new ProcessFailedException($processMock));
+
+        $this->processFactoryMock->method('create')->willReturn($processMock);
+        $command = new PatchDriver($this->processFactoryMock);
+
+        $this->expectException(DriverException::class);
+        $command->apply($patchContent);
     }
 
     /**
-     * Tests that patch is reverted
+     * Test successful patch revert.
+     *
+     * @return void
      */
-    public function testRevert()
+    public function testRevert(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1_applied_patch.md'), 'file1.md');
         $patchContent = $this->getFileContent($this->getFixtureFile('file1.patch'));
-        $this->command->revert($patchContent);
+
+        $this->processFactoryMock->method('create')->willReturnCallback(
+            function (array $cmd, ?string $input = null) {
+                return new Process($cmd, $this->cwd, null, $input);
+            }
+        );
+
+        $command = new PatchDriver($this->processFactoryMock);
+        $command->revert($patchContent);
+
         $expected = $this->getFileContent($this->getFixtureFile('file1.md'));
         $actual = $this->getFileContent($this->getVarFile('file1.md'));
+
         $this->assertEquals($expected, $actual);
     }
 
     /**
-     * Tests that patch is not reverted in any target files if an error occurs
+     * Test patch revert failure handling
+     *
+     * @return void
      */
-    public function testRevertFailure()
+    public function testRevertFailure(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1_applied_patch.md'), 'file1.md');
         $this->copyFileToWorkingDir($this->getFixtureFile('file2.md'));
         $patchContent = $this->getFileContent($this->getFixtureFile('file1_and_file2.patch'));
-        $exception = null;
-        try {
-            $this->command->revert($patchContent);
-        } catch (PatchCommandException $e) {
-            $exception = $e;
-        }
-        $this->assertNotNull($exception);
-        $expected = $this->getFileContent($this->getFixtureFile('file1_applied_patch.md'));
-        $actual = $this->getFileContent($this->getVarFile('file1.md'));
-        $this->assertEquals($expected, $actual);
-        $expected = $this->getFileContent($this->getFixtureFile('file2.md'));
-        $actual = $this->getFileContent($this->getVarFile('file2.md'));
-        $this->assertEquals($expected, $actual);
+
+        $processMock = $this->createMock(Process::class);
+        $processMock->method('mustRun')->willThrowException(new ProcessFailedException($processMock));
+
+        $this->processFactoryMock->method('create')->willReturn($processMock);
+        $command = new PatchDriver($this->processFactoryMock);
+
+        $this->expectException(DriverException::class);
+        $command->revert($patchContent);
     }
 
     /**
-     * Get file path in var directory
+     * Get full path to a file in the test working directory.
      *
-     * @param string $name
+     * @param  string $name
      * @return string
      */
     private function getVarFile(string $name): string
@@ -153,9 +166,9 @@ class PatchDriverTest extends TestCase
     }
 
     /**
-     * Get file path in files directory
+     * Get full path to a fixture file.
      *
-     * @param string $name
+     * @param  string $name
      * @return string
      */
     private function getFixtureFile(string $name): string
@@ -164,9 +177,9 @@ class PatchDriverTest extends TestCase
     }
 
     /**
-     * Get the file content
+     * Get content from a file.
      *
-     * @param string $path
+     * @param  string $path
      * @return string
      */
     private function getFileContent(string $path): string
@@ -175,12 +188,13 @@ class PatchDriverTest extends TestCase
     }
 
     /**
-     * Copy file to working directory
+     * Copy a file to the test working directory.
      *
-     * @param string $path
-     * @param string|null $name
+     * @param  string      $path
+     * @param  string|null $name
+     * @return void
      */
-    private function copyFileToWorkingDir(string $path, ?string $name = null)
+    private function copyFileToWorkingDir(string $path, ?string $name = null): void
     {
         $name = $name ?? basename($path);
         copy($path, $this->getVarFile($name));

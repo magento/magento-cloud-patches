@@ -61,7 +61,7 @@ class Status extends AbstractCommand
     /**
      * {@inheritDoc}
      */
-    public function execute(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->showStatus->run($input, $output);
