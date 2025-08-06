@@ -10,28 +10,43 @@ namespace Magento\CloudPatches\Test\Functional\Acceptance;
 use Magento\CloudDocker\Test\Functional\Codeception\Docker;
 
 /**
- * @group php83
+ * Abstract PatchApplierCest
+ *
+ * @abstract
  */
-class PatchApplierCest extends AbstractCest
+abstract class PatchApplierCest extends AbstractCest
 {
     /**
-     * @param \CliTester $I
+     * Prepares the test environment before each test.
+     *
+     * @param \CliTester $I The CLI tester instance.
+     * @throws \Robo\Exception\TaskException
      */
     public function _before(\CliTester $I): void
     {
         parent::_before($I);
-
-        $this->prepareTemplate($I, '2.4.7');
-        $I->copyFileToWorkDir('files/debug_logging/.magento.env.yaml', '.magento.env.yaml');
     }
 
     /**
+     * Tests applying an existing patch to a target file.
+     *
      * @param \CliTester $I
+     * @param \Codeception\Example $data The example data for the test.
+     *        Expected structure:
+     *        [
+     *            'templateVersion' => string,
+     *            'magentoVersion' => string|null (optional)
+     *        ]
      * @throws \Robo\Exception\TaskException
+     * @dataProvider patchesDataProvider
      */
-    public function testApplyingPatch(\CliTester $I): void
+    public function testApplyingPatch(\CliTester $I, \Codeception\Example $data): void
     {
+        $this->prepareTemplate($I, $data['templateVersion'], $data['magentoVersion'] ?? null);
+
         $I->generateDockerCompose('--mode=production');
+
+        $I->copyFileToWorkDir('files/debug_logging/.magento.env.yaml', '.magento.env.yaml');
         $I->copyFileToWorkDir('files/patches/target_file.md', 'target_file.md');
         $I->copyFileToWorkDir('files/patches/patch.patch', 'm2-hotfixes/patch.patch');
 
@@ -47,12 +62,25 @@ class PatchApplierCest extends AbstractCest
     }
 
     /**
+     * Tests that an existing patch is not applied again.
+     *
      * @param \CliTester $I
+     * @param \Codeception\Example $data The example data for the test.
+     *        Expected structure:
+     *        [
+     *            'templateVersion' => string,
+     *            'magentoVersion' => string|null (optional)
+     *        ]
      * @throws \Robo\Exception\TaskException
+     * @dataProvider patchesDataProvider
      */
-    public function testApplyingExistingPatch(\CliTester $I): void
+    public function testApplyingExistingPatch(\CliTester $I, \Codeception\Example $data): void
     {
+        $this->prepareTemplate($I, $data['templateVersion'], $data['magentoVersion'] ?? null);
+
         $I->generateDockerCompose('--mode=production');
+
+        $I->copyFileToWorkDir('files/debug_logging/.magento.env.yaml', '.magento.env.yaml');
         $I->copyFileToWorkDir('files/patches/target_file_applied_patch.md', 'target_file.md');
         $I->copyFileToWorkDir('files/patches/patch.patch', 'm2-hotfixes/patch.patch');
 
@@ -68,4 +96,10 @@ class PatchApplierCest extends AbstractCest
             $I->grabFileContent('/init/var/log/cloud.log', Docker::BUILD_CONTAINER)
         );
     }
+
+    /**
+     * Returns the data provider for patches.
+     * @return array
+     */
+    abstract protected function patchesDataProvider(): array;
 }
