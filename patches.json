@@ -307,6 +307,9 @@
     },
     "Patch for CVE-2025-47110 - Improve-admin-cache-efficiency": {
       ">=2.4.4 <2.4.4-p14 || >=2.4.5 <2.4.5-p13 || >=2.4.6 <2.4.6-p11 || >=2.4.7 <2.4.7-p6 || 2.4.8": "MCLOUD-13753__Patch_for_CVE-2025-47110_improve-admin-cache-efficiency__2.4.x.patch"
+    },
+    "Patch for CVE-2025-54236 - WebAPI-improvement": {
+      ">=2.4.4 <2.4.4-p16 || >=2.4.5 <2.4.5-p15 || >=2.4.6 <2.4.6-p13 || >=2.4.7 <2.4.7-p8 || >=2.4.8 <2.4.8-p3": "MCLOUD-14016_Patch_for_CVE-2025-54236_webapi_improvement__2.4.x.patch"
     }
   },
   "magento/module-paypal": {
