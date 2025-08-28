@@ -60,8 +60,17 @@ class ConfigReader
             if (!$this->filesystem->exists($path)) {
                 $this->config = [];
             } else {
-                $parseFlag = defined(Yaml::class . '::PARSE_CONSTANT') ? Yaml::PARSE_CONSTANT : 0;
-                $this->config = (array)Yaml::parse($this->filesystem->get($path), $parseFlag);
+                $flags = 0;
+                if (defined(Yaml::class . '::PARSE_CONSTANT')) {
+                    $flags |= Yaml::PARSE_CONSTANT;
+                }
+                if (defined(Yaml::class . '::PARSE_CUSTOM_TAGS')) {
+                    $flags |= Yaml::PARSE_CUSTOM_TAGS;
+                }
+                $this->config = (array)Yaml::parse(
+                    $this->filesystem->get($path),
+                    $flags
+                );
             }
         }
 
