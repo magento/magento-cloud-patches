@@ -81,10 +81,12 @@ class ConfigReader
     }
 
     /**
-     * Recursively normalizes YAML data, resolving custom tags.
+     * Recursively unwrap Symfony YAML TaggedValue objects and handle common tags
      *
      * @param mixed $data
      * @return mixed
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     private function normalizeYamlData(mixed $data): mixed
     {
