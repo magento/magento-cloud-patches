@@ -11,6 +11,7 @@ use Magento\CloudPatches\Filesystem\FileList;
 use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Filesystem\FileSystemException;
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\Yaml\Tag\TaggedValue;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
@@ -71,9 +72,55 @@ class ConfigReader
                     $this->filesystem->get($path),
                     $flags
                 );
+
+                $this->config = $this->normalizeYamlData($this->config);
             }
         }
 
         return $this->config;
+    }
+
+    /**
+     * Recursively normalizes YAML data, resolving custom tags.
+     *
+     * @param mixed $data
+     * @return mixed
+     */
+    private function normalizeYamlData(mixed $data): mixed
+    {
+        if ($data instanceof TaggedValue) {
+            $tag = $data->getTag();
+            $value = $data->getValue();
+
+            switch ($tag) {
+                case '!env':
+                    $envValue = getenv((string)$value);
+                    return $envValue !== false ? $envValue : null;
+
+                case '!include':
+                    if (file_exists((string)$value)) {
+                        $included = Yaml::parseFile((string)$value);
+                        return $this->normalizeYamlData($included);
+                    }
+                    return null;
+
+                case '!php/const':
+                    // Evaluate the PHP constant
+                    return defined($value) ? constant($value) : null;
+
+                default:
+                    $val = $this->normalizeYamlData($value);
+                    return is_array($val) ? $val : [$val];
+            }
+        }
+
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->normalizeYamlData($value);
+            }
+            return $data;
+        }
+
+        return $data;
     }
 }
