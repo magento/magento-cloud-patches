@@ -81,12 +81,15 @@ class ConfigReader
     }
 
     /**
-     * Recursively unwrap Symfony YAML TaggedValue objects and handle common tags
+     * Recursively unwrap Symfony YAML TaggedValue objects and handle common tags.
+     *
+     * This method handles !env, !include, !php/const, and unknown tags,
+     * ensuring all YAML values are normalized to arrays or scalars for safe merging.
      *
      * @param mixed $data
      * @return mixed
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings("PHPMD.CyclomaticComplexity") Method is intentionally complex due to tag handling.
      */
     private function normalizeYamlData(mixed $data): mixed
     {
