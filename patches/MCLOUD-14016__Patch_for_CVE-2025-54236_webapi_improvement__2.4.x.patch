@@ -1,0 +1,18 @@
+diff --git a/vendor/magento/framework/Webapi/ServiceInputProcessor.php b/vendor/magento/framework/Webapi/ServiceInputProcessor.php
+index ba58dc2bc7acf..06919af36d2eb 100644
+--- a/vendor/magento/framework/Webapi/ServiceInputProcessor.php
++++ b/vendor/magento/framework/Webapi/ServiceInputProcessor.php
+@@ -246,6 +246,13 @@ private function getConstructorData(string $className, array $data): array
+             if (isset($data[$parameter->getName()])) {
+                 $parameterType = $this->typeProcessor->getParamType($parameter);
+ 
++                // Allow only simple types or Api Data Objects
++                if (!($this->typeProcessor->isTypeSimple($parameterType)
++                    || preg_match('~\\\\?\w+\\\\\w+\\\\Api\\\\Data\\\\~', $parameterType) === 1
++                )) {
++                    continue;
++                }
++
+                 try {
+                     $res[$parameter->getName()] = $this->convertValue($data[$parameter->getName()], $parameterType);
+                 } catch (\ReflectionException $e) {
