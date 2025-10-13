@@ -68,7 +68,7 @@ class ConfigReader
                 if (defined(Yaml::class . '::PARSE_CUSTOM_TAGS')) {
                     $flags |= Yaml::PARSE_CUSTOM_TAGS;
                 }
-                $this->config = (array)Yaml::parse(
+                $this->config = (array) Yaml::parse(
                     $this->filesystem->get($path),
                     $flags
                 );
