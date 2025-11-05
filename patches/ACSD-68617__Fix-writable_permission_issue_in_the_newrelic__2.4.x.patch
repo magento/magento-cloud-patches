@@ -427,3 +427,4 @@ index e6ad3e03d7edb..78613c5b35764 100644
      <type name="Magento\Deploy\Service\DeployStaticContent">
          <plugin name="removeAllAssetIntegrityHashes" type="Magento\Csp\Plugin\RemoveAllAssetIntegrityHashes" />
          <plugin name="storeAssetIntegrityHashes" type="Magento\Csp\Plugin\StoreAssetIntegrityHashes" />
+
