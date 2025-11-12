@@ -310,6 +310,12 @@
     },
     "Patch for CVE-2025-54236 - WebAPI-improvement": {
       ">=2.4.4 <2.4.4-p16 || >=2.4.5 <2.4.5-p15 || >=2.4.6 <2.4.6-p13 || >=2.4.7 <2.4.7-p8 || >=2.4.8 <2.4.8-p3": "MCLOUD-14016__Patch_for_CVE-2025-54236_webapi_improvement__2.4.x.patch"
+    },
+    "Patch Revert AC-15282: The sri-hashes.json file is note being generated correctly on cloud": {
+      "2.4.8-p3": "Revert-AC-15165__2.4.8-p3__composer.patch",
+      "2.4.7-p8 || 2.4.6-p13": "Revert-AC-15165__2.4.7-p8_2.4.6-p13__composer.patch",
+      "2.4.5-p15": "Revert-AC-15165__2.4.5-p15__composer.patch",
+      "2.4.4-p16": "Revert-AC-15165__2.4.4-p16__composer.patch"
     }
   },
   "magento/module-paypal": {
