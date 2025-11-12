@@ -316,6 +316,12 @@
     },
     "Patch for Checkout Broken: static.min.js & mixins.min.js not loaded": {
       "2.4.8-p3 || 2.4.7-p8 || 2.4.6-p13 || 2.4.5-p15 || 2.4.4-p16": "AC-15867__Fix_Checkout_broken_static_min_js_and_mixins_min_js_loading_issue__2.4.x.patch"
+    },
+    "Patch Revert AC-15282: The sri-hashes.json file is note being generated correctly on cloud": {
+      "2.4.8-p3": "Revert_AC-15165_2.4.8-p3_composer.patch",
+      "2.4.7-p8 || 2.4.6-p13": "Revert_AC-15165_2.4.7-p8_2.4.6-p13_composer.patch",
+      "2.4.5-p15": "Revert_AC-15165_2.4.5-p15_composer.patch",
+      "2.4.4-p16": "Revert_AC-15165_2.4.4-p16_composer.patch"
     }
   },
   "magento/module-paypal": {
