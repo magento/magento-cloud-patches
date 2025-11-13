@@ -1,0 +1,1633 @@
+diff --git a/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Integrity.php b/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Integrity.php
+index ba77e172355d5..41e81752632fb 100644
+--- a/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Integrity.php
++++ b/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Integrity.php
+@@ -1,7 +1,7 @@
+ <?php
+ /**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
+  */
+ declare(strict_types=1);
+ 
+@@ -12,11 +12,8 @@
+ use Magento\Csp\Model\SubresourceIntegrityFactory;
+ use Magento\Framework\App\Filesystem\DirectoryList;
+ use Magento\Csp\Model\SubresourceIntegrityCollector;
+-use Magento\Csp\Model\SubresourceIntegrityRepositoryPool;
+ use Magento\Deploy\Package\Processor\ProcessorInterface;
+ use Magento\Csp\Model\SubresourceIntegrity\HashGenerator;
+-use Magento\Framework\App\ObjectManager;
+-use Psr\Log\LoggerInterface;
+ 
+ /**
+  * Post-processor that generates integrity hashes after static content package deployed.
+@@ -43,39 +40,22 @@ class Integrity implements ProcessorInterface
+      */
+     private SubresourceIntegrityCollector $integrityCollector;
+ 
+-    /**
+-     * @var SubresourceIntegrityRepositoryPool
+-     */
+-    private SubresourceIntegrityRepositoryPool $repositoryPool;
+-
+-    /**
+-     * @var LoggerInterface
+-     */
+-    private LoggerInterface $logger;
+-
+     /**
+      * @param Filesystem $filesystem
+      * @param HashGenerator $hashGenerator
+      * @param SubresourceIntegrityFactory $integrityFactory
+      * @param SubresourceIntegrityCollector $integrityCollector
+-     * @param LoggerInterface|null $logger
+-     * @param SubresourceIntegrityRepositoryPool|null $repositoryPool
+      */
+     public function __construct(
+         Filesystem $filesystem,
+         HashGenerator $hashGenerator,
+         SubresourceIntegrityFactory $integrityFactory,
+-        SubresourceIntegrityCollector $integrityCollector,
+-        ?LoggerInterface $logger = null,
+-        ?SubresourceIntegrityRepositoryPool $repositoryPool = null
++        SubresourceIntegrityCollector $integrityCollector
+     ) {
+         $this->filesystem = $filesystem;
+         $this->hashGenerator = $hashGenerator;
+         $this->integrityFactory = $integrityFactory;
+         $this->integrityCollector = $integrityCollector;
+-        $this->logger = $logger ?? ObjectManager::getInstance()->get(LoggerInterface::class);
+-        $this->repositoryPool = $repositoryPool ??
+-            ObjectManager::getInstance()->get(SubresourceIntegrityRepositoryPool::class);
+     }
+ 
+     /**
+@@ -88,7 +68,7 @@ public function process(Package $package, array $options): bool
+         );
+ 
+         foreach ($package->getFiles() as $file) {
+-            if (strtolower($file->getExtension()) === "js") {
++            if ($file->getExtension() == "js") {
+                 $integrity = $this->integrityFactory->create(
+                     [
+                         "data" => [
+@@ -104,21 +84,6 @@ public function process(Package $package, array $options): bool
+             }
+         }
+ 
+-        // Save collected data directly to repository before process exits
+-        $collectedData = $this->integrityCollector->release();
+-        if (!empty($collectedData)) {
+-            $area = explode('/', $package->getPath())[0];
+-            try {
+-                $this->repositoryPool->get($area)->saveBunch($collectedData);
+-            } catch (\Exception $e) {
+-                //phpcs:ignore
+-                $this->logger->error('Integrity PostProcessor: Failed saving to ' . $area . ' repository: ' . $e->getMessage());
+-            }
+-
+-            // Clear collector for next package (if any)
+-            $this->integrityCollector->clear();
+-        }
+-
+         return true;
+     }
+ }
+diff --git a/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Map.php b/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Map.php
+index 0f6a5d66f956e..4e97517a165c5 100644
+--- a/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Map.php
++++ b/vendor/magento/module-csp/Model/Deploy/Package/Processor/PostProcessor/Map.php
+@@ -1,19 +1,17 @@
+ <?php
+ /**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
+  */
+ declare(strict_types=1);
+ 
+ namespace Magento\Csp\Model\Deploy\Package\Processor\PostProcessor;
+ 
+-use Magento\Csp\Model\SubresourceIntegrityRepositoryPool;
+ use Magento\Deploy\Package\Package;
+ use Magento\Deploy\Package\PackageFileFactory;
+ use Magento\Deploy\Service\DeployStaticFile;
+ use Magento\Framework\App\DeploymentConfig\Writer\PhpFormatter;
+ use Magento\Framework\App\Filesystem\DirectoryList;
+-use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\Exception\FileSystemException;
+ use Magento\Framework\Filesystem;
+ use Magento\Framework\View\Asset\Minification;
+@@ -22,7 +20,6 @@
+ use Magento\Csp\Model\SubresourceIntegrity\HashGenerator;
+ use Magento\Framework\Filesystem\DriverInterface;
+ use Magento\Csp\Model\SubresourceIntegrityCollector;
+-use Psr\Log\LoggerInterface;
+ 
+ /**
+  * Class Adds Integrity attribute to requirejs-map.js asset
+@@ -62,16 +59,6 @@ class Map extends \Magento\Deploy\Package\Processor\PostProcessor\Map
+      */
+     private FileSystem $filesystem;
+ 
+-    /**
+-     * @var SubresourceIntegrityRepositoryPool
+-     */
+-    private SubresourceIntegrityRepositoryPool $repositoryPool;
+-
+-    /**
+-     * @var LoggerInterface
+-     */
+-    private LoggerInterface $logger;
+-
+     /**
+      * Constructor
+      *
+@@ -84,9 +71,6 @@ class Map extends \Magento\Deploy\Package\Processor\PostProcessor\Map
+      * @param DriverInterface $driver
+      * @param SubresourceIntegrityCollector $integrityCollector
+      * @param FileSystem $filesystem
+-     * @param SubresourceIntegrityRepositoryPool|null $repositoryPool
+-     * @param LoggerInterface|null $logger
+-     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+     public function __construct(
+         DeployStaticFile $deployStaticFile,
+@@ -97,9 +81,7 @@ public function __construct(
+         HashGenerator $hashGenerator,
+         DriverInterface $driver,
+         SubresourceIntegrityCollector $integrityCollector,
+-        Filesystem $filesystem,
+-        ?SubresourceIntegrityRepositoryPool $repositoryPool = null,
+-        ?LoggerInterface $logger = null
++        Filesystem $filesystem
+     ) {
+         $this->minification = $minification;
+         $this->integrityFactory = $integrityFactory;
+@@ -107,10 +89,6 @@ public function __construct(
+         $this->driver = $driver;
+         $this->integrityCollector = $integrityCollector;
+         $this->filesystem = $filesystem;
+-        $this->repositoryPool = $repositoryPool ??
+-            ObjectManager::getInstance()->get(SubresourceIntegrityRepositoryPool::class);
+-        $this->logger = $logger ??
+-            ObjectManager::getInstance()->get(LoggerInterface::class);
+         parent::__construct($deployStaticFile, $formatter, $packageFileFactory, $minification);
+     }
+ 
+@@ -140,18 +118,7 @@ public function process(Package $package, array $options): bool
+                         ]
+                     ]
+                 );
+-                // Save immediately to repository instead of using collector
+-                $area = $package->getArea();
+-
+-                if (!empty($area)) {
+-                    try {
+-                        $this->repositoryPool->get($area)->save($integrity);
+-                        $this->logger->info("Map PostProcessor: Saved SRI hash for {$relativePath} in {$area} area");
+-                    } catch (\Exception $e) {
+-                        //phpcs:ignore
+-                        $this->logger->error("Map PostProcessor: Failed to save SRI hash for {$relativePath} in {$area} area");
+-                    }
+-                }
++                $this->integrityCollector->collect($integrity);
+             }
+         }
+         return true;
+diff --git a/vendor/magento/module-csp/Model/SubresourceIntegrity/Storage/File.php b/vendor/magento/module-csp/Model/SubresourceIntegrity/Storage/File.php
+deleted file mode 100644
+index 703f6ff369a1d..0000000000000
+--- a/vendor/magento/module-csp/Model/SubresourceIntegrity/Storage/File.php
++++ /dev/null
+@@ -1,125 +0,0 @@
+-<?php
+-/**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
+- */
+-declare(strict_types=1);
+-
+-namespace Magento\Csp\Model\SubresourceIntegrity\Storage;
+-
+-use Psr\Log\LoggerInterface;
+-use Magento\Framework\Filesystem;
+-use Magento\Framework\App\Filesystem\DirectoryList;
+-use Magento\Framework\Exception\FileSystemException;
+-use Magento\Csp\Model\SubresourceIntegrity\StorageInterface;
+-
+-/**
+- * Filesystem based SRI hashed storage.
+- */
+-class File implements StorageInterface
+-{
+-    /**
+-     * Name of a storage file.
+-     *
+-     * @var string
+-     */
+-    private const FILENAME = 'sri-hashes.json';
+-
+-    /**
+-     * @var Filesystem
+-     */
+-    private Filesystem $filesystem;
+-
+-    /**
+-     * @var LoggerInterface
+-     */
+-    private LoggerInterface $logger;
+-
+-    /**
+-     * @param Filesystem $filesystem
+-     * @param LoggerInterface $logger
+-     */
+-    public function __construct(
+-        Filesystem $filesystem,
+-        LoggerInterface $logger
+-    ) {
+-        $this->filesystem = $filesystem;
+-        $this->logger = $logger;
+-    }
+-
+-    /**
+-     * @inheritDoc
+-     */
+-    public function load(?string $context): ?string
+-    {
+-        try {
+-            $staticDir = $this->filesystem->getDirectoryRead(
+-                DirectoryList::STATIC_VIEW
+-            );
+-
+-            $path = $this->resolveFilePath($context);
+-
+-            if (!$staticDir->isFile($path)) {
+-                return null;
+-            }
+-
+-            return $staticDir->readFile($path);
+-        } catch (FileSystemException $exception) {
+-            $this->logger->critical($exception);
+-
+-            return null;
+-        }
+-    }
+-
+-    /**
+-     * @inheritDoc
+-     */
+-    public function save(string $data, ?string $context): bool
+-    {
+-        try {
+-            $staticDir = $this->filesystem->getDirectoryWrite(
+-                DirectoryList::STATIC_VIEW
+-            );
+-
+-            return (bool) $staticDir->writeFile(
+-                $this->resolveFilePath($context),
+-                $data,
+-                'w'
+-            );
+-        } catch (FileSystemException $exception) {
+-            $this->logger->critical($exception);
+-
+-            return false;
+-        }
+-    }
+-
+-    /**
+-     * @inheritDoc
+-     */
+-    public function remove(?string $context): bool
+-    {
+-        try {
+-            $staticDir = $this->filesystem->getDirectoryWrite(
+-                DirectoryList::STATIC_VIEW
+-            );
+-
+-            return $staticDir->delete($this->resolveFilePath($context));
+-        } catch (FileSystemException $exception) {
+-            $this->logger->critical($exception);
+-
+-            return false;
+-        }
+-    }
+-
+-    /**
+-     * Resolves a storage file path for a given context.
+-     *
+-     * @param string|null $context
+-     *
+-     * @return string
+-     */
+-    private function resolveFilePath(?string $context): string
+-    {
+-        return ($context ? $context . DIRECTORY_SEPARATOR : '') . self::FILENAME;
+-    }
+-}
+diff --git a/vendor/magento/module-csp/Model/SubresourceIntegrity/StorageInterface.php b/vendor/magento/module-csp/Model/SubresourceIntegrity/StorageInterface.php
+deleted file mode 100644
+index 5802f3aa49b35..0000000000000
+--- a/vendor/magento/module-csp/Model/SubresourceIntegrity/StorageInterface.php
++++ /dev/null
+@@ -1,42 +0,0 @@
+-<?php
+-/**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
+- */
+-declare(strict_types=1);
+-
+-namespace Magento\Csp\Model\SubresourceIntegrity;
+-
+-/**
+- * Interface for an SRI hashes storage.
+- */
+-interface StorageInterface
+-{
+-    /**
+-     * Loads SRI hashes from a storage.
+-     *
+-     * @param string|null $context
+-     *
+-     * @return string|null
+-     */
+-    public function load(?string $context): ?string;
+-
+-    /**
+-     * Saves SRI hashes to a storage.
+-     *
+-     * @param string $data
+-     * @param string|null $context
+-     *
+-     * @return bool
+-     */
+-    public function save(string $data, ?string $context): bool;
+-
+-    /**
+-     * Deletes all SRI hashes from a storage.
+-     *
+-     * @param string|null $context
+-     *
+-     * @return bool
+-     */
+-    public function remove(?string $context): bool;
+-}
+diff --git a/vendor/magento/module-csp/Model/SubresourceIntegrityCollector.php b/vendor/magento/module-csp/Model/SubresourceIntegrityCollector.php
+index 13f2f2273dc33..36b1775b6558c 100644
+--- a/vendor/magento/module-csp/Model/SubresourceIntegrityCollector.php
++++ b/vendor/magento/module-csp/Model/SubresourceIntegrityCollector.php
+@@ -1,7 +1,7 @@
+ <?php
+ /**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
+  */
+ declare(strict_types=1);
+ 
+@@ -46,14 +46,4 @@ public function release(): array
+     {
+         return $this->data;
+     }
+-
+-    /**
+-     * Clear all collected data.
+-     *
+-     * @return void
+-     */
+-    public function clear(): void
+-    {
+-        $this->data = [];
+-    }
+ }
+diff --git a/vendor/magento/module-csp/Model/SubresourceIntegrityRepository.php b/vendor/magento/module-csp/Model/SubresourceIntegrityRepository.php
+index a6f81b85b1d9c..7cc83466ab078 100644
+--- a/vendor/magento/module-csp/Model/SubresourceIntegrityRepository.php
++++ b/vendor/magento/module-csp/Model/SubresourceIntegrityRepository.php
+@@ -1,47 +1,50 @@
+ <?php
+ /**
+- * Copyright 2024 Adobe
+- * All Rights Reserved.
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
+  */
+ declare(strict_types=1);
+ 
+ namespace Magento\Csp\Model;
+ 
+-use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\App\CacheInterface;
+ use Magento\Framework\Serialize\SerializerInterface;
+-use Magento\Csp\Model\SubresourceIntegrity\StorageInterface;
+-use Magento\Csp\Model\SubresourceIntegrityFactory;
+ 
+ /**
+- * Class contains methods equivalent to repository design to manage SRI hashes.
++ * Class contains methods equivalent to repository design to manage SRI hashes in cache.
+  */
+ class SubresourceIntegrityRepository
+ {
+     /**
++     * Cache prefix.
++     *
++     * @var string
++     */
++    private const CACHE_PREFIX = 'INTEGRITY';
++
++    /**
++     * Integrity data.
++     *
+      * @var array|null
+      */
+     private ?array $data = null;
+ 
+     /**
++     * Context of integrity data.
++     *
+      * @var string|null
+      */
+     private ?string $context;
+ 
+-    /**
+-     * @var SerializerInterface
+-     */
+-    private SerializerInterface $serializer;
+-
+     /**
+      * @var CacheInterface
+      */
+     private CacheInterface $cache;
+ 
+     /**
+-     * @var StorageInterface
++     * @var SerializerInterface
+      */
+-    private StorageInterface $storage;
++    private SerializerInterface $serializer;
+ 
+     /**
+      * @var SubresourceIntegrityFactory
+@@ -53,25 +56,17 @@ class SubresourceIntegrityRepository
+      * @param SerializerInterface $serializer
+      * @param SubresourceIntegrityFactory $integrityFactory
+      * @param string|null $context
+-     * @param StorageInterface|null $storage
+-     *
+-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+      */
+     public function __construct(
+         CacheInterface $cache,
+         SerializerInterface $serializer,
+         SubresourceIntegrityFactory $integrityFactory,
+-        ?string $context = null,
+-        ?StorageInterface $storage = null
++        ?string $context = null
+     ) {
+         $this->cache = $cache;
+         $this->serializer = $serializer;
+         $this->integrityFactory = $integrityFactory;
+         $this->context = $context;
+-
+-        $this->storage = $storage ?? ObjectManager::getInstance()->get(
+-            StorageInterface::class
+-        );
+     }
+ 
+     /**
+@@ -83,7 +78,20 @@ public function __construct(
+      */
+     public function getByPath(string $path): ?SubresourceIntegrity
+     {
+-        return $this->getData()[$path] ?? null;
++        $data = $this->getData();
++
++        if (isset($data[$path])) {
++            return $this->integrityFactory->create(
++                [
++                    "data" => [
++                        "path" => $path,
++                        "hash" => $data[$path]
++                    ]
++                ]
++            );
++        }
++
++        return null;
+     }
+ 
+     /**
+@@ -93,7 +101,20 @@ public function getByPath(string $path): ?SubresourceIntegrity
+      */
+     public function getAll(): array
+     {
+-        return array_values($this->getData());
++        $result = [];
++
++        foreach ($this->getData() as $path => $hash) {
++            $result[] = $this->integrityFactory->create(
++                [
++                    "data" => [
++                        "path" => $path,
++                        "hash" => $hash
++                    ]
++                ]
++            );
++        }
++
++        return $result;
+     }
+ 
+     /**
+@@ -107,16 +128,14 @@ public function save(SubresourceIntegrity $integrity): bool
+     {
+         $data = $this->getData();
+ 
+-        $data[$integrity->getPath()] = $integrity;
++        $data[$integrity->getPath()] = $integrity->getHash();
+ 
+         $this->data = $data;
+ 
+-        // Transform the data before saving.
+-        $transformedData = array_map(fn($integrity) => $integrity->getHash(), $this->data);
+-
+-        return $this->storage->save(
+-            $this->serializer->serialize($transformedData),
+-            $this->context
++        return $this->cache->save(
++            $this->serializer->serialize($this->data),
++            $this->getCacheKey(),
++            [self::CACHE_PREFIX]
+         );
+     }
+ 
+@@ -132,17 +151,15 @@ public function saveBunch(array $bunch): bool
+         $data = $this->getData();
+ 
+         foreach ($bunch as $integrity) {
+-            $data[$integrity->getPath()] = $integrity;
++            $data[$integrity->getPath()] = $integrity->getHash();
+         }
+ 
+         $this->data = $data;
+ 
+-        // Transform the data before saving.
+-        $transformedData = array_map(fn($integrity) => $integrity->getHash(), $this->data);
+-
+-        return $this->storage->save(
+-            $this->serializer->serialize($transformedData),
+-            $this->context
++        return $this->cache->save(
++            $this->serializer->serialize($this->data),
++            $this->getCacheKey(),
++            [self::CACHE_PREFIX]
+         );
+     }
+ 
+@@ -155,7 +172,9 @@ public function deleteAll(): bool
+     {
+         $this->data = null;
+ 
+-        return $this->storage->remove($this->context);
++        return $this->cache->remove(
++            $this->getCacheKey()
++        );
+     }
+ 
+     /**
+@@ -166,15 +185,27 @@ public function deleteAll(): bool
+     private function getData(): array
+     {
+         if ($this->data === null) {
+-            $rawData = $this->storage->load($this->context);
++            $cache = $this->cache->load($this->getCacheKey());
+ 
+-            $this->data = $rawData ? $this->serializer->unserialize($rawData) : [];
+-
+-            foreach ($this->data as $path => $hash) {
+-                $this->data[$path] = new SubresourceIntegrity(["path" => $path, "hash" => $hash]);
+-            }
++            $this->data = $cache ? $this->serializer->unserialize($cache) : [];
+         }
+ 
+         return $this->data;
+     }
++
++    /**
++     * Gets a cache key based on current context.
++     *
++     * @return string
++     */
++    private function getCacheKey(): string
++    {
++        $cacheKey = self::CACHE_PREFIX;
++
++        if ($this->context) {
++            $cacheKey .= "_" . $this->context;
++        }
++
++        return $cacheKey;
++    }
+ }
+diff --git a/vendor/magento/module-csp/Plugin/GenerateBundleAssetIntegrity.php b/vendor/magento/module-csp/Plugin/GenerateBundleAssetIntegrity.php
+deleted file mode 100644
+index c219b1874b3c5..0000000000000
+--- a/vendor/magento/module-csp/Plugin/GenerateBundleAssetIntegrity.php
++++ /dev/null
+@@ -1,106 +0,0 @@
+-<?php
+-/**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
+- */
+-declare(strict_types=1);
+-
+-namespace Magento\Csp\Plugin;
+-
+-use Magento\Csp\Model\SubresourceIntegrity\HashGenerator;
+-use Magento\Csp\Model\SubresourceIntegrityCollector;
+-use Magento\Csp\Model\SubresourceIntegrityFactory;
+-use Magento\Deploy\Service\Bundle;
+-use Magento\Framework\App\Filesystem\DirectoryList;
+-use Magento\Framework\Exception\FileSystemException;
+-use Magento\Framework\Filesystem;
+-use Magento\Framework\Filesystem\Io\File;
+-
+-class GenerateBundleAssetIntegrity
+-{
+-    /**
+-     * @var HashGenerator
+-     */
+-    private HashGenerator $hashGenerator;
+-
+-    /**
+-     * @var SubresourceIntegrityFactory
+-     */
+-    private SubresourceIntegrityFactory $integrityFactory;
+-
+-    /**
+-     * @var SubresourceIntegrityCollector
+-     */
+-    private SubresourceIntegrityCollector $integrityCollector;
+-
+-    /**
+-     * @var Filesystem
+-     */
+-    private Filesystem $filesystem;
+-
+-    /**
+-     * @var File
+-     */
+-    private File $fileIo;
+-
+-    /**
+-     * @param HashGenerator $hashGenerator
+-     * @param SubresourceIntegrityFactory $integrityFactory
+-     * @param SubresourceIntegrityCollector $integrityCollector
+-     * @param Filesystem $filesystem
+-     * @param File $fileIo
+-     */
+-    public function __construct(
+-        HashGenerator $hashGenerator,
+-        SubresourceIntegrityFactory $integrityFactory,
+-        SubresourceIntegrityCollector $integrityCollector,
+-        Filesystem $filesystem,
+-        File $fileIo
+-    ) {
+-        $this->hashGenerator = $hashGenerator;
+-        $this->integrityFactory = $integrityFactory;
+-        $this->integrityCollector = $integrityCollector;
+-        $this->filesystem = $filesystem;
+-        $this->fileIo = $fileIo;
+-    }
+-
+-    /**
+-     * Generate SRI hashes for JS files in the bundle directory.
+-     *
+-     * @param Bundle $subject
+-     * @param string|null $result
+-     * @param string $area
+-     * @param string $theme
+-     * @param string $locale
+-     * @return void
+-     * @throws FileSystemException
+-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+-     */
+-    public function afterDeploy(Bundle $subject, ?string $result, string $area, string $theme, string $locale)
+-    {
+-        if (PHP_SAPI == 'cli') {
+-            $pubStaticDir = $this->filesystem->getDirectoryRead(DirectoryList::STATIC_VIEW);
+-            $files = $pubStaticDir->search(
+-                $area ."/" . $theme . "/" . $locale . "/" . Bundle::BUNDLE_JS_DIR . "/*.js"
+-            );
+-            
+-            foreach ($files as $file) {
+-                $bundlePath = $area . '/' . $theme . '/' . $locale .
+-                    "/" . Bundle::BUNDLE_JS_DIR . '/' . $this->fileIo->getPathInfo($file)['basename'];
+-                    
+-                $integrity = $this->integrityFactory->create(
+-                    [
+-                        "data" => [
+-                            'hash' => $this->hashGenerator->generate(
+-                                $pubStaticDir->readFile($file)
+-                            ),
+-                            'path' => $bundlePath
+-                        ]
+-                    ]
+-                );
+-
+-                $this->integrityCollector->collect($integrity);
+-            }
+-        }
+-    }
+-}
+diff --git a/vendor/magento/module-csp/Plugin/GenerateMergedAssetIntegrity.php b/vendor/magento/module-csp/Plugin/GenerateMergedAssetIntegrity.php
+deleted file mode 100644
+index e2d770406ceba..0000000000000
+--- a/vendor/magento/module-csp/Plugin/GenerateMergedAssetIntegrity.php
++++ /dev/null
+@@ -1,90 +0,0 @@
+-<?php
+-/**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
+- */
+-declare(strict_types=1);
+-
+-namespace Magento\Csp\Plugin;
+-
+-use Magento\Csp\Model\SubresourceIntegrityRepositoryPool;
+-use Magento\Csp\Model\SubresourceIntegrityRepository;
+-use Magento\Csp\Model\SubresourceIntegrity\HashGenerator;
+-use Magento\Csp\Model\SubresourceIntegrityFactory;
+-use Magento\Framework\App\Area;
+-use Magento\Framework\Exception\FileSystemException;
+-use Magento\Framework\Filesystem;
+-use Magento\Framework\View\Asset\LocalInterface;
+-use Magento\Framework\View\Asset\MergeStrategy\FileExists;
+-
+-class GenerateMergedAssetIntegrity
+-{
+-    /**
+-     * @var SubresourceIntegrityRepository
+-     */
+-    private SubresourceIntegrityRepository $sourceIntegrityRepository;
+-
+-    /**
+-     * @var HashGenerator
+-     */
+-    private HashGenerator $hashGenerator;
+-
+-    /**
+-     * @var SubresourceIntegrityFactory
+-     */
+-    private SubresourceIntegrityFactory $integrityFactory;
+-
+-    /**
+-     * @var Filesystem
+-     */
+-    private Filesystem $filesystem;
+-
+-    /**
+-     * @param SubresourceIntegrityRepositoryPool $sourceIntegrityRepositoryPool
+-     * @param HashGenerator $hashGenerator
+-     * @param SubresourceIntegrityFactory $integrityFactory
+-     * @param Filesystem $filesystem
+-     */
+-    public function __construct(
+-        SubresourceIntegrityRepositoryPool $sourceIntegrityRepositoryPool,
+-        HashGenerator $hashGenerator,
+-        SubresourceIntegrityFactory $integrityFactory,
+-        Filesystem $filesystem
+-    ) {
+-        $this->sourceIntegrityRepository = $sourceIntegrityRepositoryPool->get(Area::AREA_FRONTEND);
+-        $this->hashGenerator = $hashGenerator;
+-        $this->integrityFactory = $integrityFactory;
+-        $this->filesystem = $filesystem;
+-    }
+-
+-    /**
+-     * Generate SRI hash for merged JS files.
+-     *
+-     * @param FileExists $subject
+-     * @param string|null $result
+-     * @param array $assetsToMerge
+-     * @param LocalInterface $resultAsset
+-     * @return string|null
+-     * @throws FileSystemException
+-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+-     */
+-    public function afterMerge(FileExists $subject, ?string $result, array $assetsToMerge, LocalInterface $resultAsset)
+-    {
+-        if ($resultAsset->getContentType() !== 'js') {
+-            return $result;
+-        }
+-
+-        $integrity = $this->integrityFactory->create(
+-            [
+-                "data" => [
+-                    'hash' => $this->hashGenerator->generate($resultAsset->getContent()),
+-                    'path' => $resultAsset->getPath()
+-                ]
+-            ]
+-        );
+-
+-        $this->sourceIntegrityRepository->save($integrity);
+-
+-        return $result;
+-    }
+-}
+diff --git a/vendor/magento/module-csp/Plugin/RemoveAllAssetIntegrityHashes.php b/vendor/magento/module-csp/Plugin/RemoveAllAssetIntegrityHashes.php
+index 0bc7e24a30419..85b97e9091c54 100644
+--- a/vendor/magento/module-csp/Plugin/RemoveAllAssetIntegrityHashes.php
++++ b/vendor/magento/module-csp/Plugin/RemoveAllAssetIntegrityHashes.php
+@@ -1,7 +1,7 @@
+ <?php
+ /**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
+  */
+ declare(strict_types=1);
+ 
+@@ -12,8 +12,6 @@
+ use Magento\Deploy\Console\DeployStaticOptions;
+ use Magento\Deploy\Service\DeployStaticContent;
+ use Magento\Csp\Model\SubresourceIntegrityRepositoryPool;
+-use Magento\Csp\Model\SubresourceIntegrityCollector;
+-use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Plugin that removes existing integrity hashes for all assets.
+@@ -25,22 +23,13 @@ class RemoveAllAssetIntegrityHashes
+      */
+     private SubresourceIntegrityRepositoryPool $integrityRepositoryPool;
+ 
+-    /**
+-     * @var SubresourceIntegrityCollector
+-     */
+-    private SubresourceIntegrityCollector $integrityCollector;
+-
+     /**
+      * @param SubresourceIntegrityRepositoryPool $integrityRepositoryPool
+-     * @param SubresourceIntegrityCollector|null $integrityCollector
+      */
+     public function __construct(
+-        SubresourceIntegrityRepositoryPool $integrityRepositoryPool,
+-        ?SubresourceIntegrityCollector $integrityCollector = null
++        SubresourceIntegrityRepositoryPool $integrityRepositoryPool
+     ) {
+         $this->integrityRepositoryPool = $integrityRepositoryPool;
+-        $this->integrityCollector = $integrityCollector ?? ObjectManager::getInstance()
+-            ->get(SubresourceIntegrityCollector::class);
+     }
+ 
+     /**
+@@ -58,14 +47,10 @@ public function beforeDeploy(
+         array $options
+     ): void {
+         if (PHP_SAPI == 'cli' && !$this->isRefreshContentVersionOnly($options)) {
+-            // Clear stored integrity hashes from all areas
+             foreach ([Package::BASE_AREA, Area::AREA_FRONTEND, Area::AREA_ADMINHTML] as $area) {
+                 $this->integrityRepositoryPool->get($area)
+                     ->deleteAll();
+             }
+-
+-            // Clear any leftover in-memory integrity hashes from previous runs
+-            $this->integrityCollector->clear();
+         }
+     }
+ 
+diff --git a/vendor/magento/module-csp/Plugin/StoreAssetIntegrityHashes.php b/vendor/magento/module-csp/Plugin/StoreAssetIntegrityHashes.php
+index 18f1d21c7fd33..e5674dd3a78ef 100644
+--- a/vendor/magento/module-csp/Plugin/StoreAssetIntegrityHashes.php
++++ b/vendor/magento/module-csp/Plugin/StoreAssetIntegrityHashes.php
+@@ -1,7 +1,7 @@
+ <?php
+ /**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
+  */
+ declare(strict_types=1);
+ 
+@@ -10,8 +10,6 @@
+ use Magento\Deploy\Service\DeployStaticContent;
+ use Magento\Csp\Model\SubresourceIntegrityCollector;
+ use Magento\Csp\Model\SubresourceIntegrityRepositoryPool;
+-use Psr\Log\LoggerInterface;
+-use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Plugin that stores generated integrity hashes for all assets.
+@@ -28,25 +26,16 @@ class StoreAssetIntegrityHashes
+      */
+     private SubresourceIntegrityRepositoryPool $integrityRepositoryPool;
+ 
+-    /**
+-     * @var LoggerInterface
+-     */
+-    private LoggerInterface $logger;
+-
+     /**
+      * @param SubresourceIntegrityCollector $integrityCollector
+      * @param SubresourceIntegrityRepositoryPool $integrityRepositoryPool
+-     * @param LoggerInterface|null $logger
+      */
+     public function __construct(
+         SubresourceIntegrityCollector $integrityCollector,
+-        SubresourceIntegrityRepositoryPool $integrityRepositoryPool,
+-        ?LoggerInterface $logger = null
++        SubresourceIntegrityRepositoryPool $integrityRepositoryPool
+     ) {
+         $this->integrityCollector = $integrityCollector;
+         $this->integrityRepositoryPool = $integrityRepositoryPool;
+-        $this->logger = $logger ??
+-            ObjectManager::getInstance()->get(LoggerInterface::class);
+     }
+ 
+     /**
+@@ -66,19 +55,16 @@ public function afterDeploy(
+         array $options
+     ): void {
+         $bunches = [];
+-        $integrityHashes = $this->integrityCollector->release();
+ 
+-        foreach ($integrityHashes as $integrity) {
++        foreach ($this->integrityCollector->release() as $integrity) {
+             $area = explode("/", $integrity->getPath())[0];
++
+             $bunches[$area][] = $integrity;
+         }
+ 
+         foreach ($bunches as $area => $bunch) {
+-            try {
+-                $this->integrityRepositoryPool->get($area)->saveBunch($bunch);
+-            } catch (\Exception $e) {
+-                $this->logger->error('SRI Store: Failed saving ' . $area . ': ' . $e->getMessage());
+-            }
++            $this->integrityRepositoryPool->get($area)
++                ->saveBunch($bunch);
+         }
+     }
+ }
+diff --git a/vendor/magento/module-csp/Test/Unit/Model/SubresourceIntegrityCollectorTest.php b/vendor/magento/module-csp/Test/Unit/Model/SubresourceIntegrityCollectorTest.php
+deleted file mode 100644
+index 2c92a8b8879cc..0000000000000
+--- a/vendor/magento/module-csp/Test/Unit/Model/SubresourceIntegrityCollectorTest.php
++++ /dev/null
+@@ -1,169 +0,0 @@
+-<?php
+-/**
+- * Copyright 2024 Adobe
+- * All Rights Reserved.
+- */
+-declare(strict_types=1);
+-
+-namespace Magento\Csp\Test\Unit\Model;
+-
+-use Magento\Csp\Model\SubresourceIntegrity;
+-use Magento\Csp\Model\SubresourceIntegrityCollector;
+-use PHPUnit\Framework\MockObject\MockObject;
+-use PHPUnit\Framework\TestCase;
+-
+-/**
+- * Unit Test for Class @see Magento\Csp\Model\SubresourceIntegrityCollector
+- */
+-class SubresourceIntegrityCollectorTest extends TestCase
+-{
+-    /**
+-     * @var SubresourceIntegrityCollector
+-     */
+-    private SubresourceIntegrityCollector $collector;
+-
+-    /**
+-     * Setup test
+-     */
+-    protected function setUp(): void
+-    {
+-        $this->collector = new SubresourceIntegrityCollector();
+-    }
+-
+-    /**
+-     * Test that collect method adds integrity objects to internal storage
+-     */
+-    public function testCollectAddsIntegrityObject(): void
+-    {
+-        $integrityMock = $this->createMock(SubresourceIntegrity::class);
+-
+-        $this->collector->collect($integrityMock);
+-
+-        $result = $this->collector->release();
+-        $this->assertCount(1, $result);
+-        $this->assertSame($integrityMock, $result[0]);
+-    }
+-
+-    /**
+-     * Test that multiple collect calls accumulate objects
+-     */
+-    public function testMultipleCollectCallsAccumulate(): void
+-    {
+-        $integrity1 = $this->createMock(SubresourceIntegrity::class);
+-        $integrity2 = $this->createMock(SubresourceIntegrity::class);
+-        $integrity3 = $this->createMock(SubresourceIntegrity::class);
+-
+-        $this->collector->collect($integrity1);
+-        $this->collector->collect($integrity2);
+-        $this->collector->collect($integrity3);
+-
+-        $result = $this->collector->release();
+-        $this->assertCount(3, $result);
+-        $this->assertSame($integrity1, $result[0]);
+-        $this->assertSame($integrity2, $result[1]);
+-        $this->assertSame($integrity3, $result[2]);
+-    }
+-
+-    /**
+-     * Test that release returns empty array when no objects collected
+-     */
+-    public function testReleaseReturnsEmptyArrayWhenEmpty(): void
+-    {
+-        $result = $this->collector->release();
+-
+-        $this->assertIsArray($result);
+-        $this->assertEmpty($result);
+-    }
+-
+-    /**
+-     * Test that release does not clear the internal data
+-     */
+-    public function testReleaseDoesNotClearData(): void
+-    {
+-        $integrityMock = $this->createMock(SubresourceIntegrity::class);
+-
+-        $this->collector->collect($integrityMock);
+-
+-        // Call release multiple times
+-        $result1 = $this->collector->release();
+-        $result2 = $this->collector->release();
+-
+-        $this->assertCount(1, $result1);
+-        $this->assertCount(1, $result2);
+-        $this->assertSame($integrityMock, $result1[0]);
+-        $this->assertSame($integrityMock, $result2[0]);
+-    }
+-
+-    /**
+-     * Test that clear method empties the internal storage
+-     */
+-    public function testClearEmptiesInternalStorage(): void
+-    {
+-        $integrity1 = $this->createMock(SubresourceIntegrity::class);
+-        $integrity2 = $this->createMock(SubresourceIntegrity::class);
+-
+-        // Add some objects
+-        $this->collector->collect($integrity1);
+-        $this->collector->collect($integrity2);
+-
+-        // Verify they're there
+-        $resultBeforeClear = $this->collector->release();
+-        $this->assertCount(2, $resultBeforeClear);
+-
+-        // Clear the data
+-        $this->collector->clear();
+-
+-        // Verify it's empty
+-        $resultAfterClear = $this->collector->release();
+-        $this->assertEmpty($resultAfterClear);
+-    }
+-
+-    /**
+-     * Test that collector works properly after clear
+-     */
+-    public function testCollectorWorksAfterClear(): void
+-    {
+-        $integrity1 = $this->createMock(SubresourceIntegrity::class);
+-        $integrity2 = $this->createMock(SubresourceIntegrity::class);
+-
+-        // Add and clear
+-        $this->collector->collect($integrity1);
+-        $this->collector->clear();
+-
+-        // Add new data
+-        $this->collector->collect($integrity2);
+-
+-        $result = $this->collector->release();
+-        $this->assertCount(1, $result);
+-        $this->assertSame($integrity2, $result[0]);
+-    }
+-
+-    /**
+-     * Test collect, release, clear cycle
+-     */
+-    public function testCompleteCollectReleaseClearCycle(): void
+-    {
+-        $integrity1 = $this->createMock(SubresourceIntegrity::class);
+-        $integrity2 = $this->createMock(SubresourceIntegrity::class);
+-
+-        // Initially empty
+-        $this->assertEmpty($this->collector->release());
+-
+-        // Collect objects
+-        $this->collector->collect($integrity1);
+-        $this->collector->collect($integrity2);
+-
+-        // Release should return collected objects
+-        $released = $this->collector->release();
+-        $this->assertCount(2, $released);
+-        $this->assertSame($integrity1, $released[0]);
+-        $this->assertSame($integrity2, $released[1]);
+-
+-        // Data should still be there after release
+-        $this->assertCount(2, $this->collector->release());
+-
+-        // Clear should empty everything
+-        $this->collector->clear();
+-        $this->assertEmpty($this->collector->release());
+-    }
+-}
+diff --git a/vendor/magento/module-csp/Test/Unit/Model/SubresourceIntegrityRepositoryTest.php b/vendor/magento/module-csp/Test/Unit/Model/SubresourceIntegrityRepositoryTest.php
+index fdbdcaf0e4f59..bc75d35f8fd9c 100644
+--- a/vendor/magento/module-csp/Test/Unit/Model/SubresourceIntegrityRepositoryTest.php
++++ b/vendor/magento/module-csp/Test/Unit/Model/SubresourceIntegrityRepositoryTest.php
+@@ -1,7 +1,7 @@
+ <?php
+ /**
+- * Copyright 2024 Adobe
+- * All Rights Reserved.
++ * Copyright © Magento, Inc. All rights reserved.
++ * See COPYING.txt for license details.
+  */
+ declare(strict_types=1);
+ 
+@@ -14,7 +14,6 @@
+ use Magento\Csp\Model\SubresourceIntegrity;
+ use Magento\Csp\Model\SubresourceIntegrityRepository;
+ use Magento\Csp\Model\SubresourceIntegrityFactory;
+-use Magento\Csp\Model\SubresourceIntegrity\StorageInterface;
+ 
+ /**
+  * Unit Test for Class @see Magento\Csp\Model\SubresourceIntegrityRepository
+@@ -22,11 +21,6 @@
+  */
+ class SubresourceIntegrityRepositoryTest extends TestCase
+ {
+-    /**
+-     * @var string
+-     */
+-    private string $context = "test";
+-
+     /**
+      * @var MockObject
+      */
+@@ -37,17 +31,14 @@ class SubresourceIntegrityRepositoryTest extends TestCase
+      */
+     private MockObject $serializerMock;
+ 
+-    /**
+-     * @var MockObject
+-     */
+-    private MockObject $storage;
+-
+     /**
+      * @var MockObject
+      */
+     private MockObject $integrityFactoryMock;
+ 
+     /**
++     * Subject of testing.
++     *
+      * @var SubresourceIntegrityRepository|null
+      */
+     private ?SubresourceIntegrityRepository $subresourceIntegrityRepository = null;
+@@ -71,21 +62,16 @@ protected function setUp(): void
+         $this->integrityFactoryMock = $this->getMockBuilder(SubresourceIntegrityFactory::class)
+             ->disableOriginalConstructor()
+             ->getMock();
+-        $this->storage = $this->getMockBuilder(StorageInterface::class)
+-            ->disableOriginalConstructor()
+-            ->getMockForAbstractClass();
+ 
+         $this->subresourceIntegrityRepository = new SubresourceIntegrityRepository(
+             $this->cacheMock,
+             $this->serializerMock,
+-            $this->integrityFactoryMock,
+-            $this->context,
+-            $this->storage
++            $this->integrityFactoryMock
+         );
+     }
+ 
+-    /**
+-     * Test save repository
++    /** Test save repository
++     *
+      *
+      * @return void
+      */
+@@ -100,80 +86,45 @@ public function testSave(): void
+ 
+         $expected[$data->getPath()] = $data->getHash();
+         $serialized = json_encode($expected);
+-
+-        $this->storage->expects($this->once())
+-            ->method('load')
+-            ->with($this->context)
+-            ->willReturn(null);
+-
+-        $this->serializerMock->expects($this->never())
+-            ->method('unserialize');
+-
+-        $this->serializerMock->expects($this->once())
+-            ->method('serialize')
+-            ->with($expected)
+-            ->willReturn($serialized);
+-
+-        $this->storage->expects($this->once())
+-            ->method('save')
+-            ->with($serialized, $this->context)
+-            ->willReturn(true);
+-
+-        $this->assertTrue(
+-            $this->subresourceIntegrityRepository->save($data)
+-        );
++        $this->cacheMock->expects($this->once())->method('load')->willReturn(false);
++        $this->serializerMock->expects($this->once())->method('serialize')->with($expected)->willReturn($serialized);
++        $this->cacheMock->expects($this->once())->method('save')->willReturn(true);
++        $this->assertTrue($this->subresourceIntegrityRepository->save($data));
+     }
+ 
+-    /**
+-     * Test that cache saves in bunch
++    /** Test that cache saves in bunch
++     *
+      *
+      * @return void
+      */
+     public function testSaveBunch(): void
+     {
+-        $bunch = [
+-            new SubresourceIntegrity(
+-                [
+-                    'hash' => 'testhash',
+-                    'path' => 'js/jquery.js'
+-                ]
+-            ),
+-            new SubresourceIntegrity(
+-                [
+-                    'hash' => 'testhash2',
+-                    'path' => 'js/test.js'
+-                ]
+-            )
+-        ];
++        $bunch1 = new SubresourceIntegrity(
++            [
++                'hash' => 'testhash',
++                'path' => 'js/jquery.js'
++            ]
++        );
++
++        $bunch2 = new SubresourceIntegrity(
++            [
++                'hash' => 'testhash2',
++                'path' => 'js/test.js'
++            ]
++        );
++
++        $bunches = [$bunch1, $bunch2];
+ 
+         $expected = [];
+ 
+-        foreach ($bunch as $integrity) {
+-            $expected[$integrity->getPath()] = $integrity->getHash();
++        foreach ($bunches as $bunch) {
++            $expected[$bunch->getPath()] = $bunch->getHash();
+         }
+-
+         $serializedBunch = json_encode($expected);
+-
+-        $this->storage->expects($this->once())
+-            ->method('load')
+-            ->with($this->context)
+-            ->willReturn(null);
+-
+-        $this->serializerMock->expects($this->never())
+-            ->method('unserialize');
+-
+-        $this->serializerMock->expects($this->once())
+-            ->method('serialize')
+-            ->with($expected)
+-            ->willReturn($serializedBunch);
+-
+-        $this->storage->expects($this->once())
+-            ->method('save')
+-            ->with($serializedBunch, $this->context)
+-            ->willReturn(true);
+-
+-        $this->assertTrue(
+-            $this->subresourceIntegrityRepository->saveBunch($bunch)
+-        );
++        $this->cacheMock->expects($this->once())->method('load')->willReturn(false);
++        $this->serializerMock->expects($this->once())->method('serialize')
++            ->with($expected)->willReturn($serializedBunch);
++        $this->cacheMock->expects($this->once())->method('save')->willReturn(true);
++        $this->assertTrue($this->subresourceIntegrityRepository->saveBunch($bunches));
+     }
+ }
+diff --git a/vendor/magento/module-csp/Test/Unit/Plugin/GenerateBundleAssetIntegrityTest.php b/vendor/magento/module-csp/Test/Unit/Plugin/GenerateBundleAssetIntegrityTest.php
+deleted file mode 100644
+index 8637e652f98a2..0000000000000
+--- a/vendor/magento/module-csp/Test/Unit/Plugin/GenerateBundleAssetIntegrityTest.php
++++ /dev/null
+@@ -1,117 +0,0 @@
+-<?php
+-/**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
+- */
+-declare(strict_types=1);
+-
+-namespace Magento\Csp\Test\Unit\Plugin;
+-
+-use Magento\Csp\Model\SubresourceIntegrity;
+-use Magento\Csp\Model\SubresourceIntegrity\HashGenerator;
+-use Magento\Csp\Model\SubresourceIntegrityCollector;
+-use Magento\Csp\Model\SubresourceIntegrityFactory;
+-use Magento\Csp\Plugin\GenerateBundleAssetIntegrity;
+-use Magento\Deploy\Service\Bundle;
+-use Magento\Framework\Exception\FileSystemException;
+-use Magento\Framework\Filesystem;
+-use Magento\Framework\Filesystem\Directory\ReadInterface;
+-use Magento\Framework\Filesystem\Io\File;
+-use PHPUnit\Framework\MockObject\Exception;
+-use PHPUnit\Framework\MockObject\MockObject;
+-use PHPUnit\Framework\TestCase;
+-
+-class GenerateBundleAssetIntegrityTest extends TestCase
+-{
+-    /**
+-     * @var HashGenerator|MockObject
+-     */
+-    private HashGenerator $hashGenerator;
+-
+-    /**
+-     * @var SubresourceIntegrityFactory|MockObject
+-     */
+-    private SubresourceIntegrityFactory $integrityFactory;
+-
+-    /**
+-     * @var SubresourceIntegrityCollector|MockObject
+-     */
+-    private SubresourceIntegrityCollector $integrityCollector;
+-
+-    /**
+-     * @var Filesystem|MockObject
+-     */
+-    private Filesystem $filesystem;
+-
+-    /**
+-     * @var File|MockObject
+-     */
+-    private File $fileIo;
+-
+-    /**
+-     * Initialize Dependencies
+-     *
+-     * @return void
+-     * @throws Exception
+-     */
+-    protected function setUp(): void
+-    {
+-        $this->hashGenerator = $this->createMock(HashGenerator::class);
+-        $this->integrityFactory = $this->createMock(SubresourceIntegrityFactory::class);
+-        $this->integrityCollector = $this->createMock(SubresourceIntegrityCollector::class);
+-        $this->filesystem = $this->createMock(Filesystem::class);
+-        $this->fileIo = $this->createMock(File::class);
+-    }
+-
+-    /**
+-     * @return void
+-     * @throws Exception
+-     * @throws FileSystemException
+-     */
+-    public function testAfterDeploy(): void
+-    {
+-        $subject = $this->createMock(Bundle::class);
+-        $result = null;
+-        $area = 'frontend';
+-        $theme = 'Magento/blank';
+-        $locale = 'en_US';
+-        $file = '/path/to/file.js';
+-        $hash = 'asdfghjkl';
+-        $fileContent = 'content';
+-
+-        $pubStaticDir = $this->createMock(ReadInterface::class);
+-        $pubStaticDir->expects($this->once())->method('search')->with(
+-            $area ."/" . $theme . "/" . $locale . "/" . Bundle::BUNDLE_JS_DIR . "/*.js"
+-        )->willReturn([$file]);
+-        $pubStaticDir->expects($this->once())->method('readFile')->willReturn($fileContent);
+-        $this->filesystem->expects($this->once())->method('getDirectoryRead')->willReturn($pubStaticDir);
+-        $integrity = $this->createMock(SubresourceIntegrity::class);
+-        $this->hashGenerator->expects($this->once())
+-            ->method('generate')
+-            ->with($fileContent)
+-            ->willReturn($hash);
+-        $this->fileIo->expects($this->once())
+-            ->method('getPathInfo')
+-            ->with($file)
+-            ->willReturn(['basename' => 'file.js']);
+-        $this->integrityFactory->expects($this->once())
+-            ->method('create')
+-            ->with([
+-                'data' => [
+-                    'hash' => $hash,
+-                    'path' => $area . '/' . $theme . '/' . $locale . '/' . Bundle::BUNDLE_JS_DIR . '/file.js'
+-                ]
+-            ])
+-            ->willReturn($integrity);
+-        $this->integrityCollector->expects($this->once())->method('collect')->with($integrity);
+-
+-        $plugin = new GenerateBundleAssetIntegrity(
+-            $this->hashGenerator,
+-            $this->integrityFactory,
+-            $this->integrityCollector,
+-            $this->filesystem,
+-            $this->fileIo
+-        );
+-        $plugin->afterDeploy($subject, $result, $area, $theme, $locale);
+-    }
+-}
+diff --git a/vendor/magento/module-csp/Test/Unit/Plugin/GenerateMergedAssetIntegrityTest.php b/vendor/magento/module-csp/Test/Unit/Plugin/GenerateMergedAssetIntegrityTest.php
+deleted file mode 100644
+index f55e4c3954152..0000000000000
+--- a/vendor/magento/module-csp/Test/Unit/Plugin/GenerateMergedAssetIntegrityTest.php
++++ /dev/null
+@@ -1,98 +0,0 @@
+-<?php
+-/**
+- * Copyright 2025 Adobe
+- * All Rights Reserved.
+- */
+-declare(strict_types=1);
+-
+-namespace Magento\Csp\Test\Unit\Plugin;
+-
+-use Magento\Csp\Model\SubresourceIntegrity;
+-use Magento\Csp\Model\SubresourceIntegrity\HashGenerator;
+-use Magento\Csp\Model\SubresourceIntegrityFactory;
+-use Magento\Csp\Model\SubresourceIntegrityRepository;
+-use Magento\Csp\Model\SubresourceIntegrityRepositoryPool;
+-use Magento\Framework\App\Area;
+-use Magento\Framework\Exception\FileSystemException;
+-use Magento\Framework\Filesystem;
+-use Magento\Framework\View\Asset\File;
+-use Magento\Framework\View\Asset\MergeStrategy\FileExists;
+-use Magento\Csp\Plugin\GenerateMergedAssetIntegrity;
+-use PHPUnit\Framework\MockObject\Exception;
+-use PHPUnit\Framework\MockObject\MockObject;
+-use PHPUnit\Framework\TestCase;
+-
+-/**
+- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+- */
+-class GenerateMergedAssetIntegrityTest extends TestCase
+-{
+-    /**
+-     * @var SubresourceIntegrityRepositoryPool|MockObject
+-     */
+-    private SubresourceIntegrityRepositoryPool $sourceIntegrityRepository;
+-
+-    /**
+-     * @var HashGenerator|MockObject
+-     */
+-    private HashGenerator $hashGenerator;
+-
+-    /**
+-     * @var SubresourceIntegrityFactory|MockObject
+-     */
+-    private SubresourceIntegrityFactory $integrityFactory;
+-
+-    /**
+-     * @return void
+-     * @throws Exception
+-     */
+-    protected function setUp(): void
+-    {
+-        $this->sourceIntegrityRepository = $this->createMock(SubresourceIntegrityRepositoryPool::class);
+-        $this->hashGenerator = $this->createMock(HashGenerator::class);
+-        $this->integrityFactory = $this->createMock(SubresourceIntegrityFactory::class);
+-    }
+-
+-    /**
+-     * @return void
+-     * @throws Exception|FileSystemException
+-     */
+-    public function testAfterMerge(): void
+-    {
+-        $subject = $this->createMock(FileExists::class);
+-        $result = null;
+-        $assetsToMerge = [];
+-        $fileExtension = 'js';
+-        $filePath = 'path/to/file.js';
+-        $hash = '1234567890abcdef';
+-        $fileContent = 'some content';
+-        $resultAsset = $this->createMock(File::class);
+-        $resultAsset->expects($this->once())->method('getContentType')->willReturn($fileExtension);
+-        $resultAsset->expects($this->once())->method('getContent')->willReturn($fileContent);
+-        $resultAsset->expects($this->once())
+-            ->method('getPath')
+-            ->willReturn($filePath);
+-        $this->hashGenerator->expects($this->once())->method('generate')->with($fileContent)->willReturn($hash);
+-        $integrity = $this->createMock(SubresourceIntegrity::class);
+-        $this->integrityFactory->expects($this->once())
+-            ->method('create')->with([
+-                'data' => [
+-                    'hash' => $hash,
+-                    'path' => $filePath
+-                ]
+-            ])->willReturn($integrity);
+-        $repository = $this->createMock(SubresourceIntegrityRepository::class);
+-        $this->sourceIntegrityRepository->expects($this->once())->method('get')
+-            ->with(Area::AREA_FRONTEND)
+-            ->willReturn($repository);
+-        $repository->expects($this->once())->method('save')->with($integrity);
+-
+-        $plugin = new GenerateMergedAssetIntegrity(
+-            $this->sourceIntegrityRepository,
+-            $this->hashGenerator,
+-            $this->integrityFactory,
+-            $this->createMock(Filesystem::class)
+-        );
+-        $plugin->afterMerge($subject, $result, $assetsToMerge, $resultAsset);
+-    }
+-}
+diff --git a/vendor/magento/module-csp/Test/Unit/Plugin/StoreAssetIntegrityHashesTest.php b/vendor/magento/module-csp/Test/Unit/Plugin/StoreAssetIntegrityHashesTest.php
+index fb5128ed0f956..7ac1d462015c7 100644
+--- a/vendor/magento/module-csp/Test/Unit/Plugin/StoreAssetIntegrityHashesTest.php
++++ b/vendor/magento/module-csp/Test/Unit/Plugin/StoreAssetIntegrityHashesTest.php
+@@ -15,7 +15,6 @@
+ use Magento\Csp\Plugin\StoreAssetIntegrityHashes;
+ use Magento\Csp\Model\SubresourceIntegrityCollector;
+ use PHPUnit\Framework\TestCase;
+-use Psr\Log\LoggerInterface;
+ 
+ /**
+  * Plugin that removes existing integrity hashes for all assets.
+@@ -32,11 +31,6 @@ class StoreAssetIntegrityHashesTest extends TestCase
+      */
+     private MockObject $integrityCollectorMock;
+ 
+-    /**
+-     * @var MockObject
+-     */
+-    private MockObject $loggerMock;
+-
+     /**
+      * @var StoreAssetIntegrityHashes
+      */
+@@ -58,13 +52,9 @@ protected function setUp(): void
+             ->disableOriginalConstructor()
+             ->onlyMethods(['release'])
+             ->getMock();
+-        $this->loggerMock = $this->getMockBuilder(LoggerInterface::class)
+-            ->disableOriginalConstructor()
+-            ->getMock();
+         $this->plugin = new StoreAssetIntegrityHashes(
+             $this->integrityCollectorMock,
+             $this->integrityRepositoryPoolMock,
+-            $this->loggerMock
+         );
+     }
+ 
+diff --git a/vendor/magento/module-csp/etc/di.xml b/vendor/magento/module-csp/etc/di.xml
+index fb7c08047078b..990a71d210536 100644
+--- a/vendor/magento/module-csp/etc/di.xml
++++ b/vendor/magento/module-csp/etc/di.xml
+@@ -127,12 +127,6 @@
+     <type name="Magento\RequireJs\Model\FileManager">
+         <plugin name="addResourceIntegrityAfterAssetCreate" type="Magento\Csp\Plugin\GenerateAssetIntegrity"/>
+     </type>
+-    <type name="Magento\Deploy\Service\Bundle">
+-        <plugin name="addResourceIntegrityAfterBundleDeploy" type="Magento\Csp\Plugin\GenerateBundleAssetIntegrity" />
+-    </type>
+-    <type name="Magento\Framework\View\Asset\MergeStrategy\FileExists">
+-        <plugin name="addResourceIntegrityAfterMergeFile" type="Magento\Csp\Plugin\GenerateMergedAssetIntegrity" />
+-    </type>
+     <preference for="Magento\Deploy\Package\Processor\PostProcessor\Map" type="Magento\Csp\Model\Deploy\Package\Processor\PostProcessor\Map" />
+     <type name="Magento\Csp\Model\Deploy\Package\Processor\PostProcessor\Map">
+         <arguments>
+@@ -150,5 +144,4 @@
+             </argument>
+         </arguments>
+     </type>
+-    <preference for="Magento\Csp\Model\SubresourceIntegrity\StorageInterface" type="Magento\Csp\Model\SubresourceIntegrity\Storage\File" />
+ </config>
