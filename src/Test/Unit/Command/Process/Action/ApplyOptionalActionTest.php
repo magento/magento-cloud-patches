@@ -68,7 +68,7 @@ class ApplyOptionalActionTest extends TestCase
     protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->statusPool = $this->createMock(StatusPool::class);
         $this->optionalPool = $this->createMock(OptionalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
@@ -103,9 +103,9 @@ class ApplyOptionalActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
@@ -158,9 +158,9 @@ class ApplyOptionalActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
@@ -204,9 +204,9 @@ class ApplyOptionalActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getOptionalListByOrigin')
             ->with(['Adobe Commerce Support'])
@@ -243,9 +243,9 @@ class ApplyOptionalActionTest extends TestCase
         $patchFilter = [$patch1->getId(), $patch2->getId()];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->method('getList')
             ->willReturn([$patch1, $patch2]);
 
@@ -293,7 +293,7 @@ class ApplyOptionalActionTest extends TestCase
      */
     private function createPatch(string $path, string $id, bool $isDeprecated = false)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getFilename')->willReturn('filename.patch');
         $patch->method('getId')->willReturn($id);

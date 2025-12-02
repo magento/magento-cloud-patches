@@ -78,7 +78,7 @@ class OptionalResolverTest extends TestCase
         $patch2 = $this->createPatch('MC-2');
         $patch3 = $this->createPatch('MC-3');
 
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturn([$patchMock]);
@@ -215,7 +215,7 @@ class OptionalResolverTest extends TestCase
     {
         $patch1 = $this->createPatch('MC-1');
 
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturn([$patchMock]);

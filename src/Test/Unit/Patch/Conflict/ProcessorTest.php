@@ -54,7 +54,7 @@ class ProcessorTest extends TestCase
     protected function setUp(): void
     {
         $this->renderer = $this->createMock(Renderer::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->conflictAnalyzer = $this->createMock(ConflictAnalyzer::class);
         $this->rollbackProcessor = $this->createMock(RollbackProcessor::class);
 
@@ -79,7 +79,7 @@ class ProcessorTest extends TestCase
         $rollbackMessages = ['Patch 1 has been reverted', 'Patch 2 has been reverted'];
 
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->rollbackProcessor->expects($this->once())
             ->method('process')
@@ -136,7 +136,7 @@ class ProcessorTest extends TestCase
      */
     private function createPatch(string $id, string $path)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getPath')->willReturn($path);
 

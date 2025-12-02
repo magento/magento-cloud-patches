@@ -19,11 +19,13 @@ use Magento\CloudPatches\Patch\RevertValidator;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @inheritdoc
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class RevertActionTest extends TestCase
 {
@@ -75,8 +77,7 @@ class RevertActionTest extends TestCase
         $this->optionalPool = $this->createMock(OptionalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
         $this->revertAction = $this->createMock(RevertAction::class);
-        /** @var \Psr\Log\LoggerInterface|MockObject $logger */
-        $logger = $this->getMockForAbstractClass('\Psr\Log\LoggerInterface');
+        $logger = $this->createMock(LoggerInterface::class);
 
         $this->action = new RevertAction(
             $this->applier,
@@ -214,7 +215,7 @@ class RevertActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->willReturnCallback(function ($patchId) use ($patchFilter) {
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $errorMessage) {
                 if ($patchId === $errorMessage) {
                     $this->stringContains($errorMessage);
                 }

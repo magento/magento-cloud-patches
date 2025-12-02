@@ -10,6 +10,7 @@ namespace Magento\CloudPatches\Test\Unit\Patch;
 use Magento\CloudPatches\Patch\AggregatedPatchFactory;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -35,11 +36,16 @@ class AggregatedPatchFactoryTest extends TestCase
      * Tests creating aggregated patch.
      *
      * @param PatchInterface[] $patches
+     * @param array $patchArgsList
      * @param array $expectedResult
      * @dataProvider createDataProvider
      */
-    public function testCreate(array $patches, array $expectedResult)
+    #[DataProvider('createDataProvider')]
+    public function testCreate(array $patchArgsList, array $expectedResult)
     {
+        $patches = array_map(function (array $args) {
+            return $this->createPatch(...$args);
+        }, $patchArgsList);
         $aggregatedPatch = $this->aggregatedPatchFactory->create($patches);
 
         $this->assertEquals($expectedResult['id'], $aggregatedPatch->getId());
@@ -54,12 +60,12 @@ class AggregatedPatchFactoryTest extends TestCase
     /**
      * @return array
      */
-    public function createDataProvider(): array
+    public static function createDataProvider(): array
     {
         return [
             [
-                'patches' => [
-                    $this->createPatch(
+                'patchArgsList' => [
+                    [
                         'MC-1',
                         'Title patch MC-1 CE',
                         'Optional',
@@ -67,16 +73,8 @@ class AggregatedPatchFactoryTest extends TestCase
                         ['MC-2'],
                         'MC-3',
                         true
-                    ),
-                    $this->createPatch(
-                        'MC-1',
-                        'Title patch MC-1 EE',
-                        'Optional',
-                        ['magento-module3'],
-                        ['MC-3'],
-                        'MC-4',
-                        false
-                    )
+                    ],
+                    ['MC-1', 'Title patch MC-1 EE', 'Optional', ['magento-module3'], ['MC-3'], 'MC-4', false]
                 ],
                 'expectedResult' => [
                     'id' => 'MC-1',

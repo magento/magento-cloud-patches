@@ -18,6 +18,7 @@ use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -85,6 +86,7 @@ class CloudCollectorTest extends TestCase
      * @param string $expectedType
      * @dataProvider collectDataProvider
      */
+    #[DataProvider('collectDataProvider')]
     public function testCollectSuccessful(bool $isCloud, string $expectedType)
     {
         $validConfig = require __DIR__ . '/Fixture/cloud_config_valid.php';
@@ -199,6 +201,7 @@ class CloudCollectorTest extends TestCase
      * @param array $invalidConfig
      * @dataProvider invalidPatchFilenameDataProvider
      */
+    #[DataProvider('invalidPatchFilenameDataProvider')]
     public function testInvalidConfigurationPatchFilename(array $invalidConfig)
     {
         $this->sourceProvider->expects($this->once())
@@ -248,6 +251,7 @@ class CloudCollectorTest extends TestCase
      * @param array $config
      * @dataProvider invalidTitleSectionDataProvider
      */
+    #[DataProvider('invalidTitleSectionDataProvider')]
     public function testInvalidConfigurationTitleSection(array $config)
     {
         $this->sourceProvider->expects($this->once())

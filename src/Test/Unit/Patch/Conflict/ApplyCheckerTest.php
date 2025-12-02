@@ -101,7 +101,7 @@ class ApplyCheckerTest extends TestCase
      */
     private function createPatch(string $id, string $path)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getPath')->willReturn($path);
 

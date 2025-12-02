@@ -68,7 +68,7 @@ class RevertTest extends TestCase
     protected function setUp(): void
     {
         $this->revertAction = $this->createMock(RevertAction::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->applier = $this->createMock(Applier::class);
         $this->localPool = $this->createMock(LocalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
@@ -102,9 +102,9 @@ class RevertTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2, $patch3]);
 
@@ -116,7 +116,7 @@ class RevertTest extends TestCase
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2) {
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [
@@ -136,7 +136,7 @@ class RevertTest extends TestCase
             ->method('execute')
             ->with($inputMock, $outputMock, [])
             ->willReturnCallback(function ($input, $output) use ($inputMock, $outputMock) {
-                if ($output === $outputMock && $input === $inputMock && $patch === []) {
+                if ($output === $outputMock && $input === $inputMock) {
                     return true;
                 }
                 return false;
@@ -160,9 +160,9 @@ class RevertTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2]);
 
@@ -203,7 +203,7 @@ class RevertTest extends TestCase
      */
     private function createPatch(string $path, string $title)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getTitle')->willReturn($title);
         $patch->method('getId')->willReturn($title);

@@ -22,11 +22,11 @@ class StatusPoolTest extends TestCase
     public function testStatusGet()
     {
         $result1 = ['MC-1' => StatusPool::APPLIED, 'MC-2' => StatusPool::NOT_APPLIED];
-        $resolver1 = $this->getMockForAbstractClass(ResolverInterface::class);
+        $resolver1 = $this->createMock(ResolverInterface::class);
         $resolver1->method('resolve')->willReturn($result1);
 
         $result2 = ['MC-3' => StatusPool::APPLIED, 'MC-4' => StatusPool::NA];
-        $resolver2 = $this->getMockForAbstractClass(ResolverInterface::class);
+        $resolver2 = $this->createMock(ResolverInterface::class);
         $resolver2->method('resolve')->willReturn($result2);
 
         $statusPool = new StatusPool([$resolver1, $resolver2]);

@@ -13,6 +13,7 @@ use Magento\CloudPatches\Patch\Conflict\ApplyChecker;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\RollbackProcessor;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -71,6 +72,7 @@ class AnalyzerTest extends TestCase
      * @param string $expectedMessage
      * @dataProvider analyzeDataProvider
      */
+    #[DataProvider('analyzeDataProvider')]
     public function testAnalyze(array $checkApplyMap, string $expectedMessage)
     {
         $failedPatch = $this->createPatch('MC-1', 'path1', PatchInterface::TYPE_OPTIONAL);
@@ -180,7 +182,7 @@ class AnalyzerTest extends TestCase
      */
     private function createPatch(string $id, string $path, string $type = '')
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getType')->willReturn($type);

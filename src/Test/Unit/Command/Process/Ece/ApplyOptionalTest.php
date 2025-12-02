@@ -55,7 +55,7 @@ class ApplyOptionalTest extends TestCase
     {
         $this->filterFactory = $this->createMock(FilterFactory::class);
         $this->actionPool = $this->createMock(ActionPool::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->config = $this->createMock(Config::class);
 
         $this->applyOptionalEce = new ApplyOptional(
@@ -74,9 +74,9 @@ class ApplyOptionalTest extends TestCase
     public function testApplyWithPatchEnvVariableProvided()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $configQualityPatches = ['MC-1111', 'MC-22222'];
         $this->config->expects($this->once())
@@ -107,9 +107,9 @@ class ApplyOptionalTest extends TestCase
     public function testApplyWithEmptyPatchEnvVariable()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $configQualityPatches = [];
         $this->config->expects($this->once())

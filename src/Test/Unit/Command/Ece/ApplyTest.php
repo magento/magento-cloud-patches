@@ -63,7 +63,7 @@ class ApplyTest extends TestCase
         $this->applyLocal = $this->createMock(ApplyLocal::class);
         $this->applyOptionalEce = $this->createMock(ApplyOptional::class);
         $this->applyRequired = $this->createMock(ApplyRequired::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->magentoVersion = $this->createMock(MagentoVersion::class);
 
         $this->command = new Apply(
@@ -81,9 +81,9 @@ class ApplyTest extends TestCase
     public function testExecute()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->applyLocal->expects($this->once())
             ->method('run');
@@ -104,9 +104,9 @@ class ApplyTest extends TestCase
     public function testRuntimeError()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->applyOptionalEce->expects($this->once())
             ->method('run')
@@ -126,9 +126,9 @@ class ApplyTest extends TestCase
     public function testCriticalError()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->applyOptionalEce->expects($this->once())
             ->method('run')

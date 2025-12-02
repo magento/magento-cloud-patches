@@ -50,7 +50,7 @@ class RevertTest extends TestCase
     {
         $this->filterFactory = $this->createMock(FilterFactory::class);
         $this->revertAction = $this->createMock(RevertAction::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->manager = new Revert(
             $this->filterFactory,
@@ -70,9 +70,9 @@ class RevertTest extends TestCase
         $cliOptAll = false;
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $inputMock->expects($this->once())
             ->method('getArgument')
@@ -116,9 +116,9 @@ class RevertTest extends TestCase
         $cliOptAll = false;
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $inputMock->expects($this->once())
             ->method('getArgument')

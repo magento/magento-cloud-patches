@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
 use Magento\CloudPatches\Patch\FilterFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,6 +36,7 @@ class FilterFactoryTest extends TestCase
      * @param array|null $expectedValue
      * @dataProvider createApplyFilterDataProvider
      */
+    #[DataProvider('createApplyFilterDataProvider')]
     public function testCreateApplyFilter(array $inputArgument, $expectedValue)
     {
         $this->assertEquals(
@@ -44,6 +46,8 @@ class FilterFactoryTest extends TestCase
     }
 
     /**
+     * Tests apply filter creation with various input arguments.
+     *
      * @return array
      */
     public static function createApplyFilterDataProvider(): array
@@ -57,13 +61,14 @@ class FilterFactoryTest extends TestCase
     }
 
     /**
-     * Tests creating 'apply' filter.
+     * Tests creating 'revert' filter.
      *
      * @param array $inputArgument
      * @param bool $optAll
      * @param array|null $expectedValue
      * @dataProvider createRevertFilterDataProvider
      */
+    #[DataProvider('createRevertFilterDataProvider')]
     public function testCreateRevertFilter(array $inputArgument, bool $optAll, $expectedValue)
     {
         $this->assertEquals(
@@ -73,6 +78,8 @@ class FilterFactoryTest extends TestCase
     }
 
     /**
+     * Tests revert filter creation using input arguments.
+     *
      * @return array
      */
     public static function createRevertFilterDataProvider(): array

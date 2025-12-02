@@ -16,6 +16,7 @@ use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Pool\PatchNotFoundException;
 use Magento\CloudPatches\Patch\Pool\RequiredPool;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -54,6 +55,7 @@ class OptionalPoolTest extends TestCase
      *
      * @dataProvider getListFilterDataProvider
      */
+    #[DataProvider('getListFilterDataProvider')]
     public function testGetList(
         array $filter,
         bool $useRequire,
@@ -67,15 +69,17 @@ class OptionalPoolTest extends TestCase
     }
 
     /**
+     * Tests patch list for different filter scenarios.
+     *
      * @return array
      */
-    public function getListFilterDataProvider(): array
+    public static function getListFilterDataProvider(): array
     {
         return [
-            $this->caseReturnAllWithEmptyFilter(),
-            $this->caseReturnPatchWithoutRequired(),
-            $this->caseReturnPatchWithRequired(),
-            $this->caseReturnPatchListUnique()
+            self::caseReturnAllWithEmptyFilter(),
+            self::caseReturnPatchWithoutRequired(),
+            self::caseReturnPatchWithRequired(),
+            self::caseReturnPatchListUnique()
         ];
     }
 
@@ -230,12 +234,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnAllWithEmptyFilter(): array
+    private static function caseReturnAllWithEmptyFilter(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2');
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => [],
@@ -251,12 +315,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnPatchWithoutRequired(): array
+    private static function caseReturnPatchWithoutRequired(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2', ['MC-1']);
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            ['MC-1'],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => ['MC-2'],
@@ -272,12 +396,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnPatchWithRequired(): array
+    private static function caseReturnPatchWithRequired(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2', ['MCLOUD-2']);
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            ['MCLOUD-2'],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => ['MC-2'],
@@ -293,12 +477,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnPatchListUnique(): array
+    private static function caseReturnPatchListUnique(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2', ['MCLOUD-2']);
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            ['MCLOUD-2'],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => ['MCLOUD-2', 'MC-2'],

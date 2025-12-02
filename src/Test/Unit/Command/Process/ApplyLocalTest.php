@@ -110,9 +110,9 @@ class ApplyLocalTest extends TestCase
         $patch3 = $this->createPatch('/path/patch3.patch', '../m2-hotfixes/patch3.patch');
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2, $patch3]);
 
@@ -158,9 +158,9 @@ class ApplyLocalTest extends TestCase
         $rollbackMessages = ['Patch 1 has been reverted'];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2]);
 
@@ -202,7 +202,7 @@ class ApplyLocalTest extends TestCase
      */
     private function createPatch(string $path, string $title)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getTitle')->willReturn($title);
 

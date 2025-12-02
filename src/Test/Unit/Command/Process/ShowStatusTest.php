@@ -133,10 +133,10 @@ class ShowStatusTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
 
         $this->reviewAppliedAction->expects($this->once())
             ->method('execute')
@@ -170,10 +170,8 @@ class ShowStatusTest extends TestCase
         $this->renderer->expects($this->once())
             ->method('printTable')
             ->with($outputMock, [$patch1, $patch2, $patch5])
-            ->willReturnCallback(function ($output, $patches)
- use ($outputMock, $patch, $patch2, $patch5) {
-                if ($output === $outputMock && $patches === [$patch2]
-                    && $patches === [$patch2] && $patches === [$patch2]) {
+            ->willReturnCallback(function ($output, $patches) use ($outputMock, $patch1, $patch2, $patch5) {
+                if ($output === $outputMock && $patches === [$patch1, $patch2, $patch5]) {
                     return true;
                 }
                 return false;

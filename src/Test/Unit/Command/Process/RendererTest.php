@@ -12,6 +12,7 @@ use Magento\CloudPatches\Console\ConfirmationQuestionFactory;
 use Magento\CloudPatches\Console\TableFactory;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Status\StatusPool;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Helper\QuestionHelper;
@@ -33,7 +34,7 @@ class RendererTest extends TestCase
      *
      * @var string[]
      */
-    private $affectedComponents = ['magento/framework', 'magento/module-elasticsearch'];
+    private const AFFECTED_COMPONENTS = ['magento/framework', 'magento/module-elasticsearch'];
 
     /**
      * @var Renderer
@@ -66,14 +67,25 @@ class RendererTest extends TestCase
      * Tests patch info output.
      *
      * @param PatchInterface $patch
+     * @param bool $isDeprecated
+     * @param string $replacedWith
+     * @param array $require
      * @param string $prependedMessage
      * @param array $expectedArray
      * @dataProvider printPatchInfoDataProvider
      */
-    public function testPrintPatchInfo(PatchInterface $patch, string $prependedMessage, array $expectedArray)
-    {
+    #[DataProvider('printPatchInfoDataProvider')]
+    public function testPrintPatchInfo(
+        bool $isDeprecated,
+        string $replacedWith,
+        array $require,
+        string $prependedMessage,
+        array $expectedArray
+    ) {
+        $patch = $this->createPatch($isDeprecated, $replacedWith, $require);
+
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $outputMock->expects($this->atLeastOnce())
             ->method('writeln')
             ->willReturnCallback(function ($filter) use ($expectedArray) {
@@ -87,39 +99,47 @@ class RendererTest extends TestCase
     }
 
     /**
+     * Tests patch info for deprecation, replacement, requirements, and prepended messages.
+     *
      * @return array[]
      */
-    public function printPatchInfoDataProvider(): array
+    public static function printPatchInfoDataProvider(): array
     {
         return [
             [
-                'patch' => $this->createPatch(false),
+                'isDeprecated' => false,
+                'replacedWith' => '',
+                'require' => [],
                 'prependedMessage' => '',
                 'expectedArray' => [
                     '<comment>Title:</comment> ' . self::PATCH_TITLE,
                     '<comment>File:</comment> ' . self::PATCH_FILENAME,
-                    '<comment>Affected components:</comment> ' . implode(' ', $this->affectedComponents)
+                    '<comment>Affected components:</comment> ' . implode(' ', self::AFFECTED_COMPONENTS)
                 ]
             ],
             [
-                'patch' => $this->createPatch(true),
+                'isDeprecated' => true,
+                'replacedWith' => '',
+                'require' => [],
                 'prependedMessage' => 'Prepended message',
                 'expectedArray' => [
                     '<info>Prepended message</info>',
                     '<comment>Title:</comment> ' . self::PATCH_TITLE,
                     '<comment>File:</comment> ' . self::PATCH_FILENAME,
-                    '<comment>Affected components:</comment> ' . implode(' ', $this->affectedComponents),
+                    '<comment>Affected components:</comment> ' . implode(' ', self::AFFECTED_COMPONENTS),
                     '<error>Patch is deprecated!</error>'
                 ]
             ],
             [
-                'patch' => $this->createPatch(true, 'MC-22222', ['MC-33333', 'MC-44444']),
+                'isDeprecated' => true,
+                'replacedWith' => 'MC-22222',
+                'require' => ['MC-33333', 'MC-44444'],
                 'prependedMessage' => 'Prepended message',
                 'expectedArray' => [
                     '<info>Prepended message</info>',
                     '<comment>Title:</comment> ' . self::PATCH_TITLE,
                     '<comment>File:</comment> ' . self::PATCH_FILENAME,
-                    '<comment>Affected components:</comment> ' . implode(' ', $this->affectedComponents),
+                    '<comment>Affected components:</comment> ' . implode(' ', self::AFFECTED_COMPONENTS),
                     '<comment>Require:</comment> MC-33333 MC-44444',
                     '<error>Patch is deprecated!</error> Please, replace it with MC-22222'
                 ]
@@ -138,12 +158,12 @@ class RendererTest extends TestCase
      */
     private function createPatch(bool $isDeprecated, string $replacedWith = '', array $require = [])
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
 
         $patch->method('getId')->willReturn(self::PATCH_ID);
         $patch->method('getTitle')->willReturn(self::PATCH_TITLE);
         $patch->method('getFilename')->willReturn(self::PATCH_FILENAME);
-        $patch->method('getAffectedComponents')->willReturn($this->affectedComponents);
+        $patch->method('getAffectedComponents')->willReturn(self::AFFECTED_COMPONENTS);
         $patch->method('isDeprecated')->willReturn($isDeprecated);
         $patch->method('getReplacedWith')->willReturn($replacedWith);
         $patch->method('getRequire')->willReturn($require);

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
 use Magento\CloudPatches\Patch\GitConverter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,6 +36,7 @@ class GitConverterTest extends TestCase
      * @param string $expectedContent
      * @dataProvider convertDataProvider
      */
+    #[DataProvider('convertDataProvider')]
     public function testConvert(string $composerContent, string $expectedContent)
     {
         $this->assertEquals(

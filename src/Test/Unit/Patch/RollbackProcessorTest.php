@@ -40,7 +40,7 @@ class RollbackProcessorTest extends TestCase
     protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->rollbackProcessor = new RollbackProcessor(
             $this->applier,
@@ -94,7 +94,7 @@ class RollbackProcessorTest extends TestCase
      */
     private function createPatch(string $id, string $path)
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getPath')->willReturn($path);
 

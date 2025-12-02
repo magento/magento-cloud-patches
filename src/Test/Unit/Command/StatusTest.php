@@ -44,7 +44,7 @@ class StatusTest extends TestCase
     protected function setUp(): void
     {
         $this->showStatus = $this->createMock(ShowStatus::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->command = new Status(
             $this->showStatus,
@@ -58,9 +58,9 @@ class StatusTest extends TestCase
     public function testExecuteSuccess()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->showStatus->expects($this->once())
             ->method('run');
@@ -77,9 +77,9 @@ class StatusTest extends TestCase
     public function testRuntimeError()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->showStatus->expects($this->once())
             ->method('run')
@@ -99,9 +99,9 @@ class StatusTest extends TestCase
     public function testCriticalError()
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->showStatus->expects($this->once())
             ->method('run')
