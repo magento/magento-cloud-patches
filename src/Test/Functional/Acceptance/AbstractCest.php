@@ -176,6 +176,8 @@ class AbstractCest
             );
         }
 
+        // Only apply dependency overrides for base 2.4.4 version, not patch versions
+        // Patch versions (e.g., 2.4.4-p1) have their own dependency resolution
         if ($magentoVersion === '2.4.4') {
             foreach ($this->dependencyListFor244 as $package => $version) {
                 $I->assertTrue(
@@ -194,7 +196,37 @@ class AbstractCest
             );
         }
 
+        // Configure Composer audit to allow insecure packages for testing old Magento versions
+        $this->configureComposerAudit($I);
+
         $I->composerUpdate();
+    }
+
+    /**
+     * Configures Composer audit settings to allow insecure packages for testing.
+     *
+     * @param \CliTester $I
+     * @return void
+     */
+    protected function configureComposerAudit(\CliTester $I): void
+    {
+        $composerJsonPath = $I->getWorkDirPath() . '/composer.json';
+        if (!file_exists($composerJsonPath)) {
+            return;
+        }
+
+        $composer = json_decode(file_get_contents($composerJsonPath), true);
+        if (!isset($composer['config'])) {
+            $composer['config'] = [];
+        }
+
+        // Disable blocking insecure packages for test environments
+        if (!isset($composer['config']['audit'])) {
+            $composer['config']['audit'] = [];
+        }
+        $composer['config']['audit']['block-insecure'] = false;
+
+        file_put_contents($composerJsonPath, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 
     /**
