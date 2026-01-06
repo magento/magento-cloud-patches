@@ -19,7 +19,7 @@ class GitConverterTest extends TestCase
     /**
      * @var GitConverter
      */
-    private $gitConverter;
+    private GitConverter $gitConverter;
 
     /**
      * @inheritDoc
@@ -34,10 +34,11 @@ class GitConverterTest extends TestCase
      *
      * @param string $composerContent
      * @param string $expectedContent
+     * @return void
      * @dataProvider convertDataProvider
      */
     #[DataProvider('convertDataProvider')]
-    public function testConvert(string $composerContent, string $expectedContent)
+    public function testConvert(string $composerContent, string $expectedContent): void
     {
         $this->assertEquals(
             $expectedContent,
@@ -46,10 +47,12 @@ class GitConverterTest extends TestCase
     }
 
     /**
+     * Data provider for conversion tests.
+     *
      * phpcs:disable
      * @return array
      */
-    public static function convertDataProvider()
+    public static function convertDataProvider(): array
     {
         return [
             [

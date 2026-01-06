@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Integrity\Testsuite;
 
 use Magento\CloudPatches\Test\Integrity\Lib\Config;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -88,9 +89,10 @@ class SupportedVersionsTest extends TestCase
      * Tests that patches exist for major Magento 2.4.x releases
      *
      * @param string $majorVersion
-     * @return void
      * @dataProvider majorVersionsDataProvider
+     * @return void
      */
+    #[DataProvider('majorVersionsDataProvider')]
     public function testPatchesExistForMajorVersions(string $majorVersion): void
     {
         $patchesConfig = $this->config->get();

@@ -7,11 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
-use Magento\CloudPatches\App\GenericException;
 use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
-use Magento\CloudPatches\Filesystem\FileSystemException;
 use Magento\CloudPatches\Filesystem\JsonConfigReader;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
@@ -26,7 +24,7 @@ class SourceProviderTest extends TestCase
     /**
      * @var SourceProvider
      */
-    private $sourceProvider;
+    private SourceProvider $sourceProvider;
 
     /**
      * @var DirectoryList|MockObject
@@ -44,12 +42,14 @@ class SourceProviderTest extends TestCase
     private $filelist;
 
     /**
-     * @var \Magento\CloudPatches\Filesystem\JsonConfigReader|\PHPUnit\Framework\MockObject\MockObject
+     * @var JsonConfigReader|MockObject
      */
     private $jsonConfigReader;
 
     /**
-     * @inheritDoc
+     * Sets up test dependencies.
+     *
+     * @return void
      */
     protected function setUp(): void
     {
@@ -68,8 +68,11 @@ class SourceProviderTest extends TestCase
 
     /**
      * Tests retrieving Cloud patch configuration.
+     *
+     * @return void
+     * @throws SourceProviderException
      */
-    public function testGetCloudPatches()
+    public function testGetCloudPatches(): void
     {
         $configPath = '/cloud/patches.json';
         $configSource = require __DIR__ . '/Collector/Fixture/cloud_config_valid.php';
@@ -88,8 +91,11 @@ class SourceProviderTest extends TestCase
 
     /**
      * Tests retrieving Quality patch configuration.
+     *
+     * @return void
+     * @throws SourceProviderException
      */
-    public function testGetQualityPatches()
+    public function testGetQualityPatches(): void
     {
         $configPath = '/quality/patches.json';
         $configSource = require __DIR__ . '/Collector/Fixture/quality_config_valid.php';
@@ -110,8 +116,11 @@ class SourceProviderTest extends TestCase
      * Tests retrieving Quality patch configuration when config path is null.
      *
      * Case when magento/quality-patches package is not installed.
+     *
+     * @return void
+     * @throws SourceProviderException
      */
-    public function testGetQualityPatchesWithNullConfigPath()
+    public function testGetQualityPatchesWithNullConfigPath(): void
     {
         $this->qualityPackage->expects($this->once())
             ->method('getSupportPatchesConfigPath')
@@ -122,8 +131,10 @@ class SourceProviderTest extends TestCase
 
     /**
      * Tests retrieving Local patch configuration.
+     *
+     * @return void
      */
-    public function testGetLocalPatches()
+    public function testGetLocalPatches(): void
     {
         $this->directoryList->method('getMagentoRoot')
             ->willReturn(__DIR__ . '/Collector/Fixture');
@@ -138,8 +149,10 @@ class SourceProviderTest extends TestCase
 
     /**
      * Tests retrieving Quality patch configuration with filesystem exception.
+     *
+     * @return void
      */
-    public function testGetQualityPatchesFilesystemException()
+    public function testGetQualityPatchesFilesystemException(): void
     {
         $configPath = '/quality/patches.json';
 
@@ -153,5 +166,83 @@ class SourceProviderTest extends TestCase
 
         $this->expectException(SourceProviderException::class);
         $this->sourceProvider->getSupportPatches();
+    }
+
+    /**
+     * Tests retrieving Community patch configuration.
+     *
+     * @return void
+     * @throws SourceProviderException
+     */
+    public function testGetCommunityPatches(): void
+    {
+        $configPath = '/community/patches.json';
+        $configSource = [
+            'community-patch-1' => [
+                'title' => 'Community Patch',
+                'packages' => [
+                    'magento/module-catalog' => [
+                        '1.0.0' => [
+                            'file' => 'community-patch.diff'
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $this->qualityPackage->expects($this->once())
+            ->method('getCommunityPatchesConfigPath')
+            ->willReturn($configPath);
+
+        $this->jsonConfigReader->expects($this->once())
+            ->method('read')
+            ->with($configPath)
+            ->willReturn($configSource);
+
+        $this->assertEquals($configSource, $this->sourceProvider->getCommunityPatches());
+    }
+
+    /**
+     * Tests retrieving Community patch configuration when config path is null.
+     *
+     * Case when magento/quality-patches package is not installed or community config is not available.
+     *
+     * @return void
+     * @throws SourceProviderException
+     */
+    public function testGetCommunityPatchesWithNullConfigPath(): void
+    {
+        $this->qualityPackage->expects($this->once())
+            ->method('getCommunityPatchesConfigPath')
+            ->willReturn(null);
+
+        $this->jsonConfigReader->expects($this->never())
+            ->method('read');
+
+        $this->assertEquals([], $this->sourceProvider->getCommunityPatches());
+    }
+
+    /**
+     * Tests retrieving Community patch configuration with filesystem exception.
+     *
+     * @return void
+     */
+    public function testGetCommunityPatchesFilesystemException(): void
+    {
+        $configPath = '/community/patches.json';
+
+        $this->qualityPackage->expects($this->once())
+            ->method('getCommunityPatchesConfigPath')
+            ->willReturn($configPath);
+
+        $this->jsonConfigReader->expects($this->once())
+            ->method('read')
+            ->with($configPath)
+            ->willThrowException(new SourceProviderException('Community config read error'));
+
+        $this->expectException(SourceProviderException::class);
+        $this->expectExceptionMessage('Community config read error');
+
+        $this->sourceProvider->getCommunityPatches();
     }
 }

@@ -29,7 +29,7 @@ class ConfirmRequiredActionTest extends TestCase
     /**
      * @var ConfirmRequiredAction
      */
-    private $action;
+    private ConfirmRequiredAction $action;
 
     /**
      * @var Renderer|MockObject
@@ -71,8 +71,11 @@ class ConfirmRequiredActionTest extends TestCase
 
     /**
      * Tests asking confirmation for not applied patches.
+     *
+     * @return void
+     * @throws RuntimeException
      */
-    public function testAskConfirmationForNotAppliedPatches()
+    public function testAskConfirmationForNotAppliedPatches(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
         $patch2 = $this->createPatch('/path/patch2.patch', 'MC-22222');
@@ -123,8 +126,10 @@ class ConfirmRequiredActionTest extends TestCase
 
     /**
      * Tests exception when patch from filter is not found.
+     *
+     * @return void
      */
-    public function testPatchNotFoundException()
+    public function testPatchNotFoundException(): void
     {
         $patchFilter = ['unknown id'];
 
@@ -143,8 +148,10 @@ class ConfirmRequiredActionTest extends TestCase
 
     /**
      * Tests exception when user refused to confirm applying additional patches.
+     *
+     * @return void
      */
-    public function testConfirmationRejected()
+    public function testConfirmationRejected(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
         $patchFilter = [$patch1->getId()];
@@ -191,17 +198,16 @@ class ConfirmRequiredActionTest extends TestCase
      *
      * @param string $path
      * @param string $id
-     * @param bool $isDeprecated
      *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $path, string $id, bool $isDeprecated = false)
+    private function createPatch(string $path, string $id): PatchInterface|MockObject
     {
         $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getFilename')->willReturn('filename.patch');
         $patch->method('getId')->willReturn($id);
-        $patch->method('isDeprecated')->willReturn($isDeprecated);
+        $patch->method('isDeprecated')->willReturn(false);
 
         return $patch;
     }

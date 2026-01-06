@@ -20,7 +20,7 @@ class ValidatePatchesConfig
      * @return void
      * @throws CollectorException
      */
-    public function execute(array $config)
+    public function execute(array $config): void
     {
         foreach ($config as $patchId => $patchGeneralConfig) {
             $errors = [];
@@ -31,7 +31,7 @@ class ValidatePatchesConfig
             }
 
             if (!empty($errors)) {
-                array_unshift($errors, "Patch {$patchId} has invalid configuration:");
+                array_unshift($errors, "Patch $patchId has invalid configuration:");
                 throw new CollectorException(implode(PHP_EOL . ' - ', $errors));
             }
         }
@@ -93,8 +93,8 @@ class ValidatePatchesConfig
             !is_array($patchData[SupportCollector::PROP_CATEGORIES])
         ) {
             $errors[] = sprintf(
-                "Property '%s' from '%s' should have a array type",
-                SupportCollector::PROP_DEPRECATED,
+                "Property '%s' from '%s' should have an array type",
+                SupportCollector::PROP_CATEGORIES,
                 $packageConstraint
             );
         }
