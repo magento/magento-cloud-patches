@@ -14,6 +14,7 @@ use Magento\CloudPatches\Command\Revert;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -58,8 +59,11 @@ class RevertTest extends TestCase
 
     /**
      * Tests successful command execution.
+     *
+     * @return void
      */
-    public function testRevertSuccess()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevertSuccess(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);
@@ -77,8 +81,11 @@ class RevertTest extends TestCase
 
     /**
      * Tests when runtime error happens during command execution.
+     *
+     * @return void
      */
-    public function testRuntimeError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRuntimeError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);
@@ -99,8 +106,11 @@ class RevertTest extends TestCase
 
     /**
      * Tests when critical error happens during command execution.
+     *
+     * @return void
      */
-    public function testCriticalError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCriticalError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);

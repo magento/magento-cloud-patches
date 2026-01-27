@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Patch;
 
 use Magento\CloudPatches\Patch\FilterFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,9 +36,11 @@ class FilterFactoryTest extends TestCase
      * @param array $inputArgument
      * @param array|null $expectedValue
      * @dataProvider createApplyFilterDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('createApplyFilterDataProvider')]
-    public function testCreateApplyFilter(array $inputArgument, $expectedValue)
+    public function testCreateApplyFilter(array $inputArgument, $expectedValue): void
     {
         $this->assertEquals(
             $expectedValue,
@@ -67,9 +70,11 @@ class FilterFactoryTest extends TestCase
      * @param bool $optAll
      * @param array|null $expectedValue
      * @dataProvider createRevertFilterDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('createRevertFilterDataProvider')]
-    public function testCreateRevertFilter(array $inputArgument, bool $optAll, $expectedValue)
+    public function testCreateRevertFilter(array $inputArgument, bool $optAll, $expectedValue): void
     {
         $this->assertEquals(
             $expectedValue,

@@ -17,6 +17,7 @@ use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\RequiredPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -79,9 +80,11 @@ class ApplyRequiredTest extends TestCase
     /**
      * Tests successful required patches applying.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplySuccessful()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplySuccessful(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
         $patch2 = $this->createPatch('/path/patch2.patch', 'MC-22222');
@@ -125,9 +128,11 @@ class ApplyRequiredTest extends TestCase
     /**
      * Tests required patches applying with exception.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithException(): void
     {
         $patch = $this->createPatch('/path/patch.patch', 'MC-11111');
 
@@ -167,10 +172,9 @@ class ApplyRequiredTest extends TestCase
      *
      * @param string $path
      * @param string $id
-     *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $path, string $id)
+    private function createPatch(string $path, string $id): PatchInterface
     {
         $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);

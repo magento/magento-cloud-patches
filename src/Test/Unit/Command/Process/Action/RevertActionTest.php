@@ -19,6 +19,7 @@ use Magento\CloudPatches\Patch\RevertValidator;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -94,6 +95,7 @@ class RevertActionTest extends TestCase
      *
      * Case: reverting 2 applied patches. Verifies that patches are reverted in reverse order.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteSuccessful()
     {
         $patchFilter = ['MC-11111', 'MC-22222'];
@@ -151,6 +153,7 @@ class RevertActionTest extends TestCase
      *
      * Case: reverting patch that was not applied previously.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testRevertNotAppliedPatch()
     {
         $patchFilter = ['MC-11111'];
@@ -197,6 +200,7 @@ class RevertActionTest extends TestCase
      *
      * @throws RuntimeException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testRevertWithException()
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
@@ -228,6 +232,7 @@ class RevertActionTest extends TestCase
     /**
      * Tests exception when patch from filter is not found.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testPatchNotFoundException()
     {
         $patchFilter = ['unknown id'];
@@ -248,6 +253,7 @@ class RevertActionTest extends TestCase
     /**
      * Tests exception when revert patch validation fails.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testValidationFailedException()
     {
         $patchFilter = ['MC-11111'];

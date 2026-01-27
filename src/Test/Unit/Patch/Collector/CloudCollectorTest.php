@@ -20,6 +20,7 @@ use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -85,9 +86,11 @@ class CloudCollectorTest extends TestCase
      * @param bool $isCloud
      * @param string $expectedType
      * @dataProvider collectDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('collectDataProvider')]
-    public function testCollectSuccessful(bool $isCloud, string $expectedType)
+    public function testCollectSuccessful(bool $isCloud, string $expectedType): void
     {
         $validConfig = require __DIR__ . '/Fixture/cloud_config_valid.php';
         $this->sourceProvider->expects($this->once())
@@ -185,6 +188,8 @@ class CloudCollectorTest extends TestCase
     }
 
     /**
+     * Collector data provider method.
+     *
      * @return array
      */
     public static function collectDataProvider(): array
@@ -200,9 +205,11 @@ class CloudCollectorTest extends TestCase
      *
      * @param array $invalidConfig
      * @dataProvider invalidPatchFilenameDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('invalidPatchFilenameDataProvider')]
-    public function testInvalidConfigurationPatchFilename(array $invalidConfig)
+    public function testInvalidConfigurationPatchFilename(array $invalidConfig): void
     {
         $this->sourceProvider->expects($this->once())
             ->method('getCloudPatches')
@@ -216,6 +223,8 @@ class CloudCollectorTest extends TestCase
     }
 
     /**
+     * Invalid patch filename data provider method.
+     *
      * @return array
      */
     public static function invalidPatchFilenameDataProvider(): array
@@ -250,9 +259,11 @@ class CloudCollectorTest extends TestCase
      *
      * @param array $config
      * @dataProvider invalidTitleSectionDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('invalidTitleSectionDataProvider')]
-    public function testInvalidConfigurationTitleSection(array $config)
+    public function testInvalidConfigurationTitleSection(array $config): void
     {
         $this->sourceProvider->expects($this->once())
             ->method('getCloudPatches')
@@ -266,6 +277,8 @@ class CloudCollectorTest extends TestCase
     }
 
     /**
+     * Invalid title section data provider method.
+     *
      * @return array
      */
     public static function invalidTitleSectionDataProvider(): array
@@ -290,8 +303,11 @@ class CloudCollectorTest extends TestCase
 
     /**
      * Tests case when patch factory can't create a patch for some reason.
+     *
+     * @return void
      */
-    public function testPatchIntegrityException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testPatchIntegrityException(): void
     {
         $validConfig = require __DIR__ . '/Fixture/cloud_config_valid.php';
         $this->sourceProvider->expects($this->once())
@@ -314,8 +330,11 @@ class CloudCollectorTest extends TestCase
 
     /**
      * Tests case when configuration can't be retrieved from source.
+     *
+     * @return void
      */
-    public function testSourceProviderException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testSourceProviderException(): void
     {
         $this->sourceProvider->expects($this->once())
             ->method('getCloudPatches')

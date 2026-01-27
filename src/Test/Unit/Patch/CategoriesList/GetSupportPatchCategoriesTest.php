@@ -11,6 +11,7 @@ use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\CloudPatches\Filesystem\JsonConfigReader;
 use Magento\CloudPatches\Patch\CategoriesList\GetSupportPatchCategories;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -42,6 +43,7 @@ class GetSupportPatchCategoriesTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsCategories(): void
     {
         $categories = ['Performance', 'Security', 'Other'];
@@ -70,6 +72,7 @@ class GetSupportPatchCategoriesTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsEmptyArrayWhenConfigPathIsNull(): void
     {
         $this->qualityPackageMock->expects($this->once())
@@ -92,6 +95,7 @@ class GetSupportPatchCategoriesTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsEmptyArrayWhenConfigFileIsEmpty(): void
     {
         $configPath = '/path/to/categories.json';
@@ -119,6 +123,7 @@ class GetSupportPatchCategoriesTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsCategoriesWithSpecialCharacters(): void
     {
         $categories = ['Performance & Speed', 'Security/Auth', 'UI/UX Improvements'];

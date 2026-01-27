@@ -11,6 +11,7 @@ use Magento\CloudPatches\Patch\Collector\CloudCollector;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Pool\RequiredPool;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,8 +21,11 @@ class RequiredPoolTest extends TestCase
 {
     /**
      * Tests retrieving patches.
+     *
+     * @return void
      */
-    public function testGetList()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetList(): void
     {
         $patch1 = $this->createPatch('MCLOUD-1');
         $patch2 = $this->createPatch('MCLOUD-2');
@@ -44,7 +48,7 @@ class RequiredPoolTest extends TestCase
      * @param string $id
      * @return Patch|MockObject
      */
-    private function createPatch(string $id)
+    private function createPatch(string $id): Patch
     {
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);

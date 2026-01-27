@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Patch;
 
 use Magento\CloudPatches\Patch\GetCategoriesList;
 use Magento\CloudPatches\Patch\GetCategoriesListInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,6 +22,7 @@ class GetCategoriesListTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecute(): void
     {
         $provider1 = $this->createMock(GetCategoriesListInterface::class);

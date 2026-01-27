@@ -16,6 +16,7 @@ use Composer\Repository\InstalledRepositoryInterface;
 use Magento\CloudPatches\Composer\MagentoVersion;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -75,10 +76,17 @@ class MagentoVersionTest extends TestCase
      * @param string $expectedResult
      *
      * @dataProvider getDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('getDataProvider')]
-    public function testGet(bool $ce, bool $ee, bool $b2b, string $rootPackage, string $expectedResult)
-    {
+    public function testGet(
+        bool $ce,
+        bool $ee,
+        bool $b2b,
+        string $rootPackage,
+        string $expectedResult
+    ): void {
         $this->rootPackage->method('getName')
             ->willReturn($rootPackage);
         $this->rootPackage->method('getVersion')
@@ -151,12 +159,13 @@ class MagentoVersionTest extends TestCase
     }
 
     /**
-     * Tests Magento git-version identifying .
+     * Tests isGitBased method.
      *
      * @param string $rootPackageName
      * @param bool $expectedResult
      * @dataProvider isGitBasedDataProvider
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('isGitBasedDataProvider')]
     public function testIsGitBased(string $rootPackageName, bool $expectedResult)
     {
@@ -167,6 +176,8 @@ class MagentoVersionTest extends TestCase
     }
 
     /**
+     * Tests data provider for isGitBased method.
+     *
      * @return array
      */
     public static function isGitBasedDataProvider(): array
@@ -187,7 +198,9 @@ class MagentoVersionTest extends TestCase
      * @param string $testPackageVersion
      * @param bool $expectedResult
      * @dataProvider matchPackageGitProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('matchPackageGitProvider')]
     public function testMatchPackageGit(
         string $rootPackageName,
@@ -195,7 +208,7 @@ class MagentoVersionTest extends TestCase
         string $testPackageName,
         string $testPackageVersion,
         bool $expectedResult
-    ) {
+    ): void {
         $this->rootPackage->method('getName')
             ->willReturn($rootPackageName);
         $this->rootPackage->method('getVersion')
@@ -208,6 +221,8 @@ class MagentoVersionTest extends TestCase
     }
 
     /**
+     * Tests data provider for matchPackageGit method.
+     *
      * @return array
      */
     public static function matchPackageGitProvider(): array

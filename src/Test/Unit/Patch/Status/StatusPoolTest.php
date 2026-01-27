@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Patch\Status;
 
 use Magento\CloudPatches\Patch\Status\ResolverInterface;
 use Magento\CloudPatches\Patch\Status\StatusPool;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -18,8 +19,11 @@ class StatusPoolTest extends TestCase
 {
     /**
      * Tests retrieving patch statuses.
+     *
+     * @return void
      */
-    public function testStatusGet()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testStatusGet(): void
     {
         $result1 = ['MC-1' => StatusPool::APPLIED, 'MC-2' => StatusPool::NOT_APPLIED];
         $resolver1 = $this->createMock(ResolverInterface::class);
@@ -43,8 +47,11 @@ class StatusPoolTest extends TestCase
 
     /**
      * Tests a case when exception happens after an instantiating status pool with the wrong resolver.
+     *
+     * @return void
      */
-    public function testResolveWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testResolveWithException(): void
     {
         $invalidResolver = new \stdClass();
 

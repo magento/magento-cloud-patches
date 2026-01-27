@@ -13,6 +13,7 @@ use Magento\CloudPatches\Patch\Collector\ValidatePatchesConfig;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,7 +36,7 @@ class GetSupportPatchesConfigTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->sourceProviderMock = $this->createMock(SourceProvider::class);
+        $this->sourceProviderMock        = $this->createMock(SourceProvider::class);
         $this->validatePatchesConfigMock = $this->createMock(ValidatePatchesConfig::class);
     }
 
@@ -45,6 +46,7 @@ class GetSupportPatchesConfigTest extends TestCase
      * @return void
      * @throws CollectorException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsConfig(): void
     {
         $config = [
@@ -82,6 +84,7 @@ class GetSupportPatchesConfigTest extends TestCase
      * @return void
      * @throws CollectorException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteCachesConfig(): void
     {
         $config = [
@@ -117,6 +120,7 @@ class GetSupportPatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteThrowsCollectorExceptionOnSourceProviderException(): void
     {
         $this->sourceProviderMock->expects($this->once())
@@ -142,6 +146,7 @@ class GetSupportPatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteThrowsCollectorExceptionOnValidationFailure(): void
     {
         $config = [
@@ -181,6 +186,7 @@ class GetSupportPatchesConfigTest extends TestCase
      * @return void
      * @throws CollectorException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsEmptyArrayWhenSourceIsEmpty(): void
     {
         $config = [];

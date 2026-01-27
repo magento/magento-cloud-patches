@@ -15,6 +15,7 @@ use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -73,7 +74,9 @@ class RendererTest extends TestCase
      * @param string $prependedMessage
      * @param array $expectedArray
      * @dataProvider printPatchInfoDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('printPatchInfoDataProvider')]
     public function testPrintPatchInfo(
         bool $isDeprecated,
@@ -81,7 +84,7 @@ class RendererTest extends TestCase
         array $require,
         string $prependedMessage,
         array $expectedArray
-    ) {
+    ): void {
         $patch = $this->createPatch($isDeprecated, $replacedWith, $require);
 
         /** @var OutputInterface|MockObject $outputMock */
@@ -153,10 +156,9 @@ class RendererTest extends TestCase
      * @param bool $isDeprecated
      * @param string $replacedWith
      * @param array $require
-     *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(bool $isDeprecated, string $replacedWith = '', array $require = [])
+    private function createPatch(bool $isDeprecated, string $replacedWith = '', array $require = []): PatchInterface
     {
         $patch = $this->createMock(PatchInterface::class);
 

@@ -11,6 +11,7 @@ use Magento\CloudPatches\Patch\Applier;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\RollbackProcessor;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -51,6 +52,7 @@ class RollbackProcessorTest extends TestCase
     /**
      * Tests patch conflict processing.
      */
+        #[AllowMockObjectsWithoutExpectations]
     public function testProcess()
     {
         $patch1 = $this->createPatch('MC-1', 'path1');
@@ -77,6 +79,7 @@ class RollbackProcessorTest extends TestCase
     /**
      * Tests with empty passing argument.
      */
+        #[AllowMockObjectsWithoutExpectations]
     public function testProcessWithEmptyArray()
     {
         $this->applier->expects($this->never())

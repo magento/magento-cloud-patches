@@ -15,6 +15,7 @@ use Magento\CloudPatches\Patch\Collector\SupportCollector;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\PatchBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -63,6 +64,7 @@ class SupportCollectorTest extends TestCase
      * @return void
      * @throws CollectorException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testCollect(): void
     {
         $config = [

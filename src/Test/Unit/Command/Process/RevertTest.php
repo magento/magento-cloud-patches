@@ -14,6 +14,7 @@ use Magento\CloudPatches\Command\Revert as RevertCommand;
 use Magento\CloudPatches\Patch\FilterFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -62,9 +63,11 @@ class RevertTest extends TestCase
     /**
      * Tests optional patches reverting when CLI patch argument provided.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testRevertWithPatchArgumentProvided()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevertWithPatchArgumentProvided(): void
     {
         $cliPatchArgument = ['MC-1111', 'MC-22222'];
         $cliOptAll = false;
@@ -95,22 +98,25 @@ class RevertTest extends TestCase
         $this->revertAction->expects($this->once())
             ->method('execute')
             ->with($inputMock, $outputMock, $cliPatchArgument)
-            ->willReturnCallback(function ($input, $output, $cliPatch)
- use ($inputMock, $outputMock, $cliPatchArgument) {
-                if ($input === $inputMock && $output === $outputMock && $cliPatch === $cliPatchArgument) {
-                    return true;
+            ->willReturnCallback(
+                function ($input, $output, $cliPatch) use ($inputMock, $outputMock, $cliPatchArgument) {
+                    if ($input === $inputMock && $output === $outputMock && $cliPatch === $cliPatchArgument) {
+                        return true;
+                    }
+                    return false;
                 }
-                return false;
-            });
+            );
         $this->manager->run($inputMock, $outputMock);
     }
 
     /**
      * Tests optional patches reverting when CLI patch argument is empty.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testRevertWithEmptyPatchArgument()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevertWithEmptyPatchArgument(): void
     {
         $cliPatchArgument = [];
         $cliOptAll = false;

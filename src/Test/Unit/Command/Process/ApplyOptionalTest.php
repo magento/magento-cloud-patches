@@ -14,6 +14,7 @@ use Magento\CloudPatches\Command\Process\ApplyOptional;
 use Magento\CloudPatches\Patch\FilterFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -62,9 +63,11 @@ class ApplyOptionalTest extends TestCase
     /**
      * Tests successful optional patches applying.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithPatchArgumentProvided()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithPatchArgumentProvided(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);
@@ -89,9 +92,11 @@ class ApplyOptionalTest extends TestCase
     /**
      * Tests optional patches applying when CLI patch argument is empty.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithEmptyPatchArgument()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithEmptyPatchArgument(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);

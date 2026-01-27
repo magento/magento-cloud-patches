@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Patch\Collector;
 
 use Magento\CloudPatches\Patch\Collector\CollectorException;
 use Magento\CloudPatches\Patch\Collector\ValidatePatchesConfig;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,6 +36,7 @@ class ValidatePatchesConfigTest extends TestCase
      * @return void
      * @throws CollectorException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteValidConfig(): void
     {
         $config = [
@@ -62,6 +64,7 @@ class ValidatePatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteMissingFileProperty(): void
     {
         $config = [
@@ -87,6 +90,7 @@ class ValidatePatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteInvalidRequireType(): void
     {
         $config = [
@@ -113,6 +117,7 @@ class ValidatePatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteInvalidReplacedWithType(): void
     {
         $config = [
@@ -139,6 +144,7 @@ class ValidatePatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteInvalidDeprecatedType(): void
     {
         $config = [
@@ -165,6 +171,7 @@ class ValidatePatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteInvalidCategoriesType(): void
     {
         $config = [
@@ -192,6 +199,7 @@ class ValidatePatchesConfigTest extends TestCase
      * @return void
      * @throws CollectorException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteValidConfigWithAllOptionalProperties(): void
     {
         $config = [
@@ -219,6 +227,7 @@ class ValidatePatchesConfigTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteMultipleValidationErrors(): void
     {
         $config = [

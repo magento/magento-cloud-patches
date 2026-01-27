@@ -17,6 +17,7 @@ use Magento\CloudPatches\Patch\Pool\LocalPool;
 use Magento\CloudPatches\Patch\RollbackProcessor;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -79,9 +80,11 @@ class ApplyLocalTest extends TestCase
     /**
      * Tests case when there are no local patches in m2-hotfix directory.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testExecuteLocalPatchesNotFound()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testExecuteLocalPatchesNotFound(): void
     {
         $expectedMessage = '<info>Hot-fixes were not found. Skipping</info>';
 
@@ -101,9 +104,11 @@ class ApplyLocalTest extends TestCase
     /**
      * Tests successful local patches applying.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplySuccessful()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplySuccessful(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
@@ -149,9 +154,11 @@ class ApplyLocalTest extends TestCase
     /**
      * Tests local patches applying with exception.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithException(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
@@ -200,7 +207,7 @@ class ApplyLocalTest extends TestCase
      *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $path, string $title)
+    private function createPatch(string $path, string $title): PatchInterface
     {
         $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);

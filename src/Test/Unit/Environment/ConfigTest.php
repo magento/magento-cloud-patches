@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Environment;
 
 use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Environment\ConfigReader;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -39,8 +40,11 @@ class ConfigTest extends TestCase
 
     /**
      * Tests Cloud environment.
+     *
+     * @return void
      */
-    public function testIsCloud()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testIsCloud(): void
     {
         $_ENV[Config::ENV_VAR_CLOUD]  = '';
         $this->assertFalse($this->config->isCloud());
@@ -51,8 +55,11 @@ class ConfigTest extends TestCase
 
     /**
      * Tests retrieving QUALITY_PATCHES from env variable.
+     *
+     * @return void
      */
-    public function testGetQualityPatchesEnv()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetQualityPatchesEnv(): void
     {
         $_ENV[Config::ENV_VAR_QUALITY_PATCHES]  = ['MC-1', 'MC-2'];
 
@@ -67,8 +74,11 @@ class ConfigTest extends TestCase
 
     /**
      * Tests retrieving QUALITY_PATCHES from env config.
+     *
+     * @return void
      */
-    public function testGetQualityPatchesConfig()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetQualityPatchesConfig(): void
     {
         unset($_ENV[Config::ENV_VAR_QUALITY_PATCHES]);
         $this->assertArrayNotHasKey(Config::ENV_VAR_QUALITY_PATCHES, $_ENV);

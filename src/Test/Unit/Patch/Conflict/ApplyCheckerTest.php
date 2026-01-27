@@ -13,6 +13,7 @@ use Magento\CloudPatches\Patch\Conflict\ApplyChecker;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -58,8 +59,11 @@ class ApplyCheckerTest extends TestCase
 
     /**
      * Tests patch apply checker.
+     *
+     * @return void
      */
-    public function testCheck()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCheck(): void
     {
         $patchIds = ['MC-1', 'MC-2', 'MC-3'];
         $patch1 = $this->createPatch('MC-1', 'path1');
@@ -99,7 +103,7 @@ class ApplyCheckerTest extends TestCase
      * @param string $path
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $id, string $path)
+    private function createPatch(string $id, string $path): PatchInterface
     {
         $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);

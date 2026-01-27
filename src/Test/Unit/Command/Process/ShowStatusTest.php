@@ -21,6 +21,7 @@ use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -113,8 +114,11 @@ class ShowStatusTest extends TestCase
      * Patch 3 - deprecated, not applied - no warning message, don't show patch in the table;
      * Patch 4 - deprecated, applied and replaced with applied patch4-v2 - don't show patch in the table;
      * Patch 5 - deprecated, applied and replaced with not applied patch5-v2 - show patch in the table;
+     *
+     * @return void
      */
-    public function testShowStatus()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testShowStatus(): void
     {
         $patch1 = $this->createPatch('patch1', true);
         $patch2 = $this->createPatch('patch2', false);
@@ -187,8 +191,11 @@ class ShowStatusTest extends TestCase
      * @param string $replacedWith
      * @return AggregatedPatchInterface|MockObject
      */
-    private function createPatch(string $id, bool $isDeprecated, string $replacedWith = '')
-    {
+    private function createPatch(
+        string $id,
+        bool $isDeprecated,
+        string $replacedWith = ''
+    ): AggregatedPatchInterface {
         $patch = $this->createMock(AggregatedPatch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('isDeprecated')->willReturn($isDeprecated);

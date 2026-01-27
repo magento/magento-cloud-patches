@@ -14,6 +14,7 @@ use Magento\CloudPatches\Filesystem\JsonConfigReader;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -72,6 +73,7 @@ class SourceProviderTest extends TestCase
      * @return void
      * @throws SourceProviderException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCloudPatches(): void
     {
         $configPath = '/cloud/patches.json';
@@ -95,6 +97,7 @@ class SourceProviderTest extends TestCase
      * @return void
      * @throws SourceProviderException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetQualityPatches(): void
     {
         $configPath = '/quality/patches.json';
@@ -114,12 +117,12 @@ class SourceProviderTest extends TestCase
 
     /**
      * Tests retrieving Quality patch configuration when config path is null.
-     *
      * Case when magento/quality-patches package is not installed.
      *
      * @return void
      * @throws SourceProviderException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetQualityPatchesWithNullConfigPath(): void
     {
         $this->qualityPackage->expects($this->once())
@@ -134,6 +137,7 @@ class SourceProviderTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetLocalPatches(): void
     {
         $this->directoryList->method('getMagentoRoot')
@@ -152,6 +156,7 @@ class SourceProviderTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetQualityPatchesFilesystemException(): void
     {
         $configPath = '/quality/patches.json';
@@ -174,6 +179,7 @@ class SourceProviderTest extends TestCase
      * @return void
      * @throws SourceProviderException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCommunityPatches(): void
     {
         $configPath = '/community/patches.json';
@@ -204,12 +210,12 @@ class SourceProviderTest extends TestCase
 
     /**
      * Tests retrieving Community patch configuration when config path is null.
-     *
      * Case when magento/quality-patches package is not installed or community config is not available.
      *
      * @return void
      * @throws SourceProviderException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCommunityPatchesWithNullConfigPath(): void
     {
         $this->qualityPackage->expects($this->once())
@@ -227,6 +233,7 @@ class SourceProviderTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCommunityPatchesFilesystemException(): void
     {
         $configPath = '/community/patches.json';

@@ -12,6 +12,7 @@ use Magento\CloudPatches\Patch\PatchCommandException;
 use Magento\CloudPatches\Patch\PatchCommandNotFound;
 use Magento\CloudPatches\Shell\Command\DriverInterface;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -46,6 +47,7 @@ class PatchCommandTest extends TestCase
      * @return void
      * @throws PatchCommandException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testApply(): void
     {
         $patch = 'patch.diff';
@@ -65,6 +67,7 @@ class PatchCommandTest extends TestCase
      * @return void
      * @throws PatchCommandException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testRevert(): void
     {
         $patch = 'patch.diff';
@@ -84,6 +87,7 @@ class PatchCommandTest extends TestCase
      * @return void
      * @throws PatchCommandException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testApplyCheck(): void
     {
         $patch = 'patch.diff';
@@ -103,6 +107,7 @@ class PatchCommandTest extends TestCase
      * @return void
      * @throws PatchCommandException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testRevertCheck(): void
     {
         $patch = 'patch.diff';
@@ -122,6 +127,7 @@ class PatchCommandTest extends TestCase
      * @return void
      * @throws PatchCommandException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetDriverThrowsExceptionWhenNoDriverInstalled(): void
     {
         $this->driverMock->expects($this->once())

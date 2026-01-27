@@ -17,6 +17,7 @@ use Magento\CloudPatches\Patch\Status\OptionalResolver;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use Magento\CloudPatches\Patch\Status\StatusResolverException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -62,8 +63,11 @@ class LocalResolverTest extends TestCase
 
     /**
      * Tests resolving patch statuses.
+     *
+     * @return void
      */
-    public function testResolve()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testResolve(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch');
@@ -99,8 +103,11 @@ class LocalResolverTest extends TestCase
 
     /**
      * Tests a case when exception happens during reading patch content.
+     *
+     * @return void
      */
-    public function testResolveWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testResolveWithException(): void
     {
         $patch = $this->createPatch('/path/patch.patch');
 
@@ -121,7 +128,7 @@ class LocalResolverTest extends TestCase
      * @param string $path
      * @return Patch|MockObject
      */
-    private function createPatch(string $path)
+    private function createPatch(string $path): Patch
     {
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn(md5($path));

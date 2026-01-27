@@ -12,6 +12,7 @@ use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -39,9 +40,11 @@ class AggregatedPatchFactoryTest extends TestCase
      * @param array $patchArgsList
      * @param array $expectedResult
      * @dataProvider createDataProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     #[DataProvider('createDataProvider')]
-    public function testCreate(array $patchArgsList, array $expectedResult)
+    public function testCreate(array $patchArgsList, array $expectedResult): void
     {
         $patches = array_map(function (array $args) {
             return $this->createPatch(...$args);
@@ -109,7 +112,7 @@ class AggregatedPatchFactoryTest extends TestCase
         array $require,
         string $replacedWith,
         bool $isDeprecated
-    ) {
+    ): Patch {
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getTitle')->willReturn($title);

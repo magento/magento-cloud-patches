@@ -10,6 +10,7 @@ namespace Magento\CloudPatches\Test\Unit\Command\Process\Action;
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\Action\ActionInterface;
 use Magento\CloudPatches\Command\Process\Action\ActionPool;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,6 +26,7 @@ class ActionPoolTest extends TestCase
      * @return void
      * @throws RuntimeException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecute(): void
     {
         $inputMock = $this->createMock(InputInterface::class);

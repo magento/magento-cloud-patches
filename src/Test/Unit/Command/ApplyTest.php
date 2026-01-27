@@ -12,6 +12,7 @@ use Magento\CloudPatches\Command\AbstractCommand;
 use Magento\CloudPatches\Command\Apply;
 use Magento\CloudPatches\Command\Process\ApplyOptional;
 use Magento\CloudPatches\Composer\MagentoVersion;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -61,8 +62,11 @@ class ApplyTest extends TestCase
 
     /**
      * Tests successful command execution.
+     *
+     * @return void
      */
-    public function testExecute()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testExecute(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);
@@ -80,8 +84,11 @@ class ApplyTest extends TestCase
 
     /**
      * Tests when runtime error happens during command execution.
+     *
+     * @return void
      */
-    public function testRuntimeError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRuntimeError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);
@@ -102,8 +109,11 @@ class ApplyTest extends TestCase
 
     /**
      * Tests when critical error happens during command execution.
+     *
+     * @return void
      */
-    public function testCriticalError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCriticalError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
         $inputMock = $this->createMock(InputInterface::class);

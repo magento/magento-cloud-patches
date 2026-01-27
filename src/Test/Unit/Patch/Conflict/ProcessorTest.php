@@ -14,6 +14,7 @@ use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\RollbackProcessor;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -68,8 +69,11 @@ class ProcessorTest extends TestCase
 
     /**
      * Tests patch conflict processing.
+     *
+     * @return void
      */
-    public function testProcess()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testProcess(): void
     {
         $appliedPatch1 = $this->createPatch('MC-1', 'path1');
         $appliedPatch2 = $this->createPatch('MC-2', 'path2');
@@ -134,7 +138,7 @@ class ProcessorTest extends TestCase
      * @param string $path
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $id, string $path)
+    private function createPatch(string $id, string $path): PatchInterface
     {
         $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);

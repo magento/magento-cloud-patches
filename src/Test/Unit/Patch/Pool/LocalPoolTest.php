@@ -12,6 +12,7 @@ use Magento\CloudPatches\Patch\Collector\LocalCollector;
 use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,8 +22,11 @@ class LocalPoolTest extends TestCase
 {
     /**
      * Tests retrieving patches.
+     *
+     * @return void
      */
-    public function testGetList()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetList(): void
     {
         $patch1 = $this->createPatch('HotFix-1');
         $patch2 = $this->createPatch('HotFix-2');
@@ -45,7 +49,7 @@ class LocalPoolTest extends TestCase
      * @param string $id
      * @return Patch|MockObject
      */
-    private function createPatch(string $id)
+    private function createPatch(string $id): Patch
     {
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);

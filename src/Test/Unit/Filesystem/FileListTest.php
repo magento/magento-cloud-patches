@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Filesystem;
 
 use Magento\CloudPatches\Filesystem\DirectoryList;
 use Magento\CloudPatches\Filesystem\FileList;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -44,7 +45,13 @@ class FileListTest extends TestCase
         );
     }
 
-    public function testGetPatches()
+    /**
+     * Tests retrieving patches.json file path.
+    *
+    * @return void
+    */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetPatches(): void
     {
         $this->assertSame(
             'root/patches.json',
@@ -52,7 +59,13 @@ class FileListTest extends TestCase
         );
     }
 
-    public function testGetPatchLog()
+    /**
+     * Tests retrieving .magento.env.yaml file path.
+    *
+    * @return void
+    */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetPatchLog(): void
     {
         $this->assertSame(
             'magento_root/var/log/patch.log',

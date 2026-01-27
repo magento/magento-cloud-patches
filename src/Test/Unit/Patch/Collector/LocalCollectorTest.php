@@ -13,6 +13,7 @@ use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\SourceProvider;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -51,8 +52,11 @@ class LocalCollectorTest extends TestCase
 
     /**
      * Tests collecting local patches.
+     *
+     * @return void
      */
-    public function testCollect()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCollect(): void
     {
         $file1 =  __DIR__ . SourceProvider::HOT_FIXES_DIR . '/patch1.patch';
         $file2 =  __DIR__ . SourceProvider::HOT_FIXES_DIR . '/patch2.patch';

@@ -16,6 +16,7 @@ use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -94,6 +95,7 @@ class ApplyOptionalActionTest extends TestCase
      * @return void
      * @throws RuntimeException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteSuccessful(): void
     {
         $patchFilter = ['MC-11111', 'MC-22222', 'MC-33333'];
@@ -156,6 +158,7 @@ class ApplyOptionalActionTest extends TestCase
      * @return void
      * @throws RuntimeException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testApplyAlreadyAppliedPatch(): void
     {
         $patchFilter = ['MC-11111'];
@@ -203,6 +206,7 @@ class ApplyOptionalActionTest extends TestCase
      * @return void
      * @throws RuntimeException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testApplyingAllPatchesAndSkipDeprecated(): void
     {
         $patchFilter = [];
@@ -248,6 +252,7 @@ class ApplyOptionalActionTest extends TestCase
      * @return void
      * @throws RuntimeException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testApplyWithException(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');

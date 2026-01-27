@@ -16,6 +16,7 @@ use Magento\CloudPatches\Shell\PackageNotFoundException;
 use Magento\CloudPatches\Shell\ProcessFactory;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
@@ -45,6 +46,7 @@ class ProcessFactoryTest extends TestCase
      * @return void
      * @throws PackageNotFoundException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testCreateWithNewerSymfonyProcess(): void
     {
         $cmd = ['ls', '-la'];
@@ -73,6 +75,7 @@ class ProcessFactoryTest extends TestCase
      * @return void
      * @throws PackageNotFoundException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testCreateThrowsExceptionWhenPackageNotFound(): void
     {
         $this->repositoryMock->expects($this->once())

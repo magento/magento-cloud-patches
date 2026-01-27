@@ -11,6 +11,7 @@ use Magento\CloudPatches\Filesystem\FileList;
 use Magento\CloudPatches\Filesystem\JsonConfigReader;
 use Magento\CloudPatches\Patch\CategoriesList\GetLocalPatchCategories;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -42,6 +43,7 @@ class GetLocalPatchCategoriesTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsLocalCategories(): void
     {
         $categories = ['Custom', 'Hotfix', 'Bugfix'];
@@ -69,6 +71,7 @@ class GetLocalPatchCategoriesTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsEmptyArrayWhenConfigIsEmpty(): void
     {
         $configPath = '/path/to/local/categories.json';
@@ -95,6 +98,7 @@ class GetLocalPatchCategoriesTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testExecuteReturnsMultipleCategories(): void
     {
         $categories = [

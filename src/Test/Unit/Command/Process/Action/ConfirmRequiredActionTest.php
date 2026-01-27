@@ -18,6 +18,7 @@ use Magento\CloudPatches\Patch\Pool\PatchNotFoundException;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -75,6 +76,7 @@ class ConfirmRequiredActionTest extends TestCase
      * @return void
      * @throws RuntimeException
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testAskConfirmationForNotAppliedPatches(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
@@ -129,6 +131,7 @@ class ConfirmRequiredActionTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testPatchNotFoundException(): void
     {
         $patchFilter = ['unknown id'];
@@ -151,6 +154,7 @@ class ConfirmRequiredActionTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testConfirmationRejected(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');

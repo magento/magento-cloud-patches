@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Composer;
 
 use Magento\CloudPatches\Composer\QualityPackage;
 use Magento\QualityPatches\Info;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,9 +22,9 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetPatchesDirectoryPathReturnsNullWhenInfoClassMissing(): void
     {
-        // When Magento\QualityPatches\Info class doesn't exist, all methods should return null
         if (class_exists(Info::class)) {
             $this->markTestSkipped('Test requires Magento\QualityPatches\Info class to be absent');
         }
@@ -37,6 +38,7 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetSupportPatchesConfigPathReturnsNullWhenInfoClassMissing(): void
     {
         if (class_exists(Info::class)) {
@@ -52,6 +54,7 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCommunityPatchesConfigPathReturnsNullWhenInfoClassMissing(): void
     {
         if (class_exists(Info::class)) {
@@ -67,6 +70,7 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCategoriesConfigPathReturnsNullWhenInfoClassMissing(): void
     {
         if (class_exists(Info::class)) {
@@ -82,6 +86,7 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetPatchesDirectoryPathReturnsValueWhenInfoClassExists(): void
     {
         if (!class_exists(Info::class)) {
@@ -100,6 +105,7 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetSupportPatchesConfigPathReturnsValueWhenInfoClassExists(): void
     {
         if (!class_exists(Info::class)) {
@@ -118,6 +124,7 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCommunityPatchesConfigPathReturnsValueWhenInfoClassExists(): void
     {
         if (!class_exists(Info::class)) {
@@ -136,6 +143,7 @@ class QualityPackageTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testGetCategoriesConfigPathReturnsValueWhenInfoClassExists(): void
     {
         if (!class_exists(Info::class)) {
