@@ -12,7 +12,7 @@ use Magento\CloudPatches\Command;
 use Psr\Container\ContainerInterface;
 
 /**
- * @inheritdoc
+ * @inheritDoc
  */
 class ApplicationEce extends \Symfony\Component\Console\Application
 {
@@ -35,14 +35,15 @@ class ApplicationEce extends \Symfony\Component\Console\Application
     }
 
     /**
-     * @inheritdoc
+     * @inheritDoc
      */
     protected function getDefaultCommands(): array
     {
         return array_merge(parent::getDefaultCommands(), [
             $this->container->get(Command\Ece\Apply::class),
             $this->container->get(Command\Ece\Revert::class),
-            $this->container->get(Command\Status::class)
+            $this->container->get(Command\Status::class),
+            $this->container->get(Command\Verify::class)
         ]);
     }
 }
