@@ -148,7 +148,7 @@ class AbstractCest
      * @param string $magentoVersion
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
-    protected function prepareTemplate(\CliTester $I, string $templateVersion, string $magentoVersion = null): void
+    protected function prepareTemplate(\CliTester $I, string $templateVersion, ?string $magentoVersion = null): void
     {
         $I->cloneTemplateToWorkDir($templateVersion);
         $I->createAuthJson();
