@@ -13,7 +13,9 @@ use Magento\CloudPatches\Patch\Conflict\ApplyChecker;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\RollbackProcessor;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -70,8 +72,11 @@ class AnalyzerTest extends TestCase
      * @param array $checkApplyMap
      * @param string $expectedMessage
      * @dataProvider analyzeDataProvider
+     * @return void
      */
-    public function testAnalyze(array $checkApplyMap, string $expectedMessage)
+    #[AllowMockObjectsWithoutExpectations]
+    #[DataProvider('analyzeDataProvider')]
+    public function testAnalyze(array $checkApplyMap, string $expectedMessage): void
     {
         $failedPatch = $this->createPatch('MC-1', 'path1', PatchInterface::TYPE_OPTIONAL);
         $requiredPool = ['REQUIRED-1', 'REQUIRED-2'];
@@ -105,6 +110,8 @@ class AnalyzerTest extends TestCase
     }
 
     /**
+     * Data provider for testAnalyze.
+     *
      * @return array
      */
     public static function analyzeDataProvider(): array
@@ -156,8 +163,11 @@ class AnalyzerTest extends TestCase
 
     /**
      * Tests with non-Cloud environment.
+     *
+     * @return void
      */
-    public function testAnalyzeWithNonCloudEnv()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testAnalyzeWithNonCloudEnv(): void
     {
         $patch = $this->createPatch('MC-1', 'path1');
 
@@ -178,9 +188,9 @@ class AnalyzerTest extends TestCase
      * @param string $type
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $id, string $path, string $type = '')
+    private function createPatch(string $id, string $path, string $type = ''): PatchInterface
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getType')->willReturn($type);

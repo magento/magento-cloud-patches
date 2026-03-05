@@ -16,6 +16,7 @@ use Magento\CloudPatches\Patch\Conflict\Processor as ConflictProcessor;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -23,24 +24,21 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * @inheritdoc
+ * Tests for ApplyOptionalAction.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ApplyOptionalActionTest extends TestCase
 {
     /**
      * @var ApplyOptionalAction
      */
-    private $action;
+    private ApplyOptionalAction $action;
 
     /**
      * @var Applier|MockObject
      */
     private $applier;
-
-    /**
-     * @var LoggerInterface|MockObject
-     */
-    private $logger;
 
     /**
      * @var Renderer|MockObject
@@ -63,12 +61,17 @@ class ApplyOptionalActionTest extends TestCase
     private $conflictProcessor;
 
     /**
+     * @var LoggerInterface|MockObject
+     */
+    private $logger;
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
     {
         $this->applier = $this->createMock(Applier::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->statusPool = $this->createMock(StatusPool::class);
         $this->optionalPool = $this->createMock(OptionalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
@@ -88,8 +91,12 @@ class ApplyOptionalActionTest extends TestCase
      * Tests successful optional patches applying.
      *
      * Case: applying 3 optional non-deprecated patches that wasn't applied previously.
+     *
+     * @return void
+     * @throws RuntimeException
      */
-    public function testExecuteSuccessful()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testExecuteSuccessful(): void
     {
         $patchFilter = ['MC-11111', 'MC-22222', 'MC-33333'];
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
@@ -103,9 +110,9 @@ class ApplyOptionalActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
@@ -123,32 +130,36 @@ class ApplyOptionalActionTest extends TestCase
                 [$patch3->getPath(), $patch3->getId(), 'Patch ' . $patch3->getId() .' has been applied'],
             ]);
         $this->renderer->expects($this->exactly(3))
-        ->method('printPatchInfo')
-        ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
-            static $callCount = 0;
-            $expectedPatches = [$patch1, $patch2, $patch3];
-            $expectedMessages = [
-                'Patch ' . $patch1->getId() . ' has been applied',
-                'Patch ' . $patch2->getId() . ' has been applied',
-                'Patch ' . $patch3->getId() . ' has been applied'
-            ];
+            ->method('printPatchInfo')
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
+                static $callCount = 0;
+                $expectedPatches = [$patch1, $patch2, $patch3];
+                $expectedMessages = [
+                    'Patch ' . $patch1->getId() . ' has been applied',
+                    'Patch ' . $patch2->getId() . ' has been applied',
+                    'Patch ' . $patch3->getId() . ' has been applied'
+                ];
 
-            if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
-                $callCount++;
-                return true;
-            }
+                if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
+                    $callCount++;
+                    return true;
+                }
 
-            return false;
-        });
+                return false;
+            });
         $this->action->execute($inputMock, $outputMock, $patchFilter);
     }
-    
+
     /**
      * Tests successful optional patches applying.
      *
      * Case: applying optional patch that was applied previously.
+     *
+     * @return void
+     * @throws RuntimeException
      */
-    public function testApplyAlreadyAppliedPatch()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyAlreadyAppliedPatch(): void
     {
         $patchFilter = ['MC-11111'];
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
@@ -158,9 +169,9 @@ class ApplyOptionalActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturnCallback(function ($filter) use ($patchFilter, $patch1) {
@@ -191,8 +202,12 @@ class ApplyOptionalActionTest extends TestCase
      *
      * Case: patch filter is empty (should apply all patches from the pool). Pool contains deprecated patch that
      * shouldn't be applied.
+     *
+     * @return void
+     * @throws RuntimeException
      */
-    public function testApplyingAllPatchesAndSkipDeprecated()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyingAllPatchesAndSkipDeprecated(): void
     {
         $patchFilter = [];
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111', false);
@@ -204,9 +219,9 @@ class ApplyOptionalActionTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getOptionalListByOrigin')
             ->with(['Adobe Commerce Support'])
@@ -234,18 +249,20 @@ class ApplyOptionalActionTest extends TestCase
      * Case: first patch is applied successfully, exception is thrown during applying second patch,
      * rollback starts, first patch should be reverted.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithException(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', 'MC-11111');
         $patch2 = $this->createPatch('/path/patch2.patch', 'MC-22222');
         $patchFilter = [$patch1->getId(), $patch2->getId()];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->optionalPool->method('getList')
             ->willReturn([$patch1, $patch2]);
 
@@ -255,26 +272,10 @@ class ApplyOptionalActionTest extends TestCase
                     throw new ApplierException('Applier error message');
                 }
                 // Return success message for the first patch
-                return "Patch {$path} {$id} has been applied";
+                return "Patch $path $id has been applied";
             });
         $this->conflictProcessor->expects($this->once())
             ->method('process')
-            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
-                static $callCount = 0;
-                $expectedPatches = [$patch1, $patch2, $patch3];
-                $expectedMessages = [
-                    'Patch ' . $patch1->getId() . ' has been applied',
-                    'Patch ' . $patch2->getId() . ' has been applied',
-                    'Patch ' . $patch3->getId() . ' has been applied'
-                ];
-
-                if ($patch === $expectedPatches[$callCount] && $message === $expectedMessages[$callCount]) {
-                    $callCount++;
-                    return true;
-                }
-
-                return false;
-            })
             ->willThrowException(new RuntimeException('Error message'));
 
         $this->expectException(RuntimeException::class);
@@ -291,9 +292,9 @@ class ApplyOptionalActionTest extends TestCase
      *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $path, string $id, bool $isDeprecated = false)
+    private function createPatch(string $path, string $id, bool $isDeprecated = false): PatchInterface|MockObject
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getFilename')->willReturn('filename.patch');
         $patch->method('getId')->willReturn($id);

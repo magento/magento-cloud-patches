@@ -22,6 +22,7 @@ use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\SourceProvider;
 use Magento\CloudPatches\Patch\SourceProviderException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -52,7 +53,7 @@ class QualityCollectorTest extends TestCase
     private $qualityPackage;
 
     /**
-     * @var \Magento\CloudPatches\Patch\Collector\GetPatchesConfigInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var GetPatchesConfigInterface|MockObject
      */
     private $patchesConfig;
 
@@ -75,9 +76,12 @@ class QualityCollectorTest extends TestCase
     }
 
     /**
-     * Tests collecting patches - valid configuration
+     * Tests collecting patches - valid configuration.
+     *
+     * @return void
      */
-    public function testCollectSuccessful()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCollectSuccessful(): void
     {
         $validConfig = require __DIR__ . '/Fixture/quality_config_valid.php';
         $this->patchesConfig->expects($this->once())
@@ -150,9 +154,11 @@ class QualityCollectorTest extends TestCase
     }
     
     /**
-     * patchBuilder function
+     * Test PatchBuilder method.
+     *
+     * @return void
      */
-    public function patchBuilderTest()
+    public function patchBuilderTest(): void
     {
         $this->patchBuilder->expects($this->exactly(3))
             ->method('setType')
@@ -216,9 +222,12 @@ class QualityCollectorTest extends TestCase
     }
 
     /**
-     * Tests collecting patches - invalid configuration
+     * Tests collecting patches - invalid configuration.
+     *
+     * @return void
      */
-    public function testInvalidConfiguration()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testInvalidConfiguration(): void
     {
         $config = require __DIR__ . '/Fixture/quality_config_invalid.php';
 
@@ -254,8 +263,11 @@ class QualityCollectorTest extends TestCase
 
     /**
      * Tests case when patch factory can't create a patch for some reason.
+     *
+     * @return void
      */
-    public function testPatchIntegrityException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testPatchIntegrityException(): void
     {
         $validConfig = require __DIR__ . '/Fixture/quality_config_valid.php';
         $this->patchesConfig->expects($this->once())
@@ -278,8 +290,11 @@ class QualityCollectorTest extends TestCase
 
     /**
      * Tests case when configuration can't be retrieved from source.
+     *
+     * @return void
      */
-    public function testSourceProviderException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testSourceProviderException(): void
     {
         $this->patchesConfig->expects($this->once())
             ->method('execute')

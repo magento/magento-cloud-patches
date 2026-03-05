@@ -12,6 +12,7 @@ use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
 use Magento\CloudPatches\Patch\Aggregator;
 use Magento\CloudPatches\Patch\Data\Patch;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -38,17 +39,20 @@ class AggregatorTest extends TestCase
         $this->aggregator = new Aggregator($this->aggregatedPatchFactory);
     }
 
-  /**
-   * Tests patch aggregation.
-   */
-    public function testAggregate()
+    /**
+     * Tests patch aggregation.
+     *
+     * @return void
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testAggregate(): void
     {
-        $patch1CE = $this->createPatch('MC-1', 'Patch1 CE');
-        $patch1EE = $this->createPatch('MC-1', 'Patch1 EE');
+        $patch1CE  = $this->createPatch('MC-1', 'Patch1 CE');
+        $patch1EE  = $this->createPatch('MC-1', 'Patch1 EE');
         $patch1B2B = $this->createPatch('MC-1', 'Patch1 B2B');
-        $patch2CE = $this->createPatch('MC-2', 'Patch2 CE');
-        $patch2EE = $this->createPatch('MC-2', 'Patch2 EE');
-        $patch3 = $this->createPatch('MC-3', 'Patch3');
+        $patch2CE  = $this->createPatch('MC-2', 'Patch2 CE');
+        $patch2EE  = $this->createPatch('MC-2', 'Patch2 EE');
+        $patch3    = $this->createPatch('MC-3', 'Patch3');
 
         // Mock AggregatedPatchInterface to return the patches when getPatches is called
         $aggregatedPatchMock1 = $this->createMock(AggregatedPatchInterface::class);
@@ -62,12 +66,12 @@ class AggregatorTest extends TestCase
 
         // Setting up the factory mock to return AggregatedPatchInterface mocks
         $this->aggregatedPatchFactory->expects($this->exactly(3))
-        ->method('create')
-        ->willReturnOnConsecutiveCalls(
-            $aggregatedPatchMock1,  // First call returns this AggregatedPatchInterface mock
-            $aggregatedPatchMock2,  // Second call returns this AggregatedPatchInterface mock
-            $aggregatedPatchMock3   // Third call returns this AggregatedPatchInterface mock
-        );
+            ->method('create')
+            ->willReturnOnConsecutiveCalls(
+                $aggregatedPatchMock1,  // First call returns this AggregatedPatchInterface mock
+                $aggregatedPatchMock2,  // Second call returns this AggregatedPatchInterface mock
+                $aggregatedPatchMock3   // Third call returns this AggregatedPatchInterface mock
+            );
 
         $result = $this->aggregator->aggregate(
             [$patch1CE, $patch1EE, $patch1B2B, $patch2CE, $patch2EE, $patch3]
@@ -83,7 +87,7 @@ class AggregatorTest extends TestCase
      * @param string $title
      * @return Patch|MockObject
      */
-    private function createPatch(string $id, string $title)
+    private function createPatch(string $id, string $title): Patch
     {
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);

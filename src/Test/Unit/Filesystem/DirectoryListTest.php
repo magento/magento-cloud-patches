@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Filesystem;
 
 use Magento\CloudPatches\Filesystem\DirectoryList;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -41,7 +42,13 @@ class DirectoryListTest extends TestCase
         );
     }
 
-    public function testGetRoot()
+    /**
+     * Tests retrieving root directory.
+     *
+     * @return void
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetRoot(): void
     {
         $this->assertSame(
             $this->root,
@@ -49,7 +56,13 @@ class DirectoryListTest extends TestCase
         );
     }
 
-    public function testGetMagentoRoot()
+    /**
+     * Tests retrieving Magento root directory.
+     *
+     * @return void
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetMagentoRoot(): void
     {
         $this->assertSame(
             $this->magentoRoot,
@@ -57,7 +70,13 @@ class DirectoryListTest extends TestCase
         );
     }
 
-    public function testGetPatches()
+    /**
+     * Tests retrieving the patches directory path.
+     *
+     * @return void
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetPatches(): void
     {
         $this->assertSame(
             $this->root . '/patches',

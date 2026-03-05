@@ -19,6 +19,7 @@ use Magento\CloudPatches\Patch\Status\OptionalResolver;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use Magento\CloudPatches\Patch\Status\StatusResolverException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -71,14 +72,17 @@ class OptionalResolverTest extends TestCase
 
     /**
      * Tests resolving patch statuses for patches without dependencies.
+     *
+     * @return void
      */
-    public function testResolveForIndependentPatches()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testResolveForIndependentPatches(): void
     {
         $patch1 = $this->createPatch('MC-1');
         $patch2 = $this->createPatch('MC-2');
         $patch3 = $this->createPatch('MC-3');
 
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturn([$patchMock]);
@@ -113,10 +117,12 @@ class OptionalResolverTest extends TestCase
 
     /**
      * Tests resolving patch statuses for patches with dependencies.
-     *
      * Status is defined using combined patch that contains all not applied dependencies.
+     *
+     * @return void
      */
-    public function testResolveForDependentPatches()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testResolveForDependentPatches(): void
     {
         $patch1 = $this->createPatch('MC-1');
         $patch2 = $this->createPatch('MC-2', ['MC-1']);
@@ -163,8 +169,11 @@ class OptionalResolverTest extends TestCase
     /**
      * Tests resolving patch statuses for conflicting cases,
      * when status can be defined only after analysis of applied dependencies.
+     *
+     * @return void
      */
-    public function testResolveForDependentPatchesWithConflicts()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testResolveForDependentPatchesWithConflicts(): void
     {
         $patch1 = $this->createPatch('MC-1');
         $patch2 = $this->createPatch('MC-2', ['MC-1']);
@@ -210,12 +219,15 @@ class OptionalResolverTest extends TestCase
 
     /**
      * Tests a case when exception happens during reading patch content.
+     *
+     * @return void
      */
-    public function testResolveWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testResolveWithException(): void
     {
         $patch1 = $this->createPatch('MC-1');
 
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
         $this->optionalPool->expects($this->once())
             ->method('getList')
             ->willReturn([$patchMock]);
@@ -238,7 +250,7 @@ class OptionalResolverTest extends TestCase
      * @param array $require
      * @return AggregatedPatch|MockObject
      */
-    private function createPatch(string $id, array $require = [])
+    private function createPatch(string $id, array $require = []): AggregatedPatch
     {
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);

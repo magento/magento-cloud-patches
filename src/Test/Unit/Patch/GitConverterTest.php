@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Unit\Patch;
 
 use Magento\CloudPatches\Patch\GitConverter;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -18,7 +20,7 @@ class GitConverterTest extends TestCase
     /**
      * @var GitConverter
      */
-    private $gitConverter;
+    private GitConverter $gitConverter;
 
     /**
      * @inheritDoc
@@ -34,8 +36,11 @@ class GitConverterTest extends TestCase
      * @param string $composerContent
      * @param string $expectedContent
      * @dataProvider convertDataProvider
+     * @return void
      */
-    public function testConvert(string $composerContent, string $expectedContent)
+    #[AllowMockObjectsWithoutExpectations]
+    #[DataProvider('convertDataProvider')]
+    public function testConvert(string $composerContent, string $expectedContent): void
     {
         $this->assertEquals(
             $expectedContent,
@@ -44,10 +49,12 @@ class GitConverterTest extends TestCase
     }
 
     /**
+     * Data provider for conversion tests.
+     *
      * phpcs:disable
      * @return array
      */
-    public static function convertDataProvider()
+    public static function convertDataProvider(): array
     {
         return [
             [

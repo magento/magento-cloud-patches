@@ -16,7 +16,9 @@ use Magento\CloudPatches\Patch\PatchIntegrityException;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Pool\PatchNotFoundException;
 use Magento\CloudPatches\Patch\Pool\RequiredPool;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -53,36 +55,43 @@ class OptionalPoolTest extends TestCase
      * @param PatchInterface[] $expectedResult
      *
      * @dataProvider getListFilterDataProvider
+     * @return void
      */
+    #[DataProvider('getListFilterDataProvider')]
     public function testGetList(
         array $filter,
         bool $useRequire,
         array $cloudPatches,
         array $qualityPatches,
         array $expectedResult
-    ) {
+    ): void {
         $pool = $this->createPool($cloudPatches, $qualityPatches);
 
         $this->assertEquals($expectedResult, array_values($pool->getList($filter, $useRequire)));
     }
 
     /**
+     * Tests patch list for different filter scenarios.
+     *
      * @return array
      */
-    public function getListFilterDataProvider(): array
+    public static function getListFilterDataProvider(): array
     {
         return [
-            $this->caseReturnAllWithEmptyFilter(),
-            $this->caseReturnPatchWithoutRequired(),
-            $this->caseReturnPatchWithRequired(),
-            $this->caseReturnPatchListUnique()
+            self::caseReturnAllWithEmptyFilter(),
+            self::caseReturnPatchWithoutRequired(),
+            self::caseReturnPatchWithRequired(),
+            self::caseReturnPatchListUnique()
         ];
     }
 
     /**
      * Tests case when patch is not found in a pool.
+     *
+     * @return void
      */
-    public function testGetListPatchNotFound()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetListPatchNotFound(): void
     {
         $filter = ['MC-3'];
         $patch1 = $this->createPatch('MC-1');
@@ -96,8 +105,11 @@ class OptionalPoolTest extends TestCase
 
     /**
      * Tests case when patch from 'require' configuration attribute is not found in a pool.
+     *
+     * @return void
      */
-    public function testGetListRequiredPatchNotFound()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetListRequiredPatchNotFound(): void
     {
         $filter = ['MC-1'];
         $patch = $this->createPatch('MC-1', ['MC-not-exists']);
@@ -110,8 +122,11 @@ class OptionalPoolTest extends TestCase
 
     /**
      * Tests retrieving only optional patches.
+     *
+     * @return void
      */
-    public function testGetOptionalAll()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetOptionalAll(): void
     {
         $requiredPatch1 = $this->createPatch('MCLOUD-1');
         $requiredPatch2 = $this->createPatch('MCLOUD-2');
@@ -129,8 +144,11 @@ class OptionalPoolTest extends TestCase
 
     /**
      * Tests retrieving patch ids dependent on provided patch if any.
+     *
+     * @return void
      */
-    public function testGetDependentOn()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetDependentOn(): void
     {
         $patch1 = $this->createPatch('MC-1');
         $patch2 = $this->createPatch('MC-2', ['MC-1']);
@@ -143,8 +161,11 @@ class OptionalPoolTest extends TestCase
 
     /**
      * Tests retrieving ids of patch dependencies.
+     *
+     * @return void
      */
-    public function testGetDependencies()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetDependencies(): void
     {
         $patch1 = $this->createPatch('MC-1');
         $patch2 = $this->createPatch('MC-2', ['MC-1']);
@@ -161,8 +182,11 @@ class OptionalPoolTest extends TestCase
 
     /**
      * Tests retrieving additional required patches which are not included in patch filter.
+     *
+     * @return void
      */
-    public function testGetAdditionalRequiredPatches()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetAdditionalRequiredPatches(): void
     {
         $filter = ['MC-4', 'MC-1'];
         $patch1 = $this->createPatch('MC-1');
@@ -180,8 +204,11 @@ class OptionalPoolTest extends TestCase
 
     /**
      * Tests retrieving patch ids replaced by provided patch if any.
+     *
+     * @return void
      */
-    public function testGetReplacedBy()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetReplacedBy(): void
     {
         $patchForReplaceId = 'MC-4';
         $patch1 = $this->createPatch('MC-1');
@@ -199,8 +226,11 @@ class OptionalPoolTest extends TestCase
 
     /**
      * Tests retrieving not deprecated patch ids by type.
+     *
+     * @return void
      */
-    public function testGetIdsByType()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetIdsByType(): void
     {
         $patch1 = $this->createPatch('OPTIONAL-1');
         $patch1->method('getType')->willReturn(PatchInterface::TYPE_OPTIONAL);
@@ -230,12 +260,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnAllWithEmptyFilter(): array
+    private static function caseReturnAllWithEmptyFilter(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2');
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => [],
@@ -251,12 +341,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnPatchWithoutRequired(): array
+    private static function caseReturnPatchWithoutRequired(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2', ['MC-1']);
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            ['MC-1'],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => ['MC-2'],
@@ -272,12 +422,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnPatchWithRequired(): array
+    private static function caseReturnPatchWithRequired(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2', ['MCLOUD-2']);
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            ['MCLOUD-2'],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => ['MC-2'],
@@ -293,12 +503,72 @@ class OptionalPoolTest extends TestCase
      *
      * @return array[]
      */
-    private function caseReturnPatchListUnique(): array
+    private static function caseReturnPatchListUnique(): array
     {
-        $cloudPatch1 = $this->createPatch('MCLOUD-1');
-        $cloudPatch2 = $this->createPatch('MCLOUD-2');
-        $qualityPatch1 = $this->createPatch('MC-1');
-        $qualityPatch2 = $this->createPatch('MC-2', ['MCLOUD-2']);
+        $cloudPatch1 = new Patch(
+            'MCLOUD-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $cloudPatch2 = new Patch(
+            'MCLOUD-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch1 = new Patch(
+            'MC-1',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            [],
+            '',
+            false,
+            ''
+        );
+        $qualityPatch2 = new Patch(
+            'MC-2',
+            PatchInterface::TYPE_OPTIONAL,
+            '',
+            [],
+            SupportCollector::ORIGIN,
+            '',
+            '',
+            '',
+            '',
+            [],
+            ['MCLOUD-2'],
+            '',
+            false,
+            ''
+        );
 
         return [
             'filter' => ['MCLOUD-2', 'MC-2'],
@@ -317,9 +587,11 @@ class OptionalPoolTest extends TestCase
      * @param string $replacedWith
      * @return Patch|MockObject
      */
-    private function createPatch(string $id, array $require = [], string $replacedWith = '')
-    {
-
+    private function createPatch(
+        string $id,
+        array $require = [],
+        string $replacedWith = ''
+    ): Patch {
         $patch = $this->createMock(Patch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getRequire')->willReturn($require);

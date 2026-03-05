@@ -66,6 +66,13 @@
         <service id="Magento\CloudPatches\Command\Process\Renderer">
             <argument key="$statusPool" type="service" id="statusPool"/>
         </service>
+        <service id="Magento\CloudPatches\Command\Process\VerifyPatches">
+            <argument key="$patchVerifier" type="service" id="Magento\CloudPatches\Patch\Verification\PatchVerifier"/>
+        </service>
+        <service id="Magento\CloudPatches\Patch\Verification\PatchVerifier">
+            <argument key="$statusPool" type="service" id="statusPool"/>
+        </service>
+        <service id="Magento\CloudPatches\Patch\Verification\VerificationReport" autowire="false"/>
         <service id="Magento\CloudPatches\Command\Process\Action\ActionPool" autowire="false"/>
         <service id="ApplyOptionalActionPool" class="Magento\CloudPatches\Command\Process\Action\ActionPool">
             <argument key="$actions" type="collection">

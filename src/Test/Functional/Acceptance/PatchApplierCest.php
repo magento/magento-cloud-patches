@@ -57,7 +57,14 @@ abstract class PatchApplierCest extends AbstractCest
         $targetFile = $I->grabFileContent('/target_file.md', Docker::BUILD_CONTAINER);
         $I->assertStringContainsString('# Hello Magento', $targetFile);
         $I->assertStringContainsString('## Additional Info', $targetFile);
+
+        // Try to get the log file, but handle case where it might not exist
         $log = $I->grabFileContent('/init/var/log/cloud.log', Docker::BUILD_CONTAINER);
+        if (empty($log)) {
+            // Log file might be in a different location, try alternative paths
+            $log = $I->grabFileContent('/var/log/cloud.log', Docker::BUILD_CONTAINER);
+        }
+        $I->assertNotEmpty($log, 'cloud.log file should exist and contain build logs');
         $I->assertStringContainsString('Patch ../m2-hotfixes/patch.patch has been applied', $log);
     }
 
@@ -91,9 +98,17 @@ abstract class PatchApplierCest extends AbstractCest
         $targetFile = $I->grabFileContent('/target_file.md', Docker::BUILD_CONTAINER);
         $I->assertStringContainsString('# Hello Magento', $targetFile);
         $I->assertStringContainsString('## Additional Info', $targetFile);
+
+        // Try to get the log file, but handle case where it might not exist
+        $log = $I->grabFileContent('/init/var/log/cloud.log', Docker::BUILD_CONTAINER);
+        if (empty($log)) {
+            // Log file might be in a different location, try alternative paths
+            $log = $I->grabFileContent('/var/log/cloud.log', Docker::BUILD_CONTAINER);
+        }
+        $I->assertNotEmpty($log, 'cloud.log file should exist and contain build logs');
         $I->assertStringContainsString(
             'Patch ../m2-hotfixes/patch.patch was already applied',
-            $I->grabFileContent('/init/var/log/cloud.log', Docker::BUILD_CONTAINER)
+            $log
         );
     }
 

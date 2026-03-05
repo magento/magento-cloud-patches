@@ -14,6 +14,7 @@ use Magento\CloudPatches\Command\Process\ShowStatus;
 use Magento\CloudPatches\Command\Status;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -44,7 +45,7 @@ class StatusTest extends TestCase
     protected function setUp(): void
     {
         $this->showStatus = $this->createMock(ShowStatus::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->command = new Status(
             $this->showStatus,
@@ -54,13 +55,16 @@ class StatusTest extends TestCase
 
     /**
      * Tests successful command execution.
+     *
+     * @return void
      */
-    public function testExecuteSuccess()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testExecuteSuccess(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->showStatus->expects($this->once())
             ->method('run');
@@ -73,13 +77,16 @@ class StatusTest extends TestCase
 
     /**
      * Tests when runtime error happens during command execution.
+     *
+     * @return void
      */
-    public function testRuntimeError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRuntimeError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->showStatus->expects($this->once())
             ->method('run')
@@ -95,13 +102,16 @@ class StatusTest extends TestCase
 
     /**
      * Tests when critical error happens during command execution.
+     *
+     * @return void
      */
-    public function testCriticalError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCriticalError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->showStatus->expects($this->once())
             ->method('run')

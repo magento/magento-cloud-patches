@@ -13,6 +13,7 @@ use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\PatchBuilder;
 use Magento\CloudPatches\Patch\PatchIntegrityException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -44,8 +45,11 @@ class PatchBuilderTest extends TestCase
 
     /**
      * Tests patch creation.
+     *
+     * @return void
      */
-    public function testBuild()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testBuild(): void
     {
         $patchData = [
             'id' => 'mc-1',
@@ -87,9 +91,11 @@ class PatchBuilderTest extends TestCase
     /**
      * Tests a case when patch content can't be received.
      *
+     * @return void
      * @throws PatchIntegrityException
      */
-    public function testBuildWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testBuildWithException(): void
     {
         $patchData = [
             'id' => 'mc-1',
@@ -116,7 +122,6 @@ class PatchBuilderTest extends TestCase
      * Builds a patch.
      *
      * @param array $patchData
-     *
      * @return PatchInterface
      * @throws PatchIntegrityException
      */

@@ -9,6 +9,7 @@ namespace Magento\CloudPatches\Test\Unit\Shell\Command;
 use Magento\CloudPatches\Shell\Command\DriverException;
 use Magento\CloudPatches\Shell\Command\PatchDriver;
 use Magento\CloudPatches\Shell\ProcessFactory;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -67,6 +68,7 @@ class PatchDriverTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testApply(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1.md'));
@@ -92,6 +94,7 @@ class PatchDriverTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testApplyFailure(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1.md'));
@@ -113,6 +116,7 @@ class PatchDriverTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testRevert(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1_applied_patch.md'), 'file1.md');
@@ -138,6 +142,7 @@ class PatchDriverTest extends TestCase
      *
      * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testRevertFailure(): void
     {
         $this->copyFileToWorkingDir($this->getFixtureFile('file1_applied_patch.md'), 'file1.md');

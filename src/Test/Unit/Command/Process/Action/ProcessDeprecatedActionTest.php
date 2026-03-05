@@ -16,6 +16,7 @@ use Magento\CloudPatches\Patch\Data\AggregatedPatchInterface;
 use Magento\CloudPatches\Patch\Data\PatchInterface;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -72,7 +73,7 @@ class ProcessDeprecatedActionTest extends TestCase
         $this->renderer = $this->createMock(Renderer::class);
         $this->aggregator = $this->createMock(Aggregator::class);
         $this->revertAction = $this->createMock(RevertAction::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->action = new ProcessDeprecatedAction(
             $this->optionalPool,
@@ -87,6 +88,7 @@ class ProcessDeprecatedActionTest extends TestCase
     /**
      * Tests successful processing patch list with deprecated patches.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testProcessDeprecationSuccessful()
     {
         $patch1 = $this->createPatch('MC-11111', true, 'MC-22222');
@@ -98,10 +100,10 @@ class ProcessDeprecatedActionTest extends TestCase
         );
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
@@ -128,7 +130,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->willReturnCallback(function ($patchId) use ($patchFilter) {
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $expectedMessage) {
                 if ($patchId === $expectedMessage) {
                     $this->stringContains($expectedMessage);
                 }
@@ -144,16 +146,17 @@ class ProcessDeprecatedActionTest extends TestCase
     /**
      * Tests a case when user rejected to apply deprecated patches.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testProcessDeprecationException()
     {
         $patch1 = $this->createPatch('MC-11111', true);
         $patchFilter = [$patch1->getId()];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
@@ -180,6 +183,7 @@ class ProcessDeprecatedActionTest extends TestCase
     /**
      * Tests successful processing patch list with applied patches that require replacement.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testProcessReplacementSuccessful()
     {
         $requireReplacement = ['MC-22222', 'MC-33333'];
@@ -197,10 +201,10 @@ class ProcessDeprecatedActionTest extends TestCase
         );
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
@@ -228,7 +232,7 @@ class ProcessDeprecatedActionTest extends TestCase
 
         $outputMock->expects($this->once())
             ->method('writeln')
-            ->willReturnCallback(function ($patchId) use ($patchFilter) {
+            ->willReturnCallback(function ($patchId) use ($patchFilter, $expectedMessage) {
                 if ($patchId === $expectedMessage) {
                     $this->stringContains($expectedMessage);
                 }
@@ -245,6 +249,7 @@ class ProcessDeprecatedActionTest extends TestCase
     /**
      * Tests successful skipping of replacement check when patch is already applied.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testSkippingReplacementProcessForAppliedPatch()
     {
         $patch1 = $this->createPatch('MC-11111', false);
@@ -255,11 +260,11 @@ class ProcessDeprecatedActionTest extends TestCase
         $patchFilter = [$patch1->getId()];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
@@ -284,6 +289,7 @@ class ProcessDeprecatedActionTest extends TestCase
     /**
      * Tests a case when user rejected to revert deprecated patches before applying a new one.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testProcessReplacementException()
     {
         $requireReplacement = ['MC-22222', 'MC-33333'];
@@ -296,10 +302,10 @@ class ProcessDeprecatedActionTest extends TestCase
         $patchFilter = [$patch1->getId()];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
-        $patchMock = $this->getMockForAbstractClass(PatchInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
+        $patchMock = $this->createMock(PatchInterface::class);
 
         $this->optionalPool->expects($this->once())
             ->method('getList')
@@ -338,13 +344,14 @@ class ProcessDeprecatedActionTest extends TestCase
      *
      * Don't need to check patches for deprecation and replacement.
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testWithEmptyPatchFilter()
     {
         $patchFilter = [];
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->aggregator->expects($this->never())
             ->method('aggregate');
@@ -362,7 +369,7 @@ class ProcessDeprecatedActionTest extends TestCase
      */
     private function createPatch(string $id, bool $isDeprecated = false, string $replacedWith = '')
     {
-        $patch = $this->getMockForAbstractClass(AggregatedPatchInterface::class);
+        $patch = $this->createMock(AggregatedPatchInterface::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('isDeprecated')->willReturn($isDeprecated);
         $patch->method('getReplacedWith')->willReturn($replacedWith);

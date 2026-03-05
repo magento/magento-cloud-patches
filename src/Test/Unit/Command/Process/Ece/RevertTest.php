@@ -18,6 +18,7 @@ use Magento\CloudPatches\Patch\Pool\LocalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -68,7 +69,7 @@ class RevertTest extends TestCase
     protected function setUp(): void
     {
         $this->revertAction = $this->createMock(RevertAction::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->applier = $this->createMock(Applier::class);
         $this->localPool = $this->createMock(LocalPool::class);
         $this->renderer = $this->createMock(Renderer::class);
@@ -87,9 +88,11 @@ class RevertTest extends TestCase
     /**
      * Tests successful patches reverting.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testRevertSuccessful()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevertSuccessful(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
@@ -102,9 +105,9 @@ class RevertTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2, $patch3]);
 
@@ -116,7 +119,7 @@ class RevertTest extends TestCase
 
         $outputMock->expects($this->exactly(4))
             ->method('writeln')
-            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2) {
+            ->willReturnCallback(function ($patch, $message) use ($patch1, $patch2, $patch3) {
                 static $callCount = 0;
                 $expectedPatches = [$patch1, $patch2, $patch3];
                 $expectedMessages = [
@@ -136,7 +139,7 @@ class RevertTest extends TestCase
             ->method('execute')
             ->with($inputMock, $outputMock, [])
             ->willReturnCallback(function ($input, $output) use ($inputMock, $outputMock) {
-                if ($output === $outputMock && $input === $inputMock && $patch === []) {
+                if ($output === $outputMock && $input === $inputMock) {
                     return true;
                 }
                 return false;
@@ -147,9 +150,11 @@ class RevertTest extends TestCase
     /**
      * Tests patches reverting with exception.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testRevertWithError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevertWithError(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
@@ -160,9 +165,9 @@ class RevertTest extends TestCase
             ]);
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2]);
 
@@ -201,9 +206,9 @@ class RevertTest extends TestCase
      *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $path, string $title)
+    private function createPatch(string $path, string $title): PatchInterface
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getTitle')->willReturn($title);
         $patch->method('getId')->willReturn($title);

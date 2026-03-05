@@ -14,6 +14,7 @@ use Magento\CloudPatches\Environment\Config;
 use Magento\CloudPatches\Patch\FilterFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -55,7 +56,7 @@ class ApplyOptionalTest extends TestCase
     {
         $this->filterFactory = $this->createMock(FilterFactory::class);
         $this->actionPool = $this->createMock(ActionPool::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->config = $this->createMock(Config::class);
 
         $this->applyOptionalEce = new ApplyOptional(
@@ -69,14 +70,16 @@ class ApplyOptionalTest extends TestCase
     /**
      * Tests successful optional patches applying.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithPatchEnvVariableProvided()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithPatchEnvVariableProvided(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $configQualityPatches = ['MC-1111', 'MC-22222'];
         $this->config->expects($this->once())
@@ -89,27 +92,30 @@ class ApplyOptionalTest extends TestCase
         $this->actionPool->expects($this->once())
             ->method('execute')
             ->with($inputMock, $outputMock, $configQualityPatches)
-            ->willReturnCallback(function ($input, $output, $config)
- use ($inputMock, $outputMock, $configQualityPatches) {
-                if ($input === $inputMock && $output === $outputMock && $config === $configQualityPatches) {
-                    return true;
+            ->willReturnCallback(
+                function ($input, $output, $config) use ($inputMock, $outputMock, $configQualityPatches) {
+                    if ($input === $inputMock && $output === $outputMock && $config === $configQualityPatches) {
+                        return true;
+                    }
+                    return null;
                 }
-                return null;
-            });
+            );
         $this->applyOptionalEce->run($inputMock, $outputMock);
     }
 
     /**
      * Tests optional patches applying when QUALITY_PATCHES env variable is empty.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithEmptyPatchEnvVariable()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithEmptyPatchEnvVariable(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $configQualityPatches = [];
         $this->config->expects($this->once())

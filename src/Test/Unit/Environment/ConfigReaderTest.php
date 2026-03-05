@@ -12,6 +12,7 @@ use Magento\CloudPatches\Filesystem\FileList;
 use Magento\CloudPatches\Filesystem\Filesystem;
 use Magento\CloudPatches\Filesystem\FileSystemException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,9 +50,13 @@ class ConfigReaderTest extends TestCase
     }
 
     /**
+     * Tests reading configuration when the file exists.
+     *
+     * @return void
      * @throws FileSystemException
      */
-    public function testRead()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRead(): void
     {
         $baseDir = __DIR__ . '/_file/';
 
@@ -76,9 +81,13 @@ class ConfigReaderTest extends TestCase
     }
 
     /**
+     * Tests reading configuration when the file does not exist.
+     *
+     * @return void
      * @throws FileSystemException
      */
-    public function testReadNotExist()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testReadNotExist(): void
     {
         $baseDir = __DIR__ . '/_file/';
 

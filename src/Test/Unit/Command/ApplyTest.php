@@ -12,6 +12,7 @@ use Magento\CloudPatches\Command\AbstractCommand;
 use Magento\CloudPatches\Command\Apply;
 use Magento\CloudPatches\Command\Process\ApplyOptional;
 use Magento\CloudPatches\Composer\MagentoVersion;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -49,7 +50,7 @@ class ApplyTest extends TestCase
     protected function setUp(): void
     {
         $this->applyOptional = $this->createMock(ApplyOptional::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->magentoVersion = $this->createMock(MagentoVersion::class);
 
         $this->command = new Apply(
@@ -61,13 +62,16 @@ class ApplyTest extends TestCase
 
     /**
      * Tests successful command execution.
+     *
+     * @return void
      */
-    public function testExecute()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testExecute(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->applyOptional->expects($this->once())
             ->method('run');
@@ -80,13 +84,16 @@ class ApplyTest extends TestCase
 
     /**
      * Tests when runtime error happens during command execution.
+     *
+     * @return void
      */
-    public function testRuntimeError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRuntimeError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->applyOptional->expects($this->once())
             ->method('run')
@@ -102,13 +109,16 @@ class ApplyTest extends TestCase
 
     /**
      * Tests when critical error happens during command execution.
+     *
+     * @return void
      */
-    public function testCriticalError()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCriticalError(): void
     {
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
 
         $this->applyOptional->expects($this->once())
             ->method('run')

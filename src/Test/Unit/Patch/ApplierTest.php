@@ -16,6 +16,7 @@ use Magento\CloudPatches\Patch\PatchCommandException;
 use Magento\CloudPatches\Patch\PatchCommandInterface;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -69,9 +70,11 @@ class ApplierTest extends TestCase
     /**
      * Tests apply operation, case when patch applied successfully.
      *
+     * @return void
      * @throws ApplierException
      */
-    public function testApply()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApply(): void
     {
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
@@ -95,8 +98,11 @@ class ApplierTest extends TestCase
 
     /**
      * Tests apply operation, case when applying patch fails.
+     *
+     * @return void
      */
-    public function testApplyFailed()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyFailed(): void
     {
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
@@ -116,9 +122,11 @@ class ApplierTest extends TestCase
     /**
      * Tests apply operation, case when patch was already applied.
      *
+     * @return void
      * @throws ApplierException
      */
-    public function testApplyPatchAlreadyApplied()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyPatchAlreadyApplied(): void
     {
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
@@ -148,9 +156,11 @@ class ApplierTest extends TestCase
     /**
      * Tests revert operation, case when patch reverted successfully.
      *
+     * @return void
      * @throws ApplierException
      */
-    public function testRevert()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevert(): void
     {
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
@@ -175,8 +185,12 @@ class ApplierTest extends TestCase
 
     /**
      * Tests revert operation, case when patch revert fails.
+     *
+     * @return void
+     * @throws ApplierException
      */
-    public function testRevertFailed()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevertFailed(): void
     {
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
@@ -196,9 +210,11 @@ class ApplierTest extends TestCase
     /**
      * Tests revert operation, case when patch wasn't applied.
      *
+     * @return void
      * @throws ApplierException
      */
-    public function testRevertPatchWasntApplied()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testRevertPatchWasntApplied(): void
     {
         $path = 'path/to/patch';
         $patchId = 'MC-11111';
@@ -228,8 +244,11 @@ class ApplierTest extends TestCase
 
     /**
      * Tests status operation, case when patch is not applied.
+     *
+     * @return void
      */
-    public function testStatusNotApplied()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testStatusNotApplied(): void
     {
         $patchContent = 'patch content';
 
@@ -242,8 +261,11 @@ class ApplierTest extends TestCase
 
     /**
      * Tests status operation, case when patch status can't be defined.
+     *
+     * @return void
      */
-    public function testStatusNotAvailable()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testStatusNotAvailable(): void
     {
         $patchContent = 'patch content';
 
@@ -262,8 +284,11 @@ class ApplierTest extends TestCase
 
     /**
      * Tests status operation, case when patch is applied.
+     *
+     * @return void
      */
-    public function testStatusApplied()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testStatusApplied(): void
     {
         $patchContent = 'patch content';
 
@@ -281,9 +306,11 @@ class ApplierTest extends TestCase
 
     /**
      * Tests checkApply operation.
-     *
      * Verifies that 'diff --git' is replaced with 'diff -Nuar'
+     *
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
     public function testCheckApply()
     {
         $patchContent = 'diff --git a/vendor/module-deploy/Queue.php b/vendor/module-deploy/Queue.php
@@ -306,15 +333,12 @@ diff -Nuar a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/mo
 +        echo "diff --Nuar";
 diff -Nuar a/vendor/magento/module-email/Model/Transport.php b/vendor/magento/module-email/Model/Transport.php
 ';
-
         $this->magentoVersion->expects($this->once())
             ->method('isGitBased')
             ->willReturn(false);
-
         $this->patchCommand->expects($this->once())
             ->method('applyCheck')
             ->with($expectedPatchContent);
-
         $this->assertTrue($this->applier->checkApply($patchContent));
     }
 }

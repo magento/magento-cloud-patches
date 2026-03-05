@@ -14,7 +14,9 @@ use Composer\Repository\RepositoryManager;
 use Composer\Repository\WritableRepositoryInterface;
 use Composer\Repository\InstalledRepositoryInterface;
 use Magento\CloudPatches\Composer\MagentoVersion;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -44,12 +46,12 @@ class MagentoVersionTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->repository = $this->getMockForAbstractClass(
+        $this->repository = $this->createMock(
             (version_compare(PHP_VERSION, '7.3') == -1)
                 ? WritableRepositoryInterface::class
                 : InstalledRepositoryInterface::class
         );
-        $this->rootPackage = $this->getMockForAbstractClass(RootPackageInterface::class);
+        $this->rootPackage = $this->createMock(RootPackageInterface::class);
         $repositoryManager = $this->createMock(RepositoryManager::class);
         $repositoryManager->method('getLocalRepository')
             ->willReturn($this->repository);
@@ -74,15 +76,23 @@ class MagentoVersionTest extends TestCase
      * @param string $expectedResult
      *
      * @dataProvider getDataProvider
+     * @return void
      */
-    public function testGet(bool $ce, bool $ee, bool $b2b, string $rootPackage, string $expectedResult)
-    {
+    #[AllowMockObjectsWithoutExpectations]
+    #[DataProvider('getDataProvider')]
+    public function testGet(
+        bool $ce,
+        bool $ee,
+        bool $b2b,
+        string $rootPackage,
+        string $expectedResult
+    ): void {
         $this->rootPackage->method('getName')
             ->willReturn($rootPackage);
         $this->rootPackage->method('getVersion')
             ->willReturn(self::VERSION);
 
-        $package = $this->getMockForAbstractClass(PackageInterface::class);
+        $package = $this->createMock(PackageInterface::class);
         $package->method('getVersion')
             ->willReturn(self::VERSION);
         $this->repository->method('findPackage')
@@ -96,63 +106,67 @@ class MagentoVersionTest extends TestCase
     }
 
     /**
+     * Tests Magento version and edition.
+     *
      * @return array
      */
-    public function getDataProvider(): array
+    public static function getDataProvider(): array
     {
         return [
             [
-                'CE' => false,
-                'EE' => false,
-                'B2B' => false,
-                'gitPackage' => '',
-                'Magento 2 is not installed'
+                'ce' => false,
+                'ee' => false,
+                'b2b' => false,
+                'rootPackage' => '',
+                'expectedResult' => 'Magento 2 is not installed'
             ],
             [
-                'CE' => true,
-                'EE' => true,
-                'B2B' => false,
-                'gitPackage' => '',
-                'Magento 2 Enterprise Edition, version ' . self::VERSION
+                'ce' => true,
+                'ee' => true,
+                'b2b' => false,
+                'rootPackage' => '',
+                'expectedResult' => 'Magento 2 Enterprise Edition, version ' . self::VERSION
             ],
             [
-                'CE' => true,
-                'EE' => false,
-                'B2B' => true,
-                'gitPackage' => '',
-                'Magento 2 B2B Edition, version ' . self::VERSION
+                'ce' => true,
+                'ee' => false,
+                'b2b' => true,
+                'rootPackage' => '',
+                'expectedResult' => 'Magento 2 B2B Edition, version ' . self::VERSION
             ],
             [
-                'CE' => true,
-                'EE' => false,
-                'B2B' => false,
-                'gitPackage' => '',
-                'Magento 2 Community Edition, version ' . self::VERSION
+                'ce' => true,
+                'ee' => false,
+                'b2b' => false,
+                'rootPackage' => '',
+                'expectedResult' => 'Magento 2 Community Edition, version ' . self::VERSION
             ],
             [
-                'CE' => false,
-                'EE' => false,
-                'B2B' => false,
-                'gitPackage' => 'magento/magento2ce',
-                'Git-based: Magento 2 Community Edition, version ' . self::VERSION
+                'ce' => false,
+                'ee' => false,
+                'b2b' => false,
+                'rootPackage' => 'magento/magento2ce',
+                'expectedResult' => 'Git-based: Magento 2 Community Edition, version ' . self::VERSION
             ],
             [
-                'CE' => false,
-                'EE' => false,
-                'B2B' => false,
-                'gitPackage' => 'magento/magento2ee',
-                'Git-based: Magento 2 Enterprise Edition, version ' . self::VERSION
+                'ce' => false,
+                'ee' => false,
+                'b2b' => false,
+                'rootPackage' => 'magento/magento2ee',
+                'expectedResult' => 'Git-based: Magento 2 Enterprise Edition, version ' . self::VERSION
             ],
         ];
     }
 
     /**
-     * Tests Magento git-version identifying .
+     * Tests isGitBased method.
      *
      * @param string $rootPackageName
      * @param bool $expectedResult
      * @dataProvider isGitBasedDataProvider
      */
+    #[AllowMockObjectsWithoutExpectations]
+    #[DataProvider('isGitBasedDataProvider')]
     public function testIsGitBased(string $rootPackageName, bool $expectedResult)
     {
         $this->rootPackage->method('getName')
@@ -162,9 +176,11 @@ class MagentoVersionTest extends TestCase
     }
 
     /**
+     * Tests data provider for isGitBased method.
+     *
      * @return array
      */
-    public function isGitBasedDataProvider(): array
+    public static function isGitBasedDataProvider(): array
     {
         return [
             ['rootPackageName' => 'magento/magento2ce', 'expectedResult' => true],
@@ -182,14 +198,17 @@ class MagentoVersionTest extends TestCase
      * @param string $testPackageVersion
      * @param bool $expectedResult
      * @dataProvider matchPackageGitProvider
+     * @return void
      */
+    #[AllowMockObjectsWithoutExpectations]
+    #[DataProvider('matchPackageGitProvider')]
     public function testMatchPackageGit(
         string $rootPackageName,
         string $rootPackageVersion,
         string $testPackageName,
         string $testPackageVersion,
         bool $expectedResult
-    ) {
+    ): void {
         $this->rootPackage->method('getName')
             ->willReturn($rootPackageName);
         $this->rootPackage->method('getVersion')
@@ -202,9 +221,11 @@ class MagentoVersionTest extends TestCase
     }
 
     /**
+     * Tests data provider for matchPackageGit method.
+     *
      * @return array
      */
-    public function matchPackageGitProvider(): array
+    public static function matchPackageGitProvider(): array
     {
         return [
             [

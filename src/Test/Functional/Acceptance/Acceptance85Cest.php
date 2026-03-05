@@ -8,20 +8,20 @@ declare(strict_types=1);
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
 /**
- * @group php72
+ * @group php85
  */
-class Acceptance72Cest extends AcceptanceCest
+class Acceptance85Cest extends AcceptanceCest
 {
     /**
+     * Patches data provider.
+     *
      * @return array
      */
     protected function patchesDataProvider(): array
     {
         return [
-            ['templateVersion' => '2.3.0'],
-            ['templateVersion' => '2.3.1'],
-            ['templateVersion' => '2.3.2', 'magentoVersion' => '2.3.2'],
-            ['templateVersion' => '2.3.2', 'magentoVersion' => '2.3.2-p2'],
+            // Magento 2.4.9-beta1 versions (PHP 8.5)
+            ['templateVersion' => '2.4.9-alpha-opensearch3.0', 'magentoVersion' => '2.4.9-beta101'],
         ];
     }
 }

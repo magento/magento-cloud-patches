@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Composer;
 
+use Magento\QualityPatches\Info;
+
 /**
  * Provides info from magento/quality-patches package.
  */
@@ -34,15 +36,19 @@ class QualityPackage
 
     /**
      * QualityPackage constructor
+     *
+     * @param string|null $infoClass Class name to check for existence, defaults to Info::class
      */
-    public function __construct()
+    public function __construct(?string $infoClass = null)
     {
-        if (class_exists(\Magento\QualityPatches\Info::class)) {
-            $info = new \Magento\QualityPatches\Info();
-            $this->patchesDirectory = $info->getPatchesDirectory();
-            $this->supportPatchesConfig = $info->getSupportPatchesConfig();
+        $infoClass = $infoClass ?? Info::class;
+        if (class_exists($infoClass)) {
+            $info = new $infoClass();
+
+            $this->patchesDirectory       = $info->getPatchesDirectory();
+            $this->supportPatchesConfig   = $info->getSupportPatchesConfig();
             $this->communityPatchesConfig = $info->getCommunityPatchesConfig();
-            $this->categoriesConfig = $info->getCategoriesConfig();
+            $this->categoriesConfig       = $info->getCategoriesConfig();
         }
     }
 
@@ -51,7 +57,7 @@ class QualityPackage
      *
      * @return string|null
      */
-    public function getPatchesDirectoryPath()
+    public function getPatchesDirectoryPath(): ?string
     {
         return $this->patchesDirectory;
     }
@@ -61,7 +67,7 @@ class QualityPackage
      *
      * @return string|null
      */
-    public function getSupportPatchesConfigPath()
+    public function getSupportPatchesConfigPath(): ?string
     {
         return $this->supportPatchesConfig;
     }
@@ -71,7 +77,7 @@ class QualityPackage
      *
      * @return string|null
      */
-    public function getCommunityPatchesConfigPath()
+    public function getCommunityPatchesConfigPath(): ?string
     {
         return $this->communityPatchesConfig;
     }
@@ -81,7 +87,7 @@ class QualityPackage
      *
      * @return string|null
      */
-    public function getCategoriesConfigPath()
+    public function getCategoriesConfigPath(): ?string
     {
         return $this->categoriesConfig;
     }

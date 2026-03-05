@@ -12,6 +12,7 @@ use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\RevertValidator;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -50,10 +51,12 @@ class RevertValidatorTest extends TestCase
 
     /**
      * Tests validation fails.
-     *
      * Case when patch has applied dependent patches.
+     *
+     * @return void
      */
-    public function testValidateWithAppliedDependents()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testValidateWithAppliedDependents(): void
     {
         $patchFilter = ['MC-1'];
 
@@ -75,12 +78,13 @@ class RevertValidatorTest extends TestCase
 
     /**
      * Tests validation success.
-     *
      * Case when dependent patches are not applied.
      *
      * @doesNotPerformAssertions
+     * @return void
      */
-    public function testValidateWithNotAppliedDependents()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testValidateWithNotAppliedDependents(): void
     {
         $patchFilter = ['MC-1'];
 
@@ -99,12 +103,13 @@ class RevertValidatorTest extends TestCase
 
     /**
      * Tests validation success.
-     *
      * Case when there are no dependent patches.
      *
      * @doesNotPerformAssertions
+     * @return void
      */
-    public function testValidateWithNoDependents()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testValidateWithNoDependents(): void
     {
         $patchFilter = ['MC-1'];
 

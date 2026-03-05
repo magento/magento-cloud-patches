@@ -17,6 +17,7 @@ use Magento\CloudPatches\Patch\Pool\LocalPool;
 use Magento\CloudPatches\Patch\RollbackProcessor;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -79,9 +80,11 @@ class ApplyLocalTest extends TestCase
     /**
      * Tests case when there are no local patches in m2-hotfix directory.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testExecuteLocalPatchesNotFound()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testExecuteLocalPatchesNotFound(): void
     {
         $expectedMessage = '<info>Hot-fixes were not found. Skipping</info>';
 
@@ -101,18 +104,20 @@ class ApplyLocalTest extends TestCase
     /**
      * Tests successful local patches applying.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplySuccessful()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplySuccessful(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
         $patch3 = $this->createPatch('/path/patch3.patch', '../m2-hotfixes/patch3.patch');
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2, $patch3]);
 
@@ -149,18 +154,20 @@ class ApplyLocalTest extends TestCase
     /**
      * Tests local patches applying with exception.
      *
+     * @return void
      * @throws RuntimeException
      */
-    public function testApplyWithException()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testApplyWithException(): void
     {
         $patch1 = $this->createPatch('/path/patch1.patch', '../m2-hotfixes/patch1.patch');
         $patch2 = $this->createPatch('/path/patch2.patch', '../m2-hotfixes/patch2.patch');
         $rollbackMessages = ['Patch 1 has been reverted'];
 
         /** @var InputInterface|MockObject $inputMock */
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $inputMock = $this->createMock(InputInterface::class);
         /** @var OutputInterface|MockObject $outputMock */
-        $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
+        $outputMock = $this->createMock(OutputInterface::class);
         $this->localPool->method('getList')
             ->willReturn([$patch1, $patch2]);
 
@@ -200,9 +207,9 @@ class ApplyLocalTest extends TestCase
      *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $path, string $title)
+    private function createPatch(string $path, string $title): PatchInterface
     {
-        $patch = $this->getMockForAbstractClass(PatchInterface::class);
+        $patch = $this->createMock(PatchInterface::class);
         $patch->method('getPath')->willReturn($path);
         $patch->method('getTitle')->willReturn($title);
 

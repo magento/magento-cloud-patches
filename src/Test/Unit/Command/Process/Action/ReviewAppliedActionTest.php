@@ -20,6 +20,7 @@ use Magento\CloudPatches\Patch\RevertValidator;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -67,8 +68,11 @@ class ReviewAppliedActionTest extends TestCase
 
     /**
      * Tests that warning message is shown when number of patches (filter + already applied) exceeds limit.
+     *
+     * @return void
      */
-    public function testAppliedPatchesExceedsLimit()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testAppliedPatchesExceedsLimit(): void
     {
         $filterSize = round(ReviewAppliedAction::UPGRADE_THRESHOLD / 2);
         $patchFilter = [];
@@ -102,8 +106,11 @@ class ReviewAppliedActionTest extends TestCase
 
     /**
      * Tests that warning message is not shown when number of applied patches doesn't exceed the limit.
+     *
+     * @return void
      */
-    public function testAppliedPatchesNotExceedLimit()
+    #[AllowMockObjectsWithoutExpectations]
+    public function testAppliedPatchesNotExceedLimit(): void
     {
         $appliedPatches = [];
         for ($i = 1; $i < ReviewAppliedAction::UPGRADE_THRESHOLD; $i++) {
@@ -132,10 +139,9 @@ class ReviewAppliedActionTest extends TestCase
      * Creates patch mock.
      *
      * @param string $id
-     *
      * @return PatchInterface|MockObject
      */
-    private function createPatch(string $id)
+    private function createPatch(string $id): PatchInterface
     {
         $patch = $this->createMock(PatchInterface::class);
         $patch->method('getId')->willReturn($id);
