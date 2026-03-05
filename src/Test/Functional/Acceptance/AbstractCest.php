@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\CloudPatches\Test\Functional\Acceptance;
 
+use CliTester;
+
 /**
  * Abstract class with implemented before/after Cest steps.
  */
@@ -135,20 +137,27 @@ class AbstractCest
     ];
 
     /**
-     * @param \CliTester $I
+     * Set up the testing environment before each test.
+     *
+     * @param CliTester $I
+     * @return void
      */
-    public function _before(\CliTester $I): void
+    public function _before(CliTester $I): void
     {
         $I->cleanupWorkDir();
     }
 
     /**
-     * @param \CliTester $I
+     * Prepares the template for testing by cloning it, setting up authentication,
+     * and configuring dependencies.
+     *
+     * @param CliTester $I
      * @param string $templateVersion
      * @param string $magentoVersion
+     * @return void
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
-    protected function prepareTemplate(\CliTester $I, string $templateVersion, ?string $magentoVersion = null): void
+    protected function prepareTemplate(CliTester $I, string $templateVersion, ?string $magentoVersion = null): void
     {
         $I->cloneTemplateToWorkDir($templateVersion);
         $I->createAuthJson();
@@ -196,7 +205,7 @@ class AbstractCest
             );
         }
 
-        // Configure Composer audit to allow insecure packages for testing old Magento versions
+        // Allow insecure packages for legacy Magento testing only (not used in production).
         $this->configureComposerAudit($I);
 
         $I->composerUpdate();
@@ -205,10 +214,10 @@ class AbstractCest
     /**
      * Configures Composer audit settings to allow insecure packages for testing.
      *
-     * @param \CliTester $I
+     * @param CliTester $I
      * @return void
      */
-    protected function configureComposerAudit(\CliTester $I): void
+    protected function configureComposerAudit(CliTester $I): void
     {
         $composerJsonPath = $I->getWorkDirPath() . '/composer.json';
         if (!file_exists($composerJsonPath)) {
@@ -230,6 +239,10 @@ class AbstractCest
     }
 
     /**
+     * Converts an array of environment variables to a JSON string format
+     * suitable for use in shell commands.
+     * The resulting JSON string is escaped to ensure it can be safely used in shell contexts.
+     *
      * @param array $data
      * @return string
      */
@@ -239,10 +252,15 @@ class AbstractCest
     }
 
     /**
-     * @param \CliTester $I
+     * Retrieves the Magento version range from the composer.json file in the working directory.
+     * This method reads the composer.json file, decodes it, and extracts
+     * the version constraint for the magento/magento-cloud-metapackage.
+     * If the package is not found, it returns an empty string.
+     *
+     * @param CliTester $I
      * @return string
      */
-    protected function getVersionRangeForMagento(\CliTester $I): string
+    protected function getVersionRangeForMagento(CliTester $I): string
     {
         $composer = json_decode(file_get_contents($I->getWorkDirPath() . '/composer.json'), true);
 
@@ -250,9 +268,12 @@ class AbstractCest
     }
 
     /**
-     * @param \CliTester $I
+     * Cleans up after each test by stopping the environment and removing the working directory.
+     *
+     * @param CliTester $I
+     * @return void
      */
-    public function _after(\CliTester $I): void
+    public function _after(CliTester $I): void
     {
         $I->stopEnvironment();
         $I->removeWorkDir();

@@ -2,7 +2,7 @@
 
 ## Quick Start
 
-### ⚡ Most Common Commands
+### Most Common Commands
 
 ```bash
 # Run all integrity tests (recommended)
@@ -17,7 +17,7 @@ cd tests/unit && ../../vendor/bin/phpunit --testsuite Integrity
 
 ## All Commands
 
-### 1️⃣ Run All Integrity Tests
+### 1) Run All Integrity Tests
 
 ```bash
 cd tests/unit
@@ -30,7 +30,7 @@ Tests: 17, Assertions: 19, Skipped: 2
 Time: ~0.04 seconds
 ```
 
-### 2️⃣ Run with Pretty Output (TestDox)
+### 2) Run with Pretty Output (TestDox)
 
 ```bash
 cd tests/unit
@@ -38,11 +38,11 @@ cd tests/unit
 ```
 
 **Shows:**
-- ✔ Test passed
-- ✘ Test failed
-- ↩ Test skipped
+- Test passed
+- Test failed
+- Test skipped
 
-### 3️⃣ Run Specific Test Class
+### 3) Run Specific Test Class
 
 ```bash
 cd tests/unit
@@ -60,7 +60,7 @@ cd tests/unit
 ../../vendor/bin/phpunit ../../src/Test/Integrity/Testsuite/SupportedVersionsTest.php
 ```
 
-### 4️⃣ Run Specific Test Method
+### 4) Run Specific Test Method
 
 ```bash
 cd tests/unit
@@ -78,7 +78,7 @@ cd tests/unit
 ../../vendor/bin/phpunit --filter testPatchFileNamingConventions
 ```
 
-### 5️⃣ List All Available Tests
+### 5) List All Available Tests
 
 ```bash
 cd tests/unit
@@ -87,14 +87,14 @@ cd tests/unit
 
 **Output:** List of all 17 tests
 
-### 6️⃣ Run with Colors
+### 6) Run with Colors
 
 ```bash
 cd tests/unit
 ../../vendor/bin/phpunit --testsuite Integrity --colors=always
 ```
 
-### 7️⃣ Debug Mode (Verbose)
+### 7) Debug Mode (Verbose)
 
 ```bash
 cd tests/unit
@@ -103,7 +103,7 @@ cd tests/unit
 
 **Shows:** Detailed execution information
 
-### 8️⃣ Stop on First Failure
+### 8) Stop on First Failure
 
 ```bash
 cd tests/unit
@@ -112,7 +112,7 @@ cd tests/unit
 
 **Useful for:** Fixing errors one at a time
 
-### 9️⃣ Run All Tests (Unit + Integrity)
+### 9) Run All Tests (Unit + Integrity)
 
 ```bash
 cd tests/unit
@@ -121,7 +121,7 @@ cd tests/unit
 
 **Runs:** Both Unit and Integrity test suites
 
-### 🔟 Generate Coverage Report
+### 10) Generate Coverage Report
 
 ```bash
 cd tests/unit
@@ -135,13 +135,13 @@ open ../../var/coverage/index.html
 
 ## Test Results Explained
 
-### ✔ Green Dot (.)
+### Green Dot (.)
 Test passed successfully
 
-### ✘ Red F
+### Red F
 Test failed
 
-### ↩ Yellow S
+### Yellow S
 Test skipped (usually a warning, not a failure)
 
 ### D
@@ -205,8 +205,8 @@ cd /opt/homebrew/var/www/magento-cloud-patches/tests/unit
 ### Error: "No tests executed"
 **Solution:** Check the testsuite name (case-sensitive)
 ```bash
-../../vendor/bin/phpunit --testsuite Integrity  # ✅ Correct
-../../vendor/bin/phpunit --testsuite integrity  # ❌ Wrong
+../../vendor/bin/phpunit --testsuite Integrity  # Correct
+../../vendor/bin/phpunit --testsuite integrity  # Wrong
 ```
 
 ### Error: "Class not found"
@@ -235,40 +235,40 @@ composer install
 
 | Command | Purpose | Speed |
 |---------|---------|-------|
-| `--testsuite Integrity` | All integrity tests | ⚡ Fast |
-| `--testdox` | Pretty output | ⚡ Fast |
-| `--filter <name>` | Specific test | ⚡⚡ Very fast |
-| `--list-tests` | Show available tests | ⚡⚡ Very fast |
-| `--debug` | Verbose output | ⚡ Fast |
-| `--stop-on-failure` | Stop on first error | ⚡ Fast |
-| `--coverage-html` | Coverage report | 🐢 Slow |
+| `--testsuite Integrity` | All integrity tests | Fast |
+| `--testdox` | Pretty output | Fast |
+| `--filter <name>` | Specific test | Very fast |
+| `--list-tests` | Show available tests | Very fast |
+| `--debug` | Verbose output | Fast |
+| `--stop-on-failure` | Stop on first error | Fast |
+| `--coverage-html` | Coverage report | Slow |
 
 ## What Each Test Validates
 
 ### ConfigStructureTest (4 tests)
-- ✅ patches.json is valid JSON
-- ✅ JSON has correct structure
-- ✅ All referenced files exist
-- ✅ Version constraints are valid semver
+- patches.json is valid JSON
+- JSON has correct structure
+- All referenced files exist
+- Version constraints are valid semver
 
 ### PatchFileNamingTest (2 tests)
-- ✅ Files follow naming conventions
-- ⚠️  No duplicate references (warning only)
+- Files follow naming conventions
+- No duplicate references (warning only)
 
 ### PatchesDirectoryTest (4 tests)
-- ✅ patches/ directory exists
-- ✅ Directory contains patch files
-- ✅ All files are referenced
-- ⚠️  File quality checks (warning only)
+- patches/ directory exists
+- Directory contains patch files
+- All files are referenced
+- File quality checks (warning only)
 
 ### SupportedVersionsTest (7 tests)
-- ✅ Covers Magento 2.4.4+
-- ✅ Covers PHP 8.1+ versions
-- ✅ Major versions: 2.4.4, 2.4.5, 2.4.6, 2.4.7, 2.4.8
+- Covers Magento 2.4.4+
+- Covers PHP 8.1+ versions
+- Major versions: 2.4.4, 2.4.5, 2.4.6, 2.4.7, 2.4.8
 
 ---
 
-**💡 Pro Tip:** Add this to your bash/zsh aliases for quick access:
+**Pro Tip:** Add this to your bash/zsh aliases for quick access:
 
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
@@ -278,4 +278,3 @@ alias integrity='cd tests/unit && ../../vendor/bin/phpunit --testsuite Integrity
 cd /opt/homebrew/var/www/magento-cloud-patches
 integrity
 ```
-

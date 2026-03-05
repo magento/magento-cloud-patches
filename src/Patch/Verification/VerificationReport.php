@@ -53,6 +53,8 @@ class VerificationReport
     private $isPassing;
 
     /**
+     * VerificationReport constructor.
+     *
      * @param array $expectedPatches
      * @param array $appliedPatches
      * @param array $missingPatches
@@ -123,7 +125,10 @@ class VerificationReport
     }
 
     /**
-     * Returns the compliance percentage (0-100).
+     * Returns the percentage of expected patches that are actually applied (0–100).
+     *
+     * Compliance is calculated based on the patches defined in patches.json
+     * compared with the patches detected as applied.
      *
      * @return float
      */

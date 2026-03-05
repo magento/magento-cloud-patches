@@ -50,6 +50,8 @@ class PatchVerifier
     private $cloudOnly = false;
 
     /**
+     * PatchVerifier constructor.
+     *
      * @param Aggregator $aggregator
      * @param OptionalPool $optionalPool
      * @param LocalPool $localPool
@@ -107,8 +109,10 @@ class PatchVerifier
         $missingPatches = [];
         $unexpectedPatches = [];
 
-        // 1. Identify EXPECTED patches
-        // These are patches that match current environment constraints and are NOT N/A
+        /**
+         * Identify EXPECTED patches
+         * Patches that match current environment constraints and are NOT marked as N/A
+         */
         foreach ($allPatches as $patch) {
             $patchId = $patch->getId();
             
@@ -124,15 +128,16 @@ class PatchVerifier
             // Resolve status for the patch
             $status = $this->statusPool->get($patchId);
             
-            // Check if patch is relevant (not N/A)
-            // Note: N/A patches are usually those that don't match constraints OR conflict
-            // However, statusPool only resolves patches that are in the pools.
-            // If a patch is NOT in the pool (e.g. filtered by CloudCollector), statusPool might return N/A or Default?
-            // Actually StatusPool returns 'N/A' if not found.
-            
-            // We define "Expected" as:
-            // - Present in the aggregated list (means it passed Collector constraints)
-            // - Status is NOT N/A (means it is applicable)
+            /**
+             * Verify patch relevance and applicability
+             *
+             * A patch is considered relevant when:
+             * - It is present in the aggregated list (indicating it passed Collector constraints)
+             * - Its status is not N/A (indicating it is applicable to the current environment)
+             *
+             * Note: Patches not found in the status pool are marked as N/A, while patches
+             *       filtered by CloudCollector are excluded from the aggregated list.
+             */
             if ($status !== StatusPool::NA) {
                 $expectedPatches[$patchId] = $patchInfo;
                 
@@ -149,7 +154,7 @@ class PatchVerifier
             }
         }
 
-        // Calculate compliance percentage
+        // Calculate the percentage of expected patches that are applied
         $totalExpected = count($expectedPatches);
         $totalApplied = count($appliedPatches);
         
@@ -157,9 +162,11 @@ class PatchVerifier
             ? ($totalApplied / $totalExpected) * 100
             : 100.0;
 
-        // Verification passes if:
-        // 1. There are no missing patches
-        // 2. There are expected patches (empty expected = fail as a safety check)
+        /**
+         * Verification passes if:
+         * 1. There are no missing patches
+         * 2. There are expected patches (empty expected = fail as a safety check)
+         */
         $isPassing = count($missingPatches) === 0 && $totalExpected > 0;
 
         return new VerificationReport(
