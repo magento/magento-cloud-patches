@@ -21,6 +21,8 @@ class VerifyPatches84Cest extends VerifyPatchesCest
     {
         return [
             [
+                'templateVersion' => '2.4.8',
+                'magentoVersion' => '2.4.8-p3',
                 'variables' => [
                     'ADMIN_EMAIL' => 'admin@example.com',
                 ],

@@ -18,6 +18,44 @@ use Codeception\Example;
 abstract class VerifyPatchesCest extends AbstractCest
 {
     /**
+     * Runs verify command and accepts both pass (0) and fail (1) exits.
+     *
+     * verify returns 1 when compliance is not 100%, which is valid for these tests.
+     *
+     * @param CliTester $I
+     * @param string $args
+     */
+    private function runVerifyCommand(CliTester $I, string $args = ''): void
+    {
+        $I->assertTrue(
+            $I->runDockerComposeCommand(
+                sprintf(
+                    "run deploy bash -c './vendor/bin/ece-patches verify %s; "
+                    . "code=\$?; [ \"\$code\" -eq 0 ] || [ \"\$code\" -eq 1 ]'",
+                    trim($args)
+                )
+            )
+        );
+    }
+
+    /**
+     * Prepares a template and generates docker-compose for verify tests.
+     *
+     * @param CliTester $I
+     * @param Example $data
+     */
+    private function prepareVerifyEnvironment(CliTester $I, Example $data): void
+    {
+        $this->prepareTemplate($I, $data['templateVersion'], $data['magentoVersion'] ?? null);
+        $I->generateDockerCompose(
+            sprintf(
+                '--mode=production --env-vars="%s"',
+                $this->convertEnvFromArrayToJson($data['variables'])
+            )
+        );
+    }
+
+    /**
      * @param CliTester $I
      */
     public function _before(CliTester $I): void
@@ -34,26 +72,12 @@ abstract class VerifyPatchesCest extends AbstractCest
      */
     public function testVerifyTableOutput(CliTester $I, Example $data): void
     {
-        $I->generateDockerCompose(
-            sprintf(
-                '--mode=production --env-vars="%s"',
-                $this->convertEnvFromArrayToJson($data['variables'])
-            )
-        );
+        $this->prepareVerifyEnvironment($I, $data);
         $I->copyFileToWorkDir('files/patches/.gitkeep', 'patches/.gitkeep');
-        $I->runDockerComposeCommand('run build cloud-build');
-        $I->runDockerComposeCommand('run deploy cloud-deploy');
-        $I->runDockerComposeCommand('run deploy ece-command env:config:show');
-        
-        // Run the verify command
-        $I->runDockerComposeCommand('run deploy ece-patches verify');
-        
-        // Check that the command executed
-        $output = $I->grabFileContent('/var/www/ece-tools/docker-compose.yml');
-        $I->assertNotEmpty($output);
-        
-        // Verify expected output patterns
-        $I->runDockerComposeCommand('run deploy ece-patches verify');
+        $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy ece-command env:config:show'));
+        $this->runVerifyCommand($I, '--cloud-only');
         $I->seeInOutput('Patch Application Verification Report');
         $I->seeInOutput('Statistics:');
         $I->seeInOutput('Total Expected Patches:');
@@ -69,24 +93,11 @@ abstract class VerifyPatchesCest extends AbstractCest
      */
     public function testVerifyJsonOutput(CliTester $I, Example $data): void
     {
-        $I->generateDockerCompose(
-            sprintf(
-                '--mode=production --env-vars="%s"',
-                $this->convertEnvFromArrayToJson($data['variables'])
-            )
-        );
+        $this->prepareVerifyEnvironment($I, $data);
         $I->copyFileToWorkDir('files/patches/.gitkeep', 'patches/.gitkeep');
-        $I->runDockerComposeCommand('run build cloud-build');
-        $I->runDockerComposeCommand('run deploy cloud-deploy');
-        
-        // Run the verify command with JSON format
-        $I->runDockerComposeCommand('run deploy ece-patches verify --format=json');
-        
-        // Verify JSON output structure
-        $output = $I->grabShellOutput();
-        $I->assertNotEmpty($output);
-        
-        // Check if output contains JSON structure
+        $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
+        $this->runVerifyCommand($I, '--format=json --cloud-only');
         $I->seeInOutput('"status"');
         $I->seeInOutput('"compliance_percentage"');
         $I->seeInOutput('"summary"');
@@ -103,23 +114,14 @@ abstract class VerifyPatchesCest extends AbstractCest
      */
     public function testVerifySpecificPatches(CliTester $I, Example $data): void
     {
-        $I->generateDockerCompose(
-            sprintf(
-                '--mode=production --env-vars="%s"',
-                $this->convertEnvFromArrayToJson($data['variables'])
-            )
-        );
+        $this->prepareVerifyEnvironment($I, $data);
         $I->copyFileToWorkDir('files/patches/.gitkeep', 'patches/.gitkeep');
-        $I->runDockerComposeCommand('run build cloud-build');
-        $I->runDockerComposeCommand('run deploy cloud-deploy');
-        
-        // First, get the status to find an available patch ID
-        $I->runDockerComposeCommand('run deploy ece-patches status --format=json');
-        
-        // Run verify with specific patch (using a common patch ID)
-        $I->runDockerComposeCommand('run deploy ece-patches verify --patch-id=MCLOUD-10032');
-        
-        // Verify the output contains patch information
+        $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
+        $I->assertTrue(
+            $I->runDockerComposeCommand('run deploy bash -c "./vendor/bin/ece-patches status --format=json"')
+        );
+        $this->runVerifyCommand($I, '--patch-id=MCLOUD-10032 --cloud-only');
         $I->seeInOutput('Verification');
     }
 
@@ -132,38 +134,29 @@ abstract class VerifyPatchesCest extends AbstractCest
      */
     public function testVerifyExitCodes(CliTester $I, Example $data): void
     {
-        $I->generateDockerCompose(
-            sprintf(
-                '--mode=production --env-vars="%s"',
-                $this->convertEnvFromArrayToJson($data['variables'])
-            )
-        );
+        $this->prepareVerifyEnvironment($I, $data);
         $I->copyFileToWorkDir('files/patches/.gitkeep', 'patches/.gitkeep');
-        $I->runDockerComposeCommand('run build cloud-build');
-        $I->runDockerComposeCommand('run deploy cloud-deploy');
-        
-        // Run verify and check exit code (will vary based on actual patch status)
-        $I->runDockerComposeCommand('run deploy ece-patches verify');
-        
-        // The command should complete without error
-        $output = $I->grabShellOutput();
-        $I->assertNotEmpty($output);
+        $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
+        $this->runVerifyCommand($I, '--cloud-only');
+        $I->seeInOutput('Patch Application Verification Report');
     }
 
     /**
      * Tests verify command help output.
      *
      * @param CliTester $I
+     * @param Example $data
+     * @dataProvider patchDataProvider
      */
-    public function testVerifyHelpOutput(CliTester $I): void
+    public function testVerifyHelpOutput(CliTester $I, Example $data): void
     {
-        $I->generateDockerCompose('--mode=production');
-        $I->runDockerComposeCommand('run build cloud-build');
-        
-        // Run verify help
-        $I->runDockerComposeCommand('run deploy ece-patches verify --help');
-        
-        // Verify help output contains key information
+        $this->prepareVerifyEnvironment($I, $data);
+        $I->assertTrue($I->runDockerComposeCommand('run build cloud-build'));
+        $I->assertTrue($I->runDockerComposeCommand('run deploy cloud-deploy'));
+        $I->assertTrue(
+            $I->runDockerComposeCommand('run deploy bash -c "./vendor/bin/ece-patches verify --help --cloud-only"')
+        );
         $I->seeInOutput('verify');
         $I->seeInOutput('Verifies that expected patches');
         $I->seeInOutput('--format');

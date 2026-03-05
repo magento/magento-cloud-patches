@@ -21,6 +21,8 @@ class VerifyPatches85Cest extends VerifyPatchesCest
     {
         return [
             [
+                'templateVersion' => '2.4.9-alpha-opensearch3.0',
+                'magentoVersion' => '2.4.9-beta101',
                 'variables' => [
                     'ADMIN_EMAIL' => 'admin@example.com',
                 ],
