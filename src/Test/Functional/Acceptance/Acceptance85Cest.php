@@ -21,7 +21,7 @@ class Acceptance85Cest extends AcceptanceCest
     {
         return [
             // Magento 2.4.9-beta1 versions (PHP 8.5)
-            ['templateVersion' => '2.4.9-beta1', 'magentoVersion' => '2.4.9-beta1'],
+            ['templateVersion' => '2.4.9-beta', 'magentoVersion' => '2.4.9-beta1'],
         ];
     }
 }
