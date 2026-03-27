@@ -10,12 +10,11 @@ namespace Magento\CloudPatches\Test\Unit\Patch\Verification;
 use Magento\CloudPatches\Patch\Aggregator;
 use Magento\CloudPatches\Patch\Collector\CloudCollector;
 use Magento\CloudPatches\Patch\Data\AggregatedPatch;
-use Magento\CloudPatches\Patch\Data\Patch;
 use Magento\CloudPatches\Patch\Pool\LocalPool;
 use Magento\CloudPatches\Patch\Pool\OptionalPool;
 use Magento\CloudPatches\Patch\Status\StatusPool;
 use Magento\CloudPatches\Patch\Verification\PatchVerifier;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,29 +23,29 @@ use PHPUnit\Framework\TestCase;
 class PatchVerifierTest extends TestCase
 {
     /**
-     * @var Aggregator|MockObject
+     * @var Aggregator&Stub
      */
-    private $aggregatorMock;
+    private $aggregatorStub;
 
     /**
-     * @var OptionalPool|MockObject
+     * @var OptionalPool&Stub
      */
-    private $optionalPoolMock;
+    private $optionalPoolStub;
 
     /**
-     * @var LocalPool|MockObject
+     * @var LocalPool&Stub
      */
-    private $localPoolMock;
+    private $localPoolStub;
 
     /**
-     * @var StatusPool|MockObject
+     * @var StatusPool&Stub
      */
-    private $statusPoolMock;
+    private $statusPoolStub;
 
     /**
-     * @var CloudCollector|MockObject
+     * @var CloudCollector&Stub
      */
-    private $cloudCollectorMock;
+    private $cloudCollectorStub;
 
     /**
      * @var PatchVerifier
@@ -58,18 +57,18 @@ class PatchVerifierTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->aggregatorMock = $this->createMock(Aggregator::class);
-        $this->optionalPoolMock = $this->createMock(OptionalPool::class);
-        $this->localPoolMock = $this->createMock(LocalPool::class);
-        $this->statusPoolMock = $this->createMock(StatusPool::class);
-        $this->cloudCollectorMock = $this->createMock(CloudCollector::class);
+        $this->aggregatorStub = $this->createStub(Aggregator::class);
+        $this->optionalPoolStub = $this->createStub(OptionalPool::class);
+        $this->localPoolStub = $this->createStub(LocalPool::class);
+        $this->statusPoolStub = $this->createStub(StatusPool::class);
+        $this->cloudCollectorStub = $this->createStub(CloudCollector::class);
 
         $this->patchVerifier = new PatchVerifier(
-            $this->aggregatorMock,
-            $this->optionalPoolMock,
-            $this->localPoolMock,
-            $this->statusPoolMock,
-            $this->cloudCollectorMock
+            $this->aggregatorStub,
+            $this->optionalPoolStub,
+            $this->localPoolStub,
+            $this->statusPoolStub,
+            $this->cloudCollectorStub
         );
     }
 
@@ -78,14 +77,14 @@ class PatchVerifierTest extends TestCase
      */
     public function testVerifyAllPatchesApplied(): void
     {
-        $patch1 = $this->createPatchMock('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
-        $patch2 = $this->createPatchMock('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
+        $patch1 = $this->createPatchStub('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
+        $patch2 = $this->createPatchStub('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
 
-        $this->optionalPoolMock->method('getList')->willReturn([]);
-        $this->localPoolMock->method('getList')->willReturn([]);
-        $this->aggregatorMock->method('aggregate')->willReturn([$patch1, $patch2]);
+        $this->optionalPoolStub->method('getList')->willReturn([]);
+        $this->localPoolStub->method('getList')->willReturn([]);
+        $this->aggregatorStub->method('aggregate')->willReturn([$patch1, $patch2]);
 
-        $this->statusPoolMock->method('get')
+        $this->statusPoolStub->method('get')
             ->willReturnMap([
                 ['PATCH-001', StatusPool::APPLIED],
                 ['PATCH-002', StatusPool::APPLIED],
@@ -105,15 +104,15 @@ class PatchVerifierTest extends TestCase
      */
     public function testVerifyWithMissingPatches(): void
     {
-        $patch1 = $this->createPatchMock('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
-        $patch2 = $this->createPatchMock('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
-        $patch3 = $this->createPatchMock('PATCH-003', 'Test Patch 3', 'Optional', 'Cloud');
+        $patch1 = $this->createPatchStub('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
+        $patch2 = $this->createPatchStub('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
+        $patch3 = $this->createPatchStub('PATCH-003', 'Test Patch 3', 'Optional', 'Cloud');
 
-        $this->optionalPoolMock->method('getList')->willReturn([]);
-        $this->localPoolMock->method('getList')->willReturn([]);
-        $this->aggregatorMock->method('aggregate')->willReturn([$patch1, $patch2, $patch3]);
+        $this->optionalPoolStub->method('getList')->willReturn([]);
+        $this->localPoolStub->method('getList')->willReturn([]);
+        $this->aggregatorStub->method('aggregate')->willReturn([$patch1, $patch2, $patch3]);
 
-        $this->statusPoolMock->method('get')
+        $this->statusPoolStub->method('get')
             ->willReturnMap([
                 ['PATCH-001', StatusPool::APPLIED],
                 ['PATCH-002', StatusPool::NOT_APPLIED],
@@ -137,14 +136,14 @@ class PatchVerifierTest extends TestCase
      */
     public function testVerifyExcludesNAPatches(): void
     {
-        $patch1 = $this->createPatchMock('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
-        $patch2 = $this->createPatchMock('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
+        $patch1 = $this->createPatchStub('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
+        $patch2 = $this->createPatchStub('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
 
-        $this->optionalPoolMock->method('getList')->willReturn([]);
-        $this->localPoolMock->method('getList')->willReturn([]);
-        $this->aggregatorMock->method('aggregate')->willReturn([$patch1, $patch2]);
+        $this->optionalPoolStub->method('getList')->willReturn([]);
+        $this->localPoolStub->method('getList')->willReturn([]);
+        $this->aggregatorStub->method('aggregate')->willReturn([$patch1, $patch2]);
 
-        $this->statusPoolMock->method('get')
+        $this->statusPoolStub->method('get')
             ->willReturnMap([
                 ['PATCH-001', StatusPool::APPLIED],
                 ['PATCH-002', StatusPool::NA],
@@ -165,15 +164,15 @@ class PatchVerifierTest extends TestCase
      */
     public function testVerifySpecificPatches(): void
     {
-        $patch1 = $this->createPatchMock('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
-        $patch2 = $this->createPatchMock('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
-        $patch3 = $this->createPatchMock('PATCH-003', 'Test Patch 3', 'Optional', 'Cloud');
+        $patch1 = $this->createPatchStub('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
+        $patch2 = $this->createPatchStub('PATCH-002', 'Test Patch 2', 'Optional', 'Cloud');
+        $patch3 = $this->createPatchStub('PATCH-003', 'Test Patch 3', 'Optional', 'Cloud');
 
-        $this->optionalPoolMock->method('getList')->willReturn([]);
-        $this->localPoolMock->method('getList')->willReturn([]);
-        $this->aggregatorMock->method('aggregate')->willReturn([$patch1, $patch2, $patch3]);
+        $this->optionalPoolStub->method('getList')->willReturn([]);
+        $this->localPoolStub->method('getList')->willReturn([]);
+        $this->aggregatorStub->method('aggregate')->willReturn([$patch1, $patch2, $patch3]);
 
-        $this->statusPoolMock->method('get')
+        $this->statusPoolStub->method('get')
             ->willReturnMap([
                 ['PATCH-001', StatusPool::APPLIED],
                 ['PATCH-002', StatusPool::NOT_APPLIED],
@@ -195,13 +194,13 @@ class PatchVerifierTest extends TestCase
      */
     public function testVerifySpecificWithUnknownPatch(): void
     {
-        $patch1 = $this->createPatchMock('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
+        $patch1 = $this->createPatchStub('PATCH-001', 'Test Patch 1', 'Optional', 'Cloud');
 
-        $this->optionalPoolMock->method('getList')->willReturn([]);
-        $this->localPoolMock->method('getList')->willReturn([]);
-        $this->aggregatorMock->method('aggregate')->willReturn([$patch1]);
+        $this->optionalPoolStub->method('getList')->willReturn([]);
+        $this->localPoolStub->method('getList')->willReturn([]);
+        $this->aggregatorStub->method('aggregate')->willReturn([$patch1]);
 
-        $this->statusPoolMock->method('get')
+        $this->statusPoolStub->method('get')
             ->willReturnMap([
                 ['PATCH-001', StatusPool::APPLIED],
             ]);
@@ -222,9 +221,9 @@ class PatchVerifierTest extends TestCase
      */
     public function testVerifyWithNoPatchesExpected(): void
     {
-        $this->optionalPoolMock->method('getList')->willReturn([]);
-        $this->localPoolMock->method('getList')->willReturn([]);
-        $this->aggregatorMock->method('aggregate')->willReturn([]);
+        $this->optionalPoolStub->method('getList')->willReturn([]);
+        $this->localPoolStub->method('getList')->willReturn([]);
+        $this->aggregatorStub->method('aggregate')->willReturn([]);
 
         $report = $this->patchVerifier->verify();
 
@@ -235,17 +234,17 @@ class PatchVerifierTest extends TestCase
     }
 
     /**
-     * Creates a mock aggregated patch.
+     * Creates a stub aggregated patch.
      *
      * @param string $id
      * @param string $title
      * @param string $type
      * @param string $origin
-     * @return AggregatedPatch|\PHPUnit\Framework\MockObject\MockObject
+     * @return AggregatedPatch&Stub
      */
-    private function createPatchMock(string $id, string $title, string $type, string $origin)
+    private function createPatchStub(string $id, string $title, string $type, string $origin)
     {
-        $patch = $this->createMock(AggregatedPatch::class);
+        $patch = $this->createStub(AggregatedPatch::class);
         $patch->method('getId')->willReturn($id);
         $patch->method('getTitle')->willReturn($title);
         $patch->method('getType')->willReturn($type);
