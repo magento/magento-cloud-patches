@@ -10,6 +10,7 @@ namespace Magento\CloudPatches\Test\Unit\Command;
 use Magento\CloudPatches\App\RuntimeException;
 use Magento\CloudPatches\Command\Process\VerifyPatches;
 use Magento\CloudPatches\Command\Verify;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -19,6 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @inheritDoc
  */
+#[AllowMockObjectsWithoutExpectations]
 class VerifyTest extends TestCase
 {
     /**
