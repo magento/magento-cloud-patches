@@ -22,7 +22,7 @@ class PatchApplier84Cest extends PatchApplierCest
             ['templateVersion' => '2.4.8', 'magentoVersion' => '2.4.8'],
             ['templateVersion' => '2.4.8', 'magentoVersion' => '2.4.8-p3'],
             // Magento 2.4.9 alpha versions
-            ['templateVersion' => '2.4.9-alpha', 'magentoVersion' => '2.4.9-alpha3'],
+            ['templateVersion' => '2.4.9', 'magentoVersion' => '2.4.9'],
         ];
     }
 }
