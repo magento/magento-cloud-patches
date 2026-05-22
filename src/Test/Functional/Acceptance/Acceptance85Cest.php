@@ -20,8 +20,8 @@ class Acceptance85Cest extends AcceptanceCest
     protected function patchesDataProvider(): array
     {
         return [
-            // Magento 2.4.9-beta1 versions (PHP 8.5)
-            ['templateVersion' => '2.4.9-alpha-opensearch3.0', 'magentoVersion' => '2.4.9-beta101'],
+            // Magento 2.4.9 versions (PHP 8.5)
+            ['templateVersion' => '2.4.9', 'magentoVersion' => '2.4.9'],
         ];
     }
 }
