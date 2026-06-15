@@ -1,0 +1,213 @@
+diff --git a/vendor/magento/module-catalog-staging/view/adminhtml/ui_component/staging_update_edit_product_grid.xml b/vendor/magento/module-catalog-staging/view/adminhtml/ui_component/staging_update_edit_product_grid.xml
+index 7215cc5c02c0..836e82fd7c5f 100644
+--- a/vendor/magento/module-catalog-staging/view/adminhtml/ui_component/staging_update_edit_product_grid.xml
++++ b/vendor/magento/module-catalog-staging/view/adminhtml/ui_component/staging_update_edit_product_grid.xml
+@@ -67,11 +67,11 @@
+                 <sortable>false</sortable>
+             </settings>
+         </column>
+-        <column name="name" sortOrder="30">
++        <column name="name" component="Magento_Ui/js/grid/cells/sanitizedHtml" sortOrder="30">
+             <settings>
+                 <filter>text</filter>
+                 <addField>true</addField>
+-                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
++                <bodyTmpl>ui/grid/cells/sanitizedHtml</bodyTmpl>
+                 <label translate="true">Name</label>
+             </settings>
+         </column>
+@@ -91,10 +91,10 @@
+                 <label translate="true">Attribute Set</label>
+             </settings>
+         </column>
+-        <column name="sku" sortOrder="60">
++        <column name="sku" component="Magento_Ui/js/grid/cells/sanitizedHtml" sortOrder="60">
+             <settings>
+                 <filter>text</filter>
+-                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
++                <bodyTmpl>ui/grid/cells/sanitizedHtml</bodyTmpl>
+                 <label translate="true">SKU</label>
+             </settings>
+         </column>
+diff --git a/vendor/magento/module-gift-card-account/Model/GuestCart/GiftCardAccountManagement.php b/vendor/magento/module-gift-card-account/Model/GuestCart/GiftCardAccountManagement.php
+index cfb413b6029b..7f5f0a296315 100644
+--- a/vendor/magento/module-gift-card-account/Model/GuestCart/GiftCardAccountManagement.php
++++ b/vendor/magento/module-gift-card-account/Model/GuestCart/GiftCardAccountManagement.php
+@@ -6,17 +6,20 @@
++declare(strict_types=1);
+ 
+ namespace Magento\GiftCardAccount\Model\GuestCart;
+ 
+ use Magento\GiftCardAccount\Api\GuestGiftCardAccountManagementInterface;
+ use Magento\GiftCardAccount\Api\GiftCardAccountManagementInterface;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
+ 
+ /**
+- * Class GiftCardAccountManagement
++ * Gift card account management class for guest carts.
+  */
+ class GiftCardAccountManagement implements GuestGiftCardAccountManagementInterface
+ {
+     /**
+-     * @var \Magento\GiftCardAccount\Api\GiftCardAccountManagementInterface
++     * @var GiftCardAccountManagementInterface
+      */
+     protected $giftCartAccountManagement;
+ 
+@@ -26,43 +29,54 @@ class GiftCardAccountManagement implements GuestGiftCardAccountManagementInterfa
+     protected $quoteIdMaskFactory;
+ 
+     /**
+-     * @param \Magento\GiftCardAccount\Api\GiftCardAccountManagementInterface $giftCartAccountManagement
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
++    /**
++     * @param GiftCardAccountManagementInterface $giftCartAccountManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+-        \Magento\GiftCardAccount\Api\GiftCardAccountManagementInterface $giftCartAccountManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        GiftCardAccountManagementInterface $giftCartAccountManagement,
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->giftCartAccountManagement = $giftCartAccountManagement;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function addGiftCard(
+         $cartId,
+         \Magento\GiftCardAccount\Api\Data\GiftCardAccountInterface $giftCardAccountData
+     ) {
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int)$quoteIdMask->getQuoteId());
+         return $this->giftCartAccountManagement->saveByQuoteId($quoteIdMask->getQuoteId(), $giftCardAccountData);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function checkGiftCard($cartId, $giftCardCode)
+     {
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int)$quoteIdMask->getQuoteId());
+         return $this->giftCartAccountManagement->checkGiftCard($quoteIdMask->getQuoteId(), $giftCardCode);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function deleteByQuoteId($cartId, $giftCardCode)
+     {
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int)$quoteIdMask->getQuoteId());
+         return $this->giftCartAccountManagement->deleteByQuoteId($quoteIdMask->getQuoteId(), $giftCardCode);
+     }
+ }
+diff --git a/vendor/magento/module-gift-registry/Model/GuestCart/ShippingMethodManagement.php b/vendor/magento/module-gift-registry/Model/GuestCart/ShippingMethodManagement.php
+index b4b785385b54..8d25d4054b91 100644
+--- a/vendor/magento/module-gift-registry/Model/GuestCart/ShippingMethodManagement.php
++++ b/vendor/magento/module-gift-registry/Model/GuestCart/ShippingMethodManagement.php
+@@ -6,8 +6,11 @@
++declare(strict_types=1);
+ 
+ namespace Magento\GiftRegistry\Model\GuestCart;
+ 
+ use Magento\GiftRegistry\Api\ShippingMethodManagementInterface;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
+ 
+ /**
+  * Shipping method read service.
+@@ -24,24 +27,33 @@ class ShippingMethodManagement implements \Magento\GiftRegistry\Api\GuestCart\Sh
+      */
+     protected $quoteIdMaskFactory;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * @param ShippingMethodManagementInterface $shippingMethodManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         ShippingMethodManagementInterface $shippingMethodManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->shippingMethodManagement = $shippingMethodManagement;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function estimateByRegistryId($cartId, $registryId)
+     {
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int)$quoteIdMask->getQuoteId());
+         return $this->shippingMethodManagement->estimateByRegistryId($quoteIdMask->getQuoteId(), $registryId);
+     }
+ }
+diff --git a/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Address/Attribute/Edit/Tab/General.php b/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Address/Attribute/Edit/Tab/General.php
+index d721e12d4213..f81db8ce8c9b 100644
+--- a/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Address/Attribute/Edit/Tab/General.php
++++ b/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Address/Attribute/Edit/Tab/General.php
+@@ -186,6 +186,7 @@ protected function _prepareForm()
+         );
+ 
+         $forbiddenFileExtensions = implode(',', $this->extensionValidator->getProtectedFileExtensions());
++        $forbiddenFileExtensionsDisplay = implode(', ', $this->extensionValidator->getProtectedFileExtensions());
+         $noteMessage ='Comma separated, alphanumeric characters. Forbidden file extensions: %1.';
+         $fieldset->addField(
+             'file_extensions',
+@@ -194,7 +195,7 @@ protected function _prepareForm()
+                 'name' => 'file_extensions',
+                 'label' => __('File Extensions'),
+                 'title' => __('File Extensions'),
+-                'note' => __($noteMessage, $forbiddenFileExtensions),
++                'note' => __($noteMessage, $forbiddenFileExtensionsDisplay),
+                 'class' => 'validate-forbidden-extensions',
+                 'data-validation-params' => $forbiddenFileExtensions,
+             ],
+diff --git a/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Attribute/Edit/Tab/Main.php b/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Attribute/Edit/Tab/Main.php
+index be837ef69cdf..d32871ab1c23 100644
+--- a/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Attribute/Edit/Tab/Main.php
++++ b/vendor/magento/module-customer-custom-attributes/Block/Adminhtml/Customer/Attribute/Edit/Tab/Main.php
+@@ -206,6 +206,7 @@ protected function _prepareForm()
+         );
+ 
+         $forbiddenFileExtensions = implode(',', $this->extensionValidator->getProtectedFileExtensions());
++        $forbiddenFileExtensionsDisplay = implode(', ', $this->extensionValidator->getProtectedFileExtensions());
+         $fieldset->addField(
+             'file_extensions',
+             'text',
+@@ -213,7 +214,7 @@ protected function _prepareForm()
+                 'name' => 'file_extensions',
+                 'label' => __('File Extensions'),
+                 'title' => __('File Extensions'),
+-                'note' => __('Comma separated. Forbidden file extensions: %1.', $forbiddenFileExtensions),
++                'note' => __('Comma separated. Forbidden file extensions: %1.', $forbiddenFileExtensionsDisplay),
+                 'class' => 'validate-forbidden-extensions',
+                 'data-validation-params' => $forbiddenFileExtensions,
+             ],
