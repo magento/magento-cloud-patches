@@ -225,7 +225,7 @@ class Renderer
             $details .= PHP_EOL . '<comment>Requirements:</comment>' . PHP_EOL . ' - ' . $requirements;
         }
 
-        $id = $patch->getType() === PatchInterface::TYPE_CUSTOM ? 'N/A' : $patch->getId();
+        $id = $patch->getId();
         $title = chunk_split($patch->getTitle(), 60, PHP_EOL);
 
         return [

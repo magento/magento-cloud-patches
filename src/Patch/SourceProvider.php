@@ -123,4 +123,34 @@ class SourceProvider
 
         return $files ?: [];
     }
+
+    /**
+     * Returns custom patches configuration from m2-hotfixes/custom-patches.json.
+     *
+     * The file is optional; an empty array is returned when it does not exist
+     * or cannot be parsed.
+     *
+     * Expected format:
+     * {
+     *   "MY-PATCH-001.patch": {
+     *     "id": "MY-PATCH-001",
+     *     "title": "My patch title",
+     *     "categories": ["Performance"]
+     *   }
+     * }
+     *
+     * @return array
+     */
+    public function getLocalPatchesConfig(): array
+    {
+        $configPath = $this->directoryList->getMagentoRoot()
+            . '/' . static::HOT_FIXES_DIR
+            . '/custom-patches.json';
+
+        try {
+            return $this->jsonConfigReader->read($configPath);
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
 }
