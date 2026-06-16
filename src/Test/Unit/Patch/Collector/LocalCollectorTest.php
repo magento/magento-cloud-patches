@@ -51,7 +51,10 @@ class LocalCollectorTest extends TestCase
     }
 
     /**
-     * Tests collecting local patches.
+     * Tests collecting local patches without custom-patches.json (fallback behaviour).
+     *
+     * When no custom config is present the id falls back to basename($file) and
+     * the title falls back to the short relative path.
      *
      * @return void
      */
@@ -67,11 +70,19 @@ class LocalCollectorTest extends TestCase
             ->method('getLocalPatches')
             ->willReturn([$file1, $file2]);
 
+        // No custom config → empty array
+        $this->sourceProvider->expects($this->once())
+            ->method('getLocalPatchesConfig')
+            ->willReturn([]);
+
+        // Fallback id is basename($file), not the full short path
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setId')
             ->with(
-                $this->logicalOr($this->equalTo($shortPath1), $this->equalTo($shortPath2))
+                $this->logicalOr($this->equalTo('patch1.patch'), $this->equalTo('patch2.patch'))
             );
+
+        // Fallback title is still the full short path
         $this->patchBuilder->expects($this->exactly(2))
             ->method('setTitle')
             ->with(
@@ -115,5 +126,67 @@ class LocalCollectorTest extends TestCase
             ->willReturn($this->createMock(Patch::class));
 
         $this->assertTrue(is_array($this->collector->collect()));
+    }
+
+    /**
+     * Tests collecting local patches with a custom-patches.json config.
+     *
+     * When custom config is provided the id, title and categories are read from it.
+     *
+     * @return void
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCollectWithCustomConfig(): void
+    {
+        $file1 = __DIR__ . SourceProvider::HOT_FIXES_DIR . '/patch1.patch';
+        $shortPath1 = '../' . SourceProvider::HOT_FIXES_DIR . '/patch1.patch';
+
+        $customConfig = [
+            'patch1.patch' => [
+                'id'         => 'HIB-000001',
+                'title'      => 'My custom patch title',
+                'categories' => ['Performance'],
+            ],
+        ];
+
+        $this->sourceProvider->expects($this->once())
+            ->method('getLocalPatches')
+            ->willReturn([$file1]);
+
+        $this->sourceProvider->expects($this->once())
+            ->method('getLocalPatchesConfig')
+            ->willReturn($customConfig);
+
+        $this->patchBuilder->expects($this->once())
+            ->method('setId')
+            ->with('HIB-000001');
+
+        $this->patchBuilder->expects($this->once())
+            ->method('setTitle')
+            ->with('My custom patch title');
+
+        $this->patchBuilder->expects($this->once())
+            ->method('setCategories')
+            ->with(['Performance']);
+
+        $this->patchBuilder->expects($this->once())
+            ->method('setFilename')
+            ->with('patch1.patch');
+
+        $this->patchBuilder->expects($this->once())
+            ->method('setPath')
+            ->with($file1);
+
+        $this->patchBuilder->expects($this->once())
+            ->method('setType')
+            ->with(PatchInterface::TYPE_CUSTOM);
+
+        $this->patchBuilder->expects($this->once())
+            ->method('build')
+            ->willReturn($this->createMock(Patch::class));
+
+        $result = $this->collector->collect();
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result);
     }
 }
