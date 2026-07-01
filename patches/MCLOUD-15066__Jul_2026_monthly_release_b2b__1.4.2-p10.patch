@@ -1,0 +1,337 @@
+diff --git a/vendor/magento/module-company/Model/Company/DataProvider.php b/vendor/magento/module-company/Model/Company/DataProvider.php
+index 3028befba11d..7d88636c76a2 100644
+--- a/vendor/magento/module-company/Model/Company/DataProvider.php
++++ b/vendor/magento/module-company/Model/Company/DataProvider.php
+@@ -21,6 +21,9 @@
+ use Magento\Framework\Exception\LocalizedException;
+ use Magento\Framework\Exception\NoSuchEntityException;
+ use Magento\Ui\DataProvider\AbstractDataProvider;
++use Magento\Ui\DataProvider\Modifier\ModifierInterface;
++use Magento\Ui\DataProvider\Modifier\Pool;
++use Magento\Ui\DataProvider\Modifier\PoolInterface;
+ 
+ /**
+  * Data provider for company.
+@@ -125,5 +128,10 @@ class DataProvider extends AbstractDataProvider
+     private $fileUploaderDataResolver;
+ 
++    /**
++     * @var PoolInterface
++     */
++    private $pool;
++
+     /**
+      * @param string $name
+      * @param string $primaryFieldName
+@@ -137,6 +145,7 @@ class DataProvider extends AbstractDataProvider
+      * @param array $data [optional]
+      * @param CustomerRegistry|null $customerRegistry
+      * @param FileUploaderDataResolver|null $fileUploaderDataResolver
++     * @param PoolInterface|null $pool
+      * @throws LogicException
+      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+@@ -152,7 +161,8 @@ public function __construct(
+         array $meta = [],
+         array $data = [],
+         ?CustomerRegistry $customerRegistry = null,
+-        ?FileUploaderDataResolver $fileUploaderDataResolver = null
++        ?FileUploaderDataResolver $fileUploaderDataResolver = null,
++        ?PoolInterface $pool = null
+     ) {
+         parent::__construct($name, $primaryFieldName, $requestFieldName, $meta, $data);
+         $this->collection = $companyCollectionFactory->create();
+@@ -164,6 +174,7 @@ public function __construct(
+             ObjectManager::getInstance()->get(CustomerRegistry::class);
+         $this->fileUploaderDataResolver = $fileUploaderDataResolver ??
+             ObjectManager::getInstance()->get(FileUploaderDataResolver::class);
++        $this->pool = $pool ?? ObjectManager::getInstance()->create(Pool::class);
+     }
+ 
+     /**
+@@ -288,6 +299,11 @@ public function getData()
+             $this->loadedData[$company->getId()] = $this->getCompanyResultData($company);
+         }
+ 
++        /** @var ModifierInterface $modifier */
++        foreach ($this->pool->getModifiersInstances() as $modifier) {
++            $this->loadedData = $modifier->modifyData($this->loadedData);
++        }
++
+         return $this->loadedData;
+     }
+ 
+@@ -334,6 +350,11 @@ public function getMeta()
+         $this->attributeMetadataResolver->processWebsiteMeta($customerMeta);
+         $meta['company_admin']['children'] = $customerMeta;
+ 
++        /** @var ModifierInterface $modifier */
++        foreach ($this->pool->getModifiersInstances() as $modifier) {
++            $meta = $modifier->modifyMeta($meta);
++        }
++
+         return $meta;
+     }
+ }
+diff --git a/vendor/magento/module-company/Model/SaveValidator/SanitizeCompanyName.php b/vendor/magento/module-company/Model/SaveValidator/SanitizeCompanyName.php
+new file mode 100644
+index 000000000000..ee178c87c2e1
+--- /dev/null
++++ b/vendor/magento/module-company/Model/SaveValidator/SanitizeCompanyName.php
+@@ -0,0 +1,63 @@
++<?php
++/**
++ * ADOBE CONFIDENTIAL
++ *
++ * Copyright 2026 Adobe
++ * All Rights Reserved.
++ *
++ * NOTICE: All information contained herein is, and remains
++ * the property of Adobe and its suppliers, if any. The intellectual
++ * and technical concepts contained herein are proprietary to Adobe
++ * and its suppliers and are protected by all applicable intellectual
++ * property laws, including trade secret and copyright laws.
++ * Dissemination of this information or reproduction of this material
++ * is strictly forbidden unless prior written permission is obtained
++ * from Adobe.
++ */
++declare(strict_types=1);
++
++namespace Magento\Company\Model\SaveValidator;
++
++use Magento\Company\Api\Data\CompanyInterface;
++use Magento\Company\Model\SaveValidatorInterface;
++use Magento\Framework\Exception\InputException;
++use Magento\Framework\Filter\StripTags;
++
++/**
++ * Company name validator
++ */
++class SanitizeCompanyName implements SaveValidatorInterface
++{
++    /**
++     * @param CompanyInterface $company
++     * @param InputException $exception
++     * @param StripTags $stripTags
++     */
++    public function __construct(
++        private readonly CompanyInterface $company,
++        private readonly InputException $exception,
++        private readonly StripTags $stripTags
++    ) {
++    }
++
++    /**
++     * @inheritdoc
++     */
++    public function execute()
++    {
++        $name = $this->company->getCompanyName();
++        if (empty($name)) {
++            return;
++        }
++
++        $sanitized = trim($this->stripTags->filter($name));
++        if ($sanitized === '') {
++            $this->exception->addError(
++                __('Company name is invalid.')
++            );
++            return;
++        }
++
++        $this->company->setCompanyName($sanitized);
++    }
++}
+diff --git a/vendor/magento/module-company/Ui/DataProvider/Company/Form/Modifier/SanitizeFormData.php b/vendor/magento/module-company/Ui/DataProvider/Company/Form/Modifier/SanitizeFormData.php
+new file mode 100644
+index 000000000000..087b30d3bc3a
+--- /dev/null
++++ b/vendor/magento/module-company/Ui/DataProvider/Company/Form/Modifier/SanitizeFormData.php
+@@ -0,0 +1,81 @@
++<?php
++/**
++ * ADOBE CONFIDENTIAL
++ *
++ * Copyright 2026 Adobe
++ * All Rights Reserved.
++ *
++ * NOTICE: All information contained herein is, and remains
++ * the property of Adobe and its suppliers, if any. The intellectual
++ * and technical concepts contained herein are proprietary to Adobe
++ * and its suppliers and are protected by all applicable intellectual
++ * property laws, including trade secret and copyright laws.
++ * Dissemination of this information or reproduction of this material
++ * is strictly forbidden unless prior written permission is obtained
++ * from Adobe.
++ */
++declare(strict_types=1);
++
++namespace Magento\Company\Ui\DataProvider\Company\Form\Modifier;
++
++use Magento\Company\Api\Data\CompanyInterface;
++use Magento\Company\Model\Company\DataProvider as CompanyFormDataProvider;
++use Magento\Framework\Filter\StripTags;
++use Magento\Ui\DataProvider\Modifier\ModifierInterface;
++
++/**
++ * Sanitize Details
++ */
++class SanitizeFormData implements ModifierInterface
++{
++    /**
++     * @param StripTags $stripTags
++     */
++    public function __construct(
++        private readonly StripTags $stripTags
++    ) {
++    }
++
++    /**
++     * @inheritdoc
++     */
++    public function modifyData(array $data): array
++    {
++        foreach ($data as $entityId => $row) {
++            if (!is_array($row)) {
++                continue;
++            }
++            $data[$entityId] = $this->sanitizeRow($row);
++        }
++
++        return $data;
++    }
++
++    /**
++     * @inheritdoc
++     */
++    public function modifyMeta(array $meta): array
++    {
++        return $meta;
++    }
++
++    /**
++     * Sanitize details
++     *
++     * @param array $row
++     * @return array
++     */
++    private function sanitizeRow(array $row): array
++    {
++        $scope = CompanyFormDataProvider::DATA_SCOPE_GENERAL;
++        if (!isset($row[$scope]) || !is_array($row[$scope])) {
++            return $row;
++        }
++
++        if (isset($row[$scope][CompanyInterface::NAME]) && is_string($row[$scope][CompanyInterface::NAME])) {
++            $row[$scope][CompanyInterface::NAME] = trim($this->stripTags->filter($row[$scope][CompanyInterface::NAME]));
++        }
++
++        return $row;
++    }
++}
+diff --git a/vendor/magento/module-company/etc/adminhtml/di.xml b/vendor/magento/module-company/etc/adminhtml/di.xml
+index e3b413caef4f..52e3d7201240 100644
+--- a/vendor/magento/module-company/etc/adminhtml/di.xml
++++ b/vendor/magento/module-company/etc/adminhtml/di.xml
+@@ -7,5 +7,20 @@
+ -->
+ <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
++    <virtualType name="Magento\Company\Ui\DataProvider\Company\Form\Modifier\Pool" type="Magento\Ui\DataProvider\Modifier\Pool">
++        <arguments>
++            <argument name="modifiers" xsi:type="array">
++                <item name="sanitize_form_data" xsi:type="array">
++                    <item name="class" xsi:type="string">Magento\Company\Ui\DataProvider\Company\Form\Modifier\SanitizeFormData</item>
++                    <item name="sortOrder" xsi:type="number">10</item>
++                </item>
++            </argument>
++        </arguments>
++    </virtualType>
++    <type name="Magento\Company\Model\Company\DataProvider">
++        <arguments>
++            <argument name="pool" xsi:type="object">Magento\Company\Ui\DataProvider\Company\Form\Modifier\Pool</argument>
++        </arguments>
++    </type>
+     <type name="Magento\Customer\Model\Customer\DataProviderWithDefaultAddresses">
+         <plugin name="customerDataProvider" type="Magento\Company\Plugin\Customer\Model\Customer\DataProviderPlugin"/>
+     </type>
+@@ -26,6 +41,7 @@
+             <argument name="validators" xsi:type="array">
+                 <item name="companyId" xsi:type="string">\Magento\Company\Model\SaveValidator\CompanyId</item>
+                 <item name="requiredFields" xsi:type="string">\Magento\Company\Model\SaveValidator\RequiredFields</item>
++                <item name="companyName" xsi:type="string">\Magento\Company\Model\SaveValidator\SanitizeCompanyName</item>
+                 <item name="salesRepresentative" xsi:type="string">\Magento\Company\Model\SaveValidator\SalesRepresentative</item>
+                 <item name="customerGroup" xsi:type="string">\Magento\Company\Model\SaveValidator\CustomerGroup</item>
+                 <item name="companyStatus" xsi:type="string">\Magento\Company\Model\SaveValidator\CompanyStatus</item>
+diff --git a/vendor/magento/module-company/etc/di.xml b/vendor/magento/module-company/etc/di.xml
+index 97cfbb9df300..85704cec9e1b 100755
+--- a/vendor/magento/module-company/etc/di.xml
++++ b/vendor/magento/module-company/etc/di.xml
+@@ -32,6 +32,7 @@
+             <argument name="validators" xsi:type="array">
+                 <item name="companyId" xsi:type="string">\Magento\Company\Model\SaveValidator\CompanyId</item>
+                 <item name="requiredFields" xsi:type="string">\Magento\Company\Model\SaveValidator\RequiredFields</item>
++                <item name="companyName" xsi:type="string">\Magento\Company\Model\SaveValidator\SanitizeCompanyName</item>
+                 <item name="salesRepresentative" xsi:type="string">\Magento\Company\Model\SaveValidator\SalesRepresentative</item>
+                 <item name="customerGroup" xsi:type="string">\Magento\Company\Model\SaveValidator\CustomerGroup</item>
+                 <item name="companyStatus" xsi:type="string">\Magento\Company\Model\SaveValidator\CompanyStatus</item>
+diff --git a/vendor/magento/module-company/i18n/en_US.csv b/vendor/magento/module-company/i18n/en_US.csv
+index 14d4ef6b2464..8a0f07cf1480 100644
+--- a/vendor/magento/module-company/i18n/en_US.csv
++++ b/vendor/magento/module-company/i18n/en_US.csv
+@@ -392,3 +392,4 @@ Team,Team
+ Users,Users
+ "Granting permissions does not affect which features are available for your company account. The merchant must enable features to make them available for your account.","Granting permissions does not affect which features are available for your company account. The merchant must enable features to make them available for your account."
+ "Only admin can edit their profile.","Only admin can edit their profile."
++"Company name is invalid.","Company name is invalid."
+diff --git a/vendor/magento/module-company-credit/Ui/Component/History/Listing/Column/Comment.php b/vendor/magento/module-company-credit/Ui/Component/History/Listing/Column/Comment.php
+index 09e6a66073f3..fedc3434b161 100644
+--- a/vendor/magento/module-company-credit/Ui/Component/History/Listing/Column/Comment.php
++++ b/vendor/magento/module-company-credit/Ui/Component/History/Listing/Column/Comment.php
+@@ -163,16 +163,18 @@ private function renderSystemComment($type, $data)
+     private function renderExceedLimitComment(array $commentData)
+     {
++        $userName = $this->escaper->escapeHtml((string)($commentData['user_name'] ?? ''));
++        $companyName = $this->escaper->escapeHtml((string)($commentData['company_name'] ?? ''));
+         if ($commentData['value']) {
+             $commentsString = __(
+                 '%1 made an update. %2 can exceed the Credit Limit.',
+-                $commentData['user_name'],
+-                $commentData['company_name']
++                $userName,
++                $companyName
+             );
+         } else {
+             $commentsString = __(
+                 '%1 made an update. %2 cannot exceed the Credit Limit.',
+-                $commentData['user_name'],
+-                $commentData['company_name']
++                $userName,
++                $companyName
+             );
+         }
+         return $commentsString;
+@@ -189,7 +191,8 @@ private function renderOrderComment($orderId)
+         try {
+             $order = $this->orderLocator->getOrderByIncrementId($orderId);
+             $url = $this->urlBuilder->getUrl('sales/order/view', ['order_id' => $order->getEntityId()]);
+-            $link = '<a href="' . $url . '"">' . $order->getIncrementId() . '</a>';
++            $link = '<a href="' . $this->escaper->escapeUrl($url) . '">'
++                . $this->escaper->escapeHtml((string)$order->getIncrementId()) . '</a>';
+             $commentsString = __('Order # %1', $link);
+         } catch (NoSuchEntityException $e) {
+             // If order not found then don't render comment.
+@@ -208,10 +211,10 @@ private function renderChangeCurrencyComment(array $data)
+     {
+         return __(
+             '%1 changed the credit currency from %2 to %3 at the conversion rate of %2/%3 %4.',
+-            $data['user_name'],
+-            $data['currency_from'],
+-            $data['currency_to'],
+-            $data['currency_rate']
++            $this->escaper->escapeHtml((string)($data['user_name'] ?? '')),
++            $this->escaper->escapeHtml((string)($data['currency_from'] ?? '')),
++            $this->escaper->escapeHtml((string)($data['currency_to'] ?? '')),
++            $this->escaper->escapeHtml((string)($data['currency_rate'] ?? ''))
+         );
+     }
+ }

@@ -1,0 +1,1587 @@
+diff --git a/vendor/magento/module-catalog/Block/Product/View/Gallery.php b/vendor/magento/module-catalog/Block/Product/View/Gallery.php
+index b6a58c07c428b..caf6607dc65b9 100644
+--- a/vendor/magento/module-catalog/Block/Product/View/Gallery.php
++++ b/vendor/magento/module-catalog/Block/Product/View/Gallery.php
+@@ -147,6 +147,7 @@ public function getGalleryImagesJson()
+                     'isMain'   => $this->isMainImage($image),
+                     'type' => str_replace('external-', '', $image->getMediaType()),
+                     'videoUrl' => $image->getVideoUrl(),
++                    '__disableTmpl' => true
+                 ]
+             );
+             foreach ($this->getGalleryImagesConfig()->getItems() as $imageConfig) {
+@@ -167,6 +168,7 @@ public function getGalleryImagesJson()
+                 'isMain' => true,
+                 'type' => 'image',
+                 'videoUrl' => null,
++                '__disableTmpl' => true
+             ];
+         }
+         return json_encode($imagesItems);
+diff --git a/vendor/magento/module-catalog/Block/Ui/ProductViewCounter.php b/vendor/magento/module-catalog/Block/Ui/ProductViewCounter.php
+index 93732b1b52f0c..d5547440cb959 100644
+--- a/vendor/magento/module-catalog/Block/Ui/ProductViewCounter.php
++++ b/vendor/magento/module-catalog/Block/Ui/ProductViewCounter.php
+@@ -115,6 +115,26 @@ public function __construct(
+         $this->scopeConfig = $scopeConfig ?? ObjectManager::getInstance()->get(ScopeConfigInterface::class);
+     }
+ 
++    /**
++     * Recursively adds __disableTmpl to every array level
++     *
++     * @param array $data
++     * @return array
++     */
++    private function disableTemplating(array $data): array
++    {
++        $isAssociative = (bool) count(array_filter(array_keys($data), 'is_string'));
++        if ($isAssociative) {
++            $data['__disableTmpl'] = true;
++        }
++        foreach ($data as &$value) {
++            if (is_array($value)) {
++                $value = $this->disableTemplating($value);
++            }
++        }
++        return $data;
++    }
++
+     /**
+      * Calculate item data, that will need to application on frontend
+      *
+@@ -154,6 +174,7 @@ public function getCurrentProductData()
+             ->collect($product, $productRender);
+         $data = $this->hydrator->extract($productRender);
+         $data['is_available'] = $product->isAvailable();
++        $data = $this->disableTemplating($data);
+ 
+         $currentProductData = [
+             'items' => [
+diff --git a/vendor/magento/module-catalog-inventory/Model/ResourceModel/Stock/Item.php b/vendor/magento/module-catalog-inventory/Model/ResourceModel/Stock/Item.php
+index 26960e8645dd0..dfdba72b296b4 100644
+--- a/vendor/magento/module-catalog-inventory/Model/ResourceModel/Stock/Item.php
++++ b/vendor/magento/module-catalog-inventory/Model/ResourceModel/Stock/Item.php
+@@ -129,12 +129,15 @@ protected function _prepareDataForTable(\Magento\Framework\DataObject $object, $
+         $data = parent::_prepareDataForTable($object, $table);
+         $ifNullSql = $this->getConnection()->getIfNullSql('qty');
+         if (!$object->isObjectNew() && $object->getQtyCorrection()) {
++            $rawQty  = (float) $object->getQtyCorrection();
++            $safeQty = is_finite($rawQty) ? $rawQty : 0.0;
++
+             if ($object->getQty() === null) {
+                 $data['qty'] = null;
+-            } elseif ($object->getQtyCorrection() < 0) {
+-                $data['qty'] = new \Zend_Db_Expr($ifNullSql . '-' . abs((float) $object->getQtyCorrection()));
++            } elseif ($safeQty < 0) {
++                $data['qty'] = new \Zend_Db_Expr($ifNullSql . '-' . abs($safeQty));
+             } else {
+-                $data['qty'] = new \Zend_Db_Expr($ifNullSql . '+' . $object->getQtyCorrection());
++                $data['qty'] = new \Zend_Db_Expr($ifNullSql . '+' . $safeQty);
+             }
+         }
+         return $data;
+diff --git a/vendor/magento/module-catalog-inventory/Observer/SaveInventoryDataObserver.php b/vendor/magento/module-catalog-inventory/Observer/SaveInventoryDataObserver.php
+index 5ef9cd579a6de..8fae1e6a1ccf3 100644
+--- a/vendor/magento/module-catalog-inventory/Observer/SaveInventoryDataObserver.php
++++ b/vendor/magento/module-catalog-inventory/Observer/SaveInventoryDataObserver.php
+@@ -152,6 +152,7 @@ private function getStockItemToBeUpdated(Product $product)
+     private function getStockData(Product $product)
+     {
+         $stockData = $product->getStockData();
++        unset($stockData['qty_correction']);
+         $stockData['product_id'] = $product->getId();
+ 
+         if (!isset($stockData['website_id'])) {
+diff --git a/vendor/magento/module-catalog-url-rewrite-graph-ql/Plugin/Model/Resolver/EntityUrlExcludeDisabledProductPlugin.php b/vendor/magento/module-catalog-url-rewrite-graph-ql/Plugin/Model/Resolver/EntityUrlExcludeDisabledProductPlugin.php
+new file mode 100644
+index 0000000000000..4899f2b5b4717
+--- /dev/null
++++ b/vendor/magento/module-catalog-url-rewrite-graph-ql/Plugin/Model/Resolver/EntityUrlExcludeDisabledProductPlugin.php
+@@ -0,0 +1,85 @@
++<?php
++/**
++ * Copyright 2026 Adobe
++ * All Rights Reserved.
++ */
++declare(strict_types=1);
++
++namespace Magento\CatalogUrlRewriteGraphQl\Plugin\Model\Resolver;
++
++use Magento\Catalog\Model\Product\Attribute\Source\Status;
++use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
++use Magento\Framework\GraphQl\Config\Element\Field;
++use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
++use Magento\UrlRewriteGraphQl\Model\Resolver\EntityUrl;
++
++/**
++ * Validation for product status for url resolver
++ */
++class EntityUrlExcludeDisabledProductPlugin
++{
++    /**
++     * Constant for product type
++     */
++    private const TYPE_PRODUCT = 'product';
++
++    /**
++     * @var array
++     */
++    private array $statusCache = [];
++
++    /**
++     * @var ProductResource
++     */
++    private ProductResource $productResource;
++
++    /**
++     * @param ProductResource $productResource
++     */
++    public function __construct(
++        ProductResource $productResource
++    ) {
++        $this->productResource = $productResource;
++    }
++
++    /**
++     * After plugin for EntityUrl resolver to exclude disabled products
++     *
++     * @param EntityUrl $subject
++     * @param array|null $result
++     * @param Field $field
++     * @param mixed $context
++     * @param ResolveInfo $info
++     * @param array|null $value
++     * @param array|null $args
++     * @return array|null
++     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
++     */
++    public function afterResolve(
++        EntityUrl $subject,
++        ?array $result,
++        Field $field,
++        $context,
++        ResolveInfo $info,
++        ?array $value = null,
++        ?array $args = null
++    ): ?array {
++        if ($result === null || strtolower($result['type'] ?? '') !== self::TYPE_PRODUCT || empty($result['id'])) {
++            return $result;
++        }
++        $storeId = (int)$context->getExtensionAttributes()->getStore()->getId();
++        $cacheKey = $result['id'] . '_' . $storeId;
++        if (!array_key_exists($cacheKey, $this->statusCache)) {
++            $this->statusCache[$cacheKey] = $this->productResource->getAttributeRawValue(
++                (int)$result['id'],
++                'status',
++                $storeId
++            );
++        }
++        $status = $this->statusCache[$cacheKey];
++        if ($status === false || (int)$status !== Status::STATUS_ENABLED) {
++            return null;
++        }
++        return $result;
++    }
++}
+diff --git a/vendor/magento/module-catalog-url-rewrite-graph-ql/etc/di.xml b/vendor/magento/module-catalog-url-rewrite-graph-ql/etc/di.xml
+index cb7362717fff6..cdb55aa9582d3 100644
+--- a/vendor/magento/module-catalog-url-rewrite-graph-ql/etc/di.xml
++++ b/vendor/magento/module-catalog-url-rewrite-graph-ql/etc/di.xml
+@@ -39,4 +39,8 @@
+             </argument>
+         </arguments>
+     </type>
++    <type name="Magento\UrlRewriteGraphQl\Model\Resolver\EntityUrl">
++        <plugin name="validateProductStatusUrlResolverPlugin"
++                type="Magento\CatalogUrlRewriteGraphQl\Plugin\Model\Resolver\EntityUrlExcludeDisabledProductPlugin"/>
++    </type>
+ </config>
+diff --git a/vendor/magento/module-checkout/Model/GuestPaymentInformationManagement.php b/vendor/magento/module-checkout/Model/GuestPaymentInformationManagement.php
+index 461a12c87aeb3..048d46e7cdbf3 100644
+--- a/vendor/magento/module-checkout/Model/GuestPaymentInformationManagement.php
++++ b/vendor/magento/module-checkout/Model/GuestPaymentInformationManagement.php
+@@ -14,6 +14,7 @@
+ use Magento\Quote\Api\CartRepositoryInterface;
+ use Magento\Framework\Exception\CouldNotSaveException;
+ use Magento\Quote\Model\Quote;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
+ 
+ /**
+  * Guest payment information management model.
+@@ -74,5 +75,10 @@ class GuestPaymentInformationManagement implements \Magento\Checkout\Api\GuestPa
+     private $saveRateLimitDisabled = false;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * @param \Magento\Quote\Api\GuestBillingAddressManagementInterface $billingAddressManagement
+      * @param \Magento\Quote\Api\GuestPaymentMethodManagementInterface $paymentMethodManagement
+@@ -82,6 +88,7 @@ class GuestPaymentInformationManagement implements \Magento\Checkout\Api\GuestPa
+      * @param CartRepositoryInterface $cartRepository
+      * @param PaymentProcessingRateLimiterInterface|null $paymentsRateLimiter
+      * @param PaymentSavingRateLimiterInterface|null $savingRateLimiter
++     * @param GetGuestCart|null $getGuestCart
+      * @codeCoverageIgnore
+      */
+     public function __construct(
+@@ -92,7 +99,8 @@ public function __construct(
+         \Magento\Quote\Model\QuoteIdMaskFactory $quoteIdMaskFactory,
+         CartRepositoryInterface $cartRepository,
+         ?PaymentProcessingRateLimiterInterface $paymentsRateLimiter = null,
+-        ?PaymentSavingRateLimiterInterface $savingRateLimiter = null
++        ?PaymentSavingRateLimiterInterface $savingRateLimiter = null,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->billingAddressManagement = $billingAddressManagement;
+         $this->paymentMethodManagement = $paymentMethodManagement;
+@@ -104,6 +112,7 @@ public function __construct(
+             ?? ObjectManager::getInstance()->get(PaymentProcessingRateLimiterInterface::class);
+         $this->savingRateLimiter = $savingRateLimiter
+             ?? ObjectManager::getInstance()->get(PaymentSavingRateLimiterInterface::class);
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+@@ -165,6 +174,7 @@ public function savePaymentInformation(
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
+         /** @var Quote $quote */
+         $quote = $this->cartRepository->getActive($quoteIdMask->getQuoteId());
++        $this->getGuestCart->checkIsGuestCart((int)$quote->getCustomerId(), $cartId);
+ 
+         if ($billingAddress) {
+             $billingAddress->setEmail($email);
+@@ -190,6 +200,7 @@ public function savePaymentInformation(
+     public function getPaymentInformation($cartId)
+     {
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->paymentInformationManagement->getPaymentInformation($quoteIdMask->getQuoteId());
+     }
+ 
+diff --git a/vendor/magento/module-checkout/Model/GuestShippingInformationManagement.php b/vendor/magento/module-checkout/Model/GuestShippingInformationManagement.php
+index b1194a25ab548..61a7a6d4063e6 100644
+--- a/vendor/magento/module-checkout/Model/GuestShippingInformationManagement.php
++++ b/vendor/magento/module-checkout/Model/GuestShippingInformationManagement.php
+@@ -6,5 +6,8 @@
+ namespace Magento\Checkout\Model;
+ 
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++
+ class GuestShippingInformationManagement implements \Magento\Checkout\Api\GuestShippingInformationManagementInterface
+ {
+     /**
+@@ -18,20 +21,28 @@ class GuestShippingInformationManagement implements \Magento\Checkout\Api\GuestS
+     protected $shippingInformationManagement;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * @param \Magento\Quote\Model\QuoteIdMaskFactory $quoteIdMaskFactory
+      * @param \Magento\Checkout\Api\ShippingInformationManagementInterface $shippingInformationManagement
++     * @param GetGuestCart|null $getGuestCart
+      * @codeCoverageIgnore
+      */
+     public function __construct(
+         \Magento\Quote\Model\QuoteIdMaskFactory $quoteIdMaskFactory,
+-        \Magento\Checkout\Api\ShippingInformationManagementInterface $shippingInformationManagement
++        \Magento\Checkout\Api\ShippingInformationManagementInterface $shippingInformationManagement,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->shippingInformationManagement = $shippingInformationManagement;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function saveAddressInformation(
+         $cartId,
+@@ -39,6 +50,7 @@ public function saveAddressInformation(
+     ) {
+         /** @var $quoteIdMask \Magento\Quote\Model\QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->shippingInformationManagement->saveAddressInformation(
+             $quoteIdMask->getQuoteId(),
+             $addressInformation
+diff --git a/vendor/magento/module-checkout/Model/GuestTotalsInformationManagement.php b/vendor/magento/module-checkout/Model/GuestTotalsInformationManagement.php
+index 3551f3dca4a3a..59f50be59d5e6 100644
+--- a/vendor/magento/module-checkout/Model/GuestTotalsInformationManagement.php
++++ b/vendor/magento/module-checkout/Model/GuestTotalsInformationManagement.php
+@@ -6,5 +6,9 @@
++
+ namespace Magento\Checkout\Model;
+ 
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++
+ class GuestTotalsInformationManagement implements \Magento\Checkout\Api\GuestTotalsInformationManagementInterface
+ {
+     /**
+@@ -18,20 +23,28 @@ class GuestTotalsInformationManagement implements \Magento\Checkout\Api\GuestTot
+     protected $totalsInformationManagement;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * @param \Magento\Quote\Model\QuoteIdMaskFactory $quoteIdMaskFactory
+      * @param \Magento\Checkout\Api\TotalsInformationManagementInterface $totalsInformationManagement
++     * @param GetGuestCart|null $getGuestCart
+      * @codeCoverageIgnore
+      */
+     public function __construct(
+         \Magento\Quote\Model\QuoteIdMaskFactory $quoteIdMaskFactory,
+-        \Magento\Checkout\Api\TotalsInformationManagementInterface $totalsInformationManagement
++        \Magento\Checkout\Api\TotalsInformationManagementInterface $totalsInformationManagement,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->totalsInformationManagement = $totalsInformationManagement;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function calculate(
+         $cartId,
+@@ -39,6 +52,7 @@ public function calculate(
+     ) {
+         /** @var $quoteIdMask \Magento\Quote\Model\QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->totalsInformationManagement->calculate(
+             $quoteIdMask->getQuoteId(),
+             $addressInformation
+diff --git a/vendor/magento/module-gift-message/Model/GuestCartRepository.php b/vendor/magento/module-gift-message/Model/GuestCartRepository.php
+index 96cd8e0f6c32c..eba7a892ef444 100644
+--- a/vendor/magento/module-gift-message/Model/GuestCartRepository.php
++++ b/vendor/magento/module-gift-message/Model/GuestCartRepository.php
+@@ -11,6 +11,8 @@
+ use Magento\GiftMessage\Api\GuestCartRepositoryInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
+ 
+ /**
+  * Shopping cart gift message repository object for guest
+@@ -28,34 +30,45 @@ class GuestCartRepository implements GuestCartRepositoryInterface
+     protected $quoteIdMaskFactory;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * @param CartRepository $repository
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         CartRepository $repository,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->repository = $repository;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
+-        return $this->repository->get($quoteIdMask->getQuoteId());
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
++        $quote = $this->repository->get($quoteIdMask->getQuoteId());
++        return $quote;
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function save($cartId, MessageInterface $giftMessage)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->repository->save($quoteIdMask->getQuoteId(), $giftMessage);
+     }
+ }
+diff --git a/vendor/magento/module-gift-message/Model/GuestItemRepository.php b/vendor/magento/module-gift-message/Model/GuestItemRepository.php
+index 79545b6d6f9c9..6421895f534a7 100644
+--- a/vendor/magento/module-gift-message/Model/GuestItemRepository.php
++++ b/vendor/magento/module-gift-message/Model/GuestItemRepository.php
+@@ -11,6 +11,8 @@
+ use Magento\GiftMessage\Api\GuestItemRepositoryInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
+ 
+ /**
+  * Shopping cart gift message item repository object for guest
+@@ -28,34 +30,45 @@ class GuestItemRepository implements GuestItemRepositoryInterface
+     protected $quoteIdMaskFactory;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * @param ItemRepository $repository
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         ItemRepository $repository,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->repository = $repository;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function get($cartId, $itemId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
+-        return $this->repository->get($quoteIdMask->getQuoteId(), $itemId);
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
++        $quoteItem = $this->repository->get($quoteIdMask->getQuoteId(), $itemId);
++        return $quoteItem;
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function save($cartId, MessageInterface $giftMessage, $itemId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->repository->save($quoteIdMask->getQuoteId(), $giftMessage, $itemId);
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GetGuestCart.php b/vendor/magento/module-quote/Model/GuestCart/GetGuestCart.php
+new file mode 100644
+index 0000000000000..365c442658b80
+--- /dev/null
++++ b/vendor/magento/module-quote/Model/GuestCart/GetGuestCart.php
+@@ -0,0 +1,67 @@
++<?php
++/**
++ * Copyright 2026 Adobe
++ * All Rights Reserved.
++ */
++declare(strict_types=1);
++
++namespace Magento\Quote\Model\GuestCart;
++
++use Magento\Framework\Exception\NoSuchEntityException;
++use Magento\Quote\Api\CartRepositoryInterface;
++use Magento\Quote\Model\Quote;
++
++/**
++ * Get cart for guest users.
++ */
++class GetGuestCart
++{
++    /**
++     * @var CartRepositoryInterface
++     */
++    private $cartRepository;
++
++    /**
++     * Initialize dependencies
++     *
++     * @param CartRepositoryInterface $cartRepository
++     */
++    public function __construct(
++        CartRepositoryInterface $cartRepository
++    ) {
++        $this->cartRepository = $cartRepository;
++    }
++
++    /**
++     * Get quote by masked cart ID only if it is a guest cart.
++     *
++     * @param string $maskedCartId
++     * @param int $quoteId
++     * @return Quote
++     * @throws NoSuchEntityException
++     */
++    public function execute(string $maskedCartId, int $quoteId): Quote
++    {
++        /** @var Quote $quote */
++        $quote = $this->cartRepository->get($quoteId);
++        $this->checkIsGuestCart((int) $quote->getCustomerId(), $maskedCartId);
++
++        return $quote;
++    }
++
++    /**
++     * Check if the cart is a guest cart.
++     *
++     * @param int $customerId
++     * @param string $maskedCartId
++     * @throws NoSuchEntityException
++     */
++    public function checkIsGuestCart(int $customerId, string $maskedCartId): void
++    {
++        if ($customerId !== 0) {
++            throw new NoSuchEntityException(
++                __("Could not find a cart with ID '%masked_cart_id'", ['masked_cart_id' => $maskedCartId])
++            );
++        }
++    }
++}
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestBillingAddressManagement.php b/vendor/magento/module-quote/Model/GuestCart/GuestBillingAddressManagement.php
+index 3e491e0b1a24d..492a5d66166e6 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestBillingAddressManagement.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestBillingAddressManagement.php
+@@ -6,9 +6,12 @@
++
+ namespace Magento\Quote\Model\GuestCart;
+ 
+ use Magento\Quote\Api\GuestBillingAddressManagementInterface;
+ use Magento\Quote\Api\BillingAddressManagementInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Billing address management service for guest carts.
+@@ -26,36 +30,46 @@ class GuestBillingAddressManagement implements GuestBillingAddressManagementInte
+     private $billingAddressManagement;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Constructs a quote billing address service object.
+      *
+      * @param BillingAddressManagementInterface $billingAddressManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         BillingAddressManagementInterface $billingAddressManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->billingAddressManagement = $billingAddressManagement;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function assign($cartId, \Magento\Quote\Api\Data\AddressInterface $address, $useForShipping = false)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return (int)$this->billingAddressManagement->assign($quoteIdMask->getQuoteId(), $address, $useForShipping);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->billingAddressManagement->get($quoteIdMask->getQuoteId());
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestCartItemRepository.php b/vendor/magento/module-quote/Model/GuestCart/GuestCartItemRepository.php
+index 46c3b9b7a8fdf..a1b831740f67d 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestCartItemRepository.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestCartItemRepository.php
+@@ -7,9 +6,12 @@
++
+ namespace Magento\Quote\Model\GuestCart;
+ 
+ use Magento\Quote\Api\Data\CartItemInterface;
+ use Magento\Quote\Api\CartItemRepositoryInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Cart Item repository class for guest carts.
+@@ -17,7 +20,7 @@
+ class GuestCartItemRepository implements \Magento\Quote\Api\GuestCartItemRepositoryInterface
+ {
+     /**
+-     * @var \Magento\Quote\Api\CartItemRepositoryInterface
++     * @var CartItemRepositoryInterface
+      */
+     protected $repository;
+ 
+@@ -27,26 +30,35 @@ class GuestCartItemRepository implements \Magento\Quote\Api\GuestCartItemReposit
+     protected $quoteIdMaskFactory;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Constructs a read service object.
+      *
+-     * @param \Magento\Quote\Api\CartItemRepositoryInterface $repository
++     * @param CartItemRepositoryInterface $repository
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+-        \Magento\Quote\Api\CartItemRepositoryInterface $repository,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        CartItemRepositoryInterface $repository,
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->repository = $repository;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+     public function getList($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         $cartItemList = $this->repository->getList($quoteIdMask->getQuoteId());
+         /** @var $item CartItemInterface */
+         foreach ($cartItemList as $item) {
+@@ -56,23 +68,25 @@ public function getList($cartId)
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+-    public function save(\Magento\Quote\Api\Data\CartItemInterface $cartItem)
++    public function save(CartItemInterface $cartItem)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartItem->getQuoteId(), 'masked_id');
++        $this->getGuestCart->execute($cartItem->getQuoteId(), (int) $quoteIdMask->getQuoteId());
+         $cartItem->setQuoteId($quoteIdMask->getQuoteId());
+         return $this->repository->save($cartItem);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function deleteById($cartId, $itemId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->repository->deleteById($quoteIdMask->getQuoteId(), $itemId);
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestCartManagement.php b/vendor/magento/module-quote/Model/GuestCart/GuestCartManagement.php
+index 0236cb583dac1..eeb1b01af50a8 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestCartManagement.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestCartManagement.php
+@@ -12,6 +13,8 @@
+ use Magento\Quote\Model\QuoteIdMaskFactory;
+ use Magento\Quote\Api\Data\PaymentInterface;
+ use Magento\Quote\Api\CartRepositoryInterface;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Cart Management class for guest carts.
+@@ -36,25 +39,33 @@ class GuestCartManagement implements GuestCartManagementInterface
+     protected $cartRepository;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Initialize dependencies.
+      *
+      * @param CartManagementInterface $quoteManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
+      * @param CartRepositoryInterface $cartRepository
++     * @param GetGuestCart|null $getGuestCart
+      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+     public function __construct(
+         CartManagementInterface $quoteManagement,
+         QuoteIdMaskFactory $quoteIdMaskFactory,
+-        CartRepositoryInterface $cartRepository
++        CartRepositoryInterface $cartRepository,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteManagement = $quoteManagement;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->cartRepository = $cartRepository;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+     public function createEmptyCart()
+     {
+@@ -66,22 +77,24 @@ public function createEmptyCart()
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+     public function assignCustomer($cartId, $customerId, $storeId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->quoteManagement->assignCustomer($quoteIdMask->getQuoteId(), $customerId, $storeId);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function placeOrder($cartId, PaymentInterface $paymentMethod = null)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         $this->cartRepository->get($quoteIdMask->getQuoteId())
+             ->setCheckoutMethod(CartManagementInterface::METHOD_GUEST);
+         return $this->quoteManagement->placeOrder($quoteIdMask->getQuoteId(), $paymentMethod);
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestCartRepository.php b/vendor/magento/module-quote/Model/GuestCart/GuestCartRepository.php
+index 665dc0a87c97b..7c8cca1086f9e 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestCartRepository.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestCartRepository.php
+@@ -6,9 +6,12 @@
++
+ namespace Magento\Quote\Model\GuestCart;
+ 
+ use Magento\Quote\Api\GuestCartRepositoryInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Api\CartRepositoryInterface;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Cart Repository class for guest carts.
+@@ -26,26 +30,36 @@ class GuestCartRepository implements GuestCartRepositoryInterface
+     protected $quoteRepository;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Initialize dependencies.
+      *
+      * @param CartRepositoryInterface $quoteRepository
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         CartRepositoryInterface $quoteRepository,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->quoteRepository = $quoteRepository;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
+-        return $this->quoteRepository->get($quoteIdMask->getQuoteId());
++        $quote = $this->quoteRepository->get($quoteIdMask->getQuoteId());
++        $this->getGuestCart->checkIsGuestCart((int)$quote->getCustomerId(), $cartId);
++        return $quote;
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalManagement.php b/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalManagement.php
+index 33cb83fa5fbcb..d5c457d645ff2 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalManagement.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalManagement.php
+@@ -6,7 +6,11 @@
++
+ namespace Magento\Quote\Model\GuestCart;
+ 
+ use Magento\Quote\Model\QuoteIdMaskFactory;
+ use Magento\Quote\Api\GuestCartTotalManagementInterface;
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Quote\Api\CartTotalManagementInterface;
+ 
+ /**
+  * @inheritDoc
+@@ -14,7 +19,7 @@
+ class GuestCartTotalManagement implements GuestCartTotalManagementInterface
+ {
+     /**
+-     * @var \Magento\Quote\Api\CartTotalManagementInterface
++     * @var CartTotalManagementInterface
+      */
+     protected $cartTotalManagement;
+ 
+@@ -24,19 +29,27 @@ class GuestCartTotalManagement implements GuestCartTotalManagementInterface
+     protected $quoteIdMaskFactory;
+ 
+     /**
+-     * @param \Magento\Quote\Api\CartTotalManagementInterface $cartTotalManagement
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
++    /**
++     * @param CartTotalManagementInterface $cartTotalManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+-        \Magento\Quote\Api\CartTotalManagementInterface $cartTotalManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        CartTotalManagementInterface $cartTotalManagement,
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->cartTotalManagement = $cartTotalManagement;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function collectTotals(
+         $cartId,
+@@ -46,6 +59,7 @@ public function collectTotals(
+         \Magento\Quote\Api\Data\TotalsAdditionalDataInterface $additionalData = null
+     ) {
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->cartTotalManagement->collectTotals(
+             $quoteIdMask->getQuoteId(),
+             $paymentMethod,
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalRepository.php b/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalRepository.php
+index 9e384671cf6bd..66540578c6526 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalRepository.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestCartTotalRepository.php
+@@ -10,6 +11,8 @@
+ use Magento\Quote\Api\GuestCartTotalRepositoryInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Cart totals repository class for guest carts.
+@@ -27,26 +30,35 @@ class GuestCartTotalRepository implements GuestCartTotalRepositoryInterface
+     private $cartTotalRepository;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Constructs a cart totals data object.
+      *
+      * @param CartTotalRepositoryInterface $cartTotalRepository
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         CartTotalRepositoryInterface $cartTotalRepository,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->cartTotalRepository = $cartTotalRepository;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->cartTotalRepository->get($quoteIdMask->getQuoteId());
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestCouponManagement.php b/vendor/magento/module-quote/Model/GuestCart/GuestCouponManagement.php
+index d2e807e543b2a..c585c29dc071b 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestCouponManagement.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestCouponManagement.php
+@@ -7,9 +6,12 @@
++
+ namespace Magento\Quote\Model\GuestCart;
+ 
+ use Magento\Quote\Api\GuestCouponManagementInterface;
+ use Magento\Quote\Api\CouponManagementInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Coupon management class for guest carts.
+@@ -27,46 +30,57 @@ class GuestCouponManagement implements GuestCouponManagementInterface
+     private $couponManagement;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Constructs a coupon read service object.
+      *
+      * @param CouponManagementInterface $couponManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         CouponManagementInterface $couponManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->couponManagement = $couponManagement;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->couponManagement->get($quoteIdMask->getQuoteId());
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function set($cartId, $couponCode)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
+-        return $this->couponManagement->set($quoteIdMask->getQuoteId(), $couponCode);
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
++        return $this->couponManagement->set($quoteIdMask->getQuoteId(), trim($couponCode));
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritdoc
+      */
+     public function remove($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->couponManagement->remove($quoteIdMask->getQuoteId());
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestPaymentMethodManagement.php b/vendor/magento/module-quote/Model/GuestCart/GuestPaymentMethodManagement.php
+index f57a7d2e0ba6e..d42518fcf6d88 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestPaymentMethodManagement.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestPaymentMethodManagement.php
+@@ -6,9 +6,12 @@
++
+ namespace Magento\Quote\Model\GuestCart;
+ 
+ use Magento\Quote\Api\PaymentMethodManagementInterface;
+ use Magento\Quote\Api\GuestPaymentMethodManagementInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
++use Magento\Framework\App\ObjectManager;
+ 
+ /**
+  * Payment method management class for guest carts.
+@@ -26,46 +30,57 @@ class GuestPaymentMethodManagement implements GuestPaymentMethodManagementInterf
+     protected $paymentMethodManagement;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Initialize dependencies.
+      *
+      * @param PaymentMethodManagementInterface $paymentMethodManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         PaymentMethodManagementInterface $paymentMethodManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
+         $this->paymentMethodManagement = $paymentMethodManagement;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+     public function set($cartId, \Magento\Quote\Api\Data\PaymentInterface $method)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->paymentMethodManagement->set($quoteIdMask->getQuoteId(), $method);
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->paymentMethodManagement->get($quoteIdMask->getQuoteId());
+     }
+ 
+     /**
+-     * {@inheritdoc}
++     * @inheritDoc
+      */
+     public function getList($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->paymentMethodManagement->getList($quoteIdMask->getQuoteId());
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestShippingAddressManagement.php b/vendor/magento/module-quote/Model/GuestCart/GuestShippingAddressManagement.php
+index e2f31406cfe7e..6343a94df5787 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestShippingAddressManagement.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestShippingAddressManagement.php
+@@ -6,9 +6,12 @@
++
+ namespace Magento\Quote\Model\GuestCart;
+ 
+ use Magento\Quote\Model\GuestCart\GuestShippingAddressManagementInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
+ use Magento\Quote\Model\ShippingAddressManagementInterface;
++use Magento\Framework\App\ObjectManager;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
+ 
+ /**
+  * Shipping address management class for guest carts.
+@@ -26,36 +30,46 @@ class GuestShippingAddressManagement implements GuestShippingAddressManagementIn
+     protected $shippingAddressManagement;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Constructs a quote shipping address write service object.
+      *
+      * @param ShippingAddressManagementInterface $shippingAddressManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         ShippingAddressManagementInterface $shippingAddressManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->shippingAddressManagement = $shippingAddressManagement;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function assign($cartId, \Magento\Quote\Api\Data\AddressInterface $address)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->shippingAddressManagement->assign($quoteIdMask->getQuoteId(), $address);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->shippingAddressManagement->get($quoteIdMask->getQuoteId());
+     }
+ }
+diff --git a/vendor/magento/module-quote/Model/GuestCart/GuestShippingMethodManagement.php b/vendor/magento/module-quote/Model/GuestCart/GuestShippingMethodManagement.php
+index 88c4e10d17053..61f4d270f5ffc 100644
+--- a/vendor/magento/module-quote/Model/GuestCart/GuestShippingMethodManagement.php
++++ b/vendor/magento/module-quote/Model/GuestCart/GuestShippingMethodManagement.php
+@@ -13,6 +14,7 @@
+ use Magento\Quote\Api\ShippingMethodManagementInterface;
+ use Magento\Quote\Model\QuoteIdMask;
+ use Magento\Quote\Model\QuoteIdMaskFactory;
++use Magento\Quote\Model\GuestCart\GetGuestCart;
+ 
+ /**
+  * Shipping method management class for guest carts.
+@@ -38,56 +40,68 @@ class GuestShippingMethodManagement implements
+     private $shipmentEstimationManagement;
+ 
++    /**
++     * @var GetGuestCart|null
++     */
++    private $getGuestCart;
++
+     /**
+      * Constructs a shipping method read service object.
+      *
+      * @param ShippingMethodManagementInterface $shippingMethodManagement
+      * @param QuoteIdMaskFactory $quoteIdMaskFactory
++     * @param GetGuestCart|null $getGuestCart
+      */
+     public function __construct(
+         ShippingMethodManagementInterface $shippingMethodManagement,
+-        QuoteIdMaskFactory $quoteIdMaskFactory
++        QuoteIdMaskFactory $quoteIdMaskFactory,
++        ?GetGuestCart $getGuestCart = null
+     ) {
+         $this->shippingMethodManagement = $shippingMethodManagement;
+         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
++        $this->getGuestCart = $getGuestCart ?? ObjectManager::getInstance()->get(GetGuestCart::class);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function get($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->shippingMethodManagement->get($quoteIdMask->getQuoteId());
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function getList($cartId)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->shippingMethodManagement->getList($quoteIdMask->getQuoteId());
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function set($cartId, $carrierCode, $methodCode)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->shippingMethodManagement->set($quoteIdMask->getQuoteId(), $carrierCode, $methodCode);
+     }
+ 
+     /**
+-     * {@inheritDoc}
++     * @inheritDoc
+      */
+     public function estimateByAddress($cartId, \Magento\Quote\Api\Data\EstimateAddressInterface $address)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+         return $this->shippingMethodManagement->estimateByAddress($quoteIdMask->getQuoteId(), $address);
+     }
+ 
+@@ -98,6 +112,7 @@ public function estimateByExtendedAddress($cartId, AddressInterface $address)
+     {
+         /** @var $quoteIdMask QuoteIdMask */
+         $quoteIdMask = $this->quoteIdMaskFactory->create()->load($cartId, 'masked_id');
++        $this->getGuestCart->execute($cartId, (int) $quoteIdMask->getQuoteId());
+ 
+         return $this->getShipmentEstimationManagement()
+             ->estimateByExtendedAddress((int) $quoteIdMask->getQuoteId(), $address);
+@@ -105,8 +120,10 @@ public function estimateByExtendedAddress($cartId, AddressInterface $address)
+ 
+     /**
+      * Get shipment estimation management service
++     *
+      * @return ShipmentEstimationInterface
+      * @deprecated 100.0.7
++     * @see getShipmentEstimationManagement
+      */
+     private function getShipmentEstimationManagement()
+     {
+diff --git a/vendor/magento/module-quote/etc/di.xml b/vendor/magento/module-quote/etc/di.xml
+index 901b642f7aa19..57b979702ae80 100644
+--- a/vendor/magento/module-quote/etc/di.xml
++++ b/vendor/magento/module-quote/etc/di.xml
+@@ -148,4 +148,7 @@
+     <type name="Magento\Quote\Api\CartRepositoryInterface">
+         <plugin name="quoteValidateOrderId" type="Magento\Quote\Plugin\ValidateQuoteOrigOrder"/>
+     </type>
++    <type name="Magento\Quote\Model\Quote">
++        <plugin name="validateQuoteAddress" type="Magento\Quote\Plugin\QuoteAddress" />
++    </type>
+ </config>
+diff --git a/vendor/magento/module-quote/etc/webapi_rest/di.xml b/vendor/magento/module-quote/etc/webapi_rest/di.xml
+index 85d8bafc23da7..6ed9909f04eb9 100644
+--- a/vendor/magento/module-quote/etc/webapi_rest/di.xml
++++ b/vendor/magento/module-quote/etc/webapi_rest/di.xml
+@@ -18,6 +18,5 @@
+     </type>
+     <type name="Magento\Quote\Model\Quote">
+         <plugin name="updateQuoteStoreId" type="Magento\Quote\Model\Quote\Plugin\UpdateQuoteStoreId" />
+-        <plugin name="validateQuoteAddress" type="Magento\Quote\Plugin\QuoteAddress" />
+     </type>
+ </config>
+diff --git a/vendor/magento/module-quote/i18n/en_US.csv b/vendor/magento/module-quote/i18n/en_US.csv
+index 98e6ca5b6c367..53c04db56a4e4 100644
+--- a/vendor/magento/module-quote/i18n/en_US.csv
++++ b/vendor/magento/module-quote/i18n/en_US.csv
+@@ -71,3 +71,4 @@ Carts,Carts
+ "Invalid Quote Item id %1","Invalid Quote Item id %1"
+ "Invalid quote address id %1","Invalid quote address id %1"
+ "Please check input parameters.","Please check input parameters."
++"Could not find a cart with ID '%masked_cart_id'","Could not find a cart with ID '%masked_cart_id'"
+diff --git a/vendor/magento/module-translation/Model/Inline/Parser.php b/vendor/magento/module-translation/Model/Inline/Parser.php
+index 64f4e8efc4919..e111348f0da2f 100644
+--- a/vendor/magento/module-translation/Model/Inline/Parser.php
++++ b/vendor/magento/module-translation/Model/Inline/Parser.php
+@@ -7,7 +7,10 @@
+ 
+ namespace Magento\Translation\Model\Inline;
+ 
++use DOMDocument;
++use Normalizer;
+ use Magento\Backend\App\Area\FrontNameResolver;
++use Magento\Framework\App\ObjectManager;
+ use Magento\Framework\Translate\Inline\ParserInterface;
+ use Magento\Translation\Model\ResourceModel\StringFactory;
+ use Magento\Translation\Model\ResourceModel\StringUtils;
+@@ -115,6 +118,9 @@ class Parser implements ParserInterface
+      * @var array
+      */
+     private $filterTagsExpression = [
++        '/&lt;\/?(script|meta|link|frame|iframe|object|embed|form|input|style)[^&]*&gt;/i',
++        '/&lt;[^&]*(ondblclick|onclick|onkeydown|onkeypress|onkeyup|onmousedown|onmousemove|' .
++            'onmouseout|onmouseover|onmouseup|onload|onunload|onerror)[^&]*&gt;/i',
+         '/\b(alert|eval|setTimeout|setInterval|Function|setImmediate|requestAnimationFrame|document\.(write' .
+             '|writeln)|innerHTML|outerHTML|insertAdjacentHTML|console\.(log|error|warn|info|debug))\s*[=(]/i',
+         '/\b(window|this|self)\s*\[\s*[\'"]?(alert|eval)[\'"]?\s*\]/i',
+@@ -168,5 +174,10 @@ class Parser implements ParserInterface
+     private $relatedCacheTypes;
+ 
++    /**
++     * @var Normalizer
++     */
++    private $normalizer;
++
+     /**
+      * Initialize base inline translation model
+      *
+@@ -179,6 +190,7 @@ class Parser implements ParserInterface
+      * @param Escaper $escaper
+      * @param CacheManager $cacheManager
+      * @param array $relatedCacheTypes
++     * @param Normalizer|null $normalizer
+      */
+     public function __construct(
+         StringUtilsFactory $resource,
+@@ -189,7 +202,8 @@ public function __construct(
+         InlineInterface $translateInline,
+         Escaper $escaper,
+         CacheManager $cacheManager,
+-        array $relatedCacheTypes = []
++        array $relatedCacheTypes = [],
++        ?Normalizer $normalizer = null
+     ) {
+         $this->_resourceFactory = $resource;
+         $this->_storeManager = $storeManager;
+@@ -200,6 +214,8 @@ public function __construct(
+         $this->escaper = $escaper;
+         $this->cacheManager = $cacheManager;
+         $this->relatedCacheTypes = $relatedCacheTypes;
++        $this->normalizer = $normalizer
++            ?? ObjectManager::getInstance()->get(Normalizer::class);
+     }
+ 
+     /**
+@@ -221,6 +237,7 @@ public function processAjaxPost(array $translateParams)
+ 
+         $this->_validateTranslationParams($translateParams);
+         $this->_filterTranslationParams($translateParams, ['custom']);
++        $this->filterExternalLinks($translateParams);
+ 
+         /** @var $validStoreId int */
+         $validStoreId = $this->_storeManager->getStore()->getId();
+@@ -284,12 +301,101 @@ protected function _filterTranslationParams(array &$translateParams, array $fiel
+         }
+     }
+ 
++    /**
++     * Sanitize external links in translations
++     *
++     * @param array $translateParams
++     * @return void
++     */
++    private function filterExternalLinks(array &$translateParams): void
++    {
++        foreach ($translateParams as &$param) {
++            if (isset($param['custom']) && is_string($param['custom'])) {
++                $param['custom'] = $this->removeExternalLinks($param['custom']);
++            }
++        }
++    }
++
++    /**
++     * Remove external links from HTML content, converting them to plain text
++     *
++     * @param string $content
++     * @return string
++     */
++    private function removeExternalLinks(string $content): string
++    {
++        $content = trim($content);
++        if ($content === '') {
++            return $content;
++        }
++        $dom = new DOMDocument('1.0', 'UTF-8');
++        libxml_use_internal_errors(true);
++        $wrapper = '<div>' . $content . '</div>';
++        $dom->loadHTML(
++            '<?xml encoding="UTF-8"?>' . $wrapper,
++            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
++        );
++        libxml_clear_errors();
++        $xpath = new \DOMXPath($dom);
++        foreach ($xpath->query('//a[@href]') as $anchor) {
++            $href = trim(html_entity_decode($anchor->getAttribute('href'), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
++            if ($this->isExternal($href)) {
++                $anchor->parentNode->replaceChild($dom->createTextNode($anchor->textContent), $anchor);
++            }
++        }
++        $wrapper = $dom->getElementsByTagName('div')->item(0);
++        $result = '';
++        foreach ($wrapper->childNodes as $child) {
++            $result .= $dom->saveHTML($child);
++        }
++        return $result;
++    }
++
++    /**
++     * Method to verify if the href is external
++     *
++     * @param string $href
++     * @return bool
++     */
++    private function isExternal(string $href): bool
++    {
++        $href = preg_replace('/[\x00-\x1F\x7F]+/u', '', $href);
++        $href = trim($href);
++
++        if ($href === '' || $href[0] === '#') {
++            return false;
++        }
++
++        if (class_exists(Normalizer::class) && $this->normalizer !== null) {
++            $normalized = $this->normalizer->normalize($href, Normalizer::FORM_KC);
++            if ($normalized !== false) {
++                $href = $normalized;
++            }
++        }
++
++        if (strncmp($href, '//', 2) === 0 || strncasecmp($href, 'www.', 4) === 0) {
++            return true;
++        }
++
++        if (preg_match('/^[a-z0-9.-]+\.[a-z]{2,}/i', $href)) {
++            return true;
++        }
++
++        $colonPos = strpos($href, ':');
++        if ($colonPos === false) {
++            return false;
++        }
++
++        $scheme = preg_replace('/\s+/', '', substr($href, 0, $colonPos));
++        return $scheme !== '' && preg_match('/^[a-z][a-z0-9+\-.]*$/i', $scheme);
++    }
++
+     /**
+      * Add additional filters to translation strings
+      *
+      * @return void
+      */
+-    private function addTranslationFilterExpression()
++    private function addTranslationFilterExpression(): void
+     {
+         if ($this->filterExpressionsAdded) {
+             return;
+diff --git a/vendor/magento/framework/View/Element/UiComponent/DataProvider/Sanitizer.php b/vendor/magento/framework/View/Element/UiComponent/DataProvider/Sanitizer.php
+index 27a42fb337ce8..d49e83d1a99e0 100644
+--- a/vendor/magento/framework/View/Element/UiComponent/DataProvider/Sanitizer.php
++++ b/vendor/magento/framework/View/Element/UiComponent/DataProvider/Sanitizer.php
+@@ -54,7 +54,7 @@ function ($datum, string $key) use (&$config, &$toProcess) : void {
+                         !is_bool($config) && !array_key_exists($key, $config)
+                     )
+                     && (is_string($datum) || $datum instanceof Phrase)
+-                    && preg_match('/\$\{.+\}/', (string)$datum)
++                    && preg_match('/\$\{.+\}/s', (string)$datum)
+                 ) {
+                     //Templating is not disabled for all properties or for this property specifically
+                     //Property is a string that contains template syntax so we are disabling it's rendering
+diff --git a/vendor/magento/module-customer/etc/config.xml b/vendor/magento/module-customer/etc/config.xml
+index 23a7c9ebb403..987fed873fd4 100644
+--- a/vendor/magento/module-customer/etc/config.xml
++++ b/vendor/magento/module-customer/etc/config.xml
+@@ -104,12 +104,5 @@
+                 <section_data_lifetime>60</section_data_lifetime>
+             </online_customers>
+         </customer>
+-        <system>
+-            <media_storage_configuration>
+-                <allowed_resources>
+-                    <customer_address_folder>customer_address</customer_address_folder>
+-                </allowed_resources>
+-            </media_storage_configuration>
+-        </system>
+     </default>
+ </config>
+diff --git a/vendor/magento/module-store/etc/config.xml b/vendor/magento/module-store/etc/config.xml
+index 00a9be38123b..af0064bc79ff 100644
+--- a/vendor/magento/module-store/etc/config.xml
++++ b/vendor/magento/module-store/etc/config.xml
+@@ -138,6 +138,13 @@
+                     <svgz>svgz</svgz>
+                     <xml>xml</xml>
+                     <xhtml>xhtml</xhtml>
++                    <hta>hta</hta>
++                    <mhtml>mhtml</mhtml>
++                    <mht>mht</mht>
++                    <htc>htc</htc>
++                    <xht>xht</xht>
++                    <shtm>shtm</shtm>
++                    <php8>php8</php8>
+                 </protected_extensions>
+                 <public_files_valid_paths>
+                     <protected>
+diff --git a/nginx.conf.sample b/nginx.conf.sample
+index 1c406ff181ae..2fdd438b6855 100644
+--- a/nginx.conf.sample
++++ b/nginx.conf.sample
+@@ -185,6 +185,10 @@ location /media/customer/ {
+     deny all;
+ }
+ 
++location /media/customer_address/ {
++    deny all;
++}
++
+ location /media/downloadable/ {
+     deny all;
+ }
+diff --git a/vendor/bin/patch-status b/vendor/bin/patch-status
+new file mode 100755
+index 0000000..d043172
+--- /dev/null
++++ b/vendor/bin/patch-status
+@@ -0,0 +1,3 @@
++#!/usr/bin/env php
++<?php declare(strict_types=1);/* Adobe Commerce Monthly Security Release Versioning Tool — single-file build. Auto-generated by scripts/build.php. */namespace Magento\PatchStatus\Model;final class PatchStatus{public function __construct(public readonly string $baseVersion,public readonly array $appliedPatches,public readonly array $missingPatches,public readonly array $installedComponents,public readonly array $vulnerabilityStatus,public readonly array $warnings=[],public readonly string $registrySource='none',public readonly array $unknownPatches=[],){}public static function fromArray(array $data):self{return new self(baseVersion:$data['base_version']??'unknown',appliedPatches:$data['applied_patches']??[],missingPatches:$data['missing_patches']??[],vulnerabilityStatus:$data['vulnerability_status']??[],installedComponents:$data['installed_components']??[],warnings:$data['warnings']??[],registrySource:$data['registry_source']??'none',unknownPatches:$data['unknown_patches']??[],);}public function toArray():array{return['base_version'=>$this->baseVersion,'installed_components'=>$this->installedComponents,'applied_patches'=>$this->appliedPatches,'missing_patches'=>$this->missingPatches,'unknown_patches'=>$this->unknownPatches,'vulnerability_status'=>$this->vulnerabilityStatus,'registry_source'=>$this->registrySource,'warnings'=>$this->warnings,];}}namespace Magento\PatchStatus\Fetcher;class PatchFetcher{public const DIFF_BASE_URL='https://d3sw4ohxqoqoqa.cloudfront.net/patch';private const CACHE_DIR='var/patch_metadata/.patch_diffs';private const TIMEOUT=3;public function __construct(private readonly string $magentoRoot,private readonly string $patchBaseUrl,){}public function fetch(string $patchId,string $patchFile,string $expectedSha256):?string{if(!$this->isSafePatchFileName($patchFile)){return null;}$cachePath=rtrim($this->magentoRoot,'/').'/'.self::CACHE_DIR.'/'.$patchFile;if(file_exists($cachePath)){$content=@file_get_contents($cachePath);if($content!==false&&$this->verifySha256($content,$expectedSha256)){return $content;}@unlink($cachePath);}$url=rtrim($this->patchBaseUrl,'/').'/'.$patchFile;$content=$this->fetchRemote($url);if($content===false){return null;}if(!$this->verifySha256($content,$expectedSha256)){return null;}$this->writeCache($cachePath,$content);return $content;}protected function fetchRemote(string $url):string|false{$context=stream_context_create(['http'=>['timeout'=>self::TIMEOUT,'ignore_errors'=>true,'user_agent'=>'Adobe-Commerce-PatchStatus/'.\Magento\PatchStatus\PatchStatusCommand::VERSION,],'ssl'=>['verify_peer'=>true,'verify_peer_name'=>true,],]);return@file_get_contents($url,context:$context);}private function verifySha256(string $content,string $expectedSha256):bool{return hash('sha256',$content)===strtolower($expectedSha256);}private function writeCache(string $path,string $content):void{$dir=dirname($path);if(!is_dir($dir)){@mkdir($dir,0775,true);}@file_put_contents($path,$content,LOCK_EX);}private function isSafePatchFileName(string $name):bool{return(bool)preg_match('/\A[A-Za-z0-9][A-Za-z0-9_\-]*\.(?:patch|diff|zip)\z/',$name)&&basename($name)===$name;}}namespace Magento\PatchStatus\Detector;final class ComposerDetector{private const BASE_PACKAGES=['magento/product-enterprise-edition','magento/product-community-edition','magento/magento2-base',];public function __construct(private readonly string $magentoRoot){}public function detect():array{$lockFile=rtrim($this->magentoRoot,'/').'/composer.lock';$empty=['base_version'=>null,'release_line'=>null,'installed_packages'=>[],'method'=>'none','warnings'=>[]];if(!file_exists($lockFile)){return $empty;}$raw=file_get_contents($lockFile);if($raw===false){return array_merge($empty,['warnings'=>['composer.lock exists but could not be read']]);}$lock=json_decode($raw,true);if(!is_array($lock)){return array_merge($empty,['warnings'=>['composer.lock could not be parsed as JSON']]);}$packages=array_merge($lock['packages']??[],$lock['packages-dev']??[]);$installedPackages=[];foreach($packages as $pkg){$installedPackages[$pkg['name']??'']=$pkg['version']??'';}$baseVersion=null;foreach(self::BASE_PACKAGES as $pkg){if(isset($installedPackages[$pkg])){$baseVersion=ltrim($installedPackages[$pkg],'v');break;}}$warnings=[];$method='composer';if($baseVersion===null){$warnings[]='No recognized Commerce base package found in composer.lock';$method='none';}$releaseLine=$baseVersion!==null?$this->extractReleaseLine($baseVersion):null;return['base_version'=>$baseVersion,'release_line'=>$releaseLine,'installed_packages'=>$installedPackages,'method'=>$method,'warnings'=>$warnings,];}private function extractReleaseLine(string $version):string{if(preg_match('/^(\d+\.\d+\.\d+)/',$version,$m)){return $m[1];}return $version;}}namespace Magento\PatchStatus\Detector;use Magento\PatchStatus\Fetcher\PatchFetcher;class DryRunDetector{public function __construct(private readonly string $magentoRoot,private readonly array $registry,private readonly PatchFetcher $fetcher,){}public static function isPatchBinaryAvailable():bool{exec('patch --version',$output,$code);return $code===0;}public function detect(array $applicablePatchIds):array{$statuses=[];$warnings=[];$unknownLogs=[];$root=rtrim($this->magentoRoot,'/');if(!$this->isTempDirWritable()){throw new \RuntimeException("Temp directory ".sys_get_temp_dir()." is not writable — check permissions. Aborting.");}foreach($applicablePatchIds as $patchId){$entry=$this->registry['patches'][$patchId]??null;if($entry===null){continue;}$patchFile=$entry['file_name']??null;$patchSha256=$entry['sha256']??null;if($patchFile===null||$patchSha256===null){$statuses[$patchId]='unknown';$warnings[]="No file_name or sha256 for {$patchId}";continue;}$rawContent=$this->fetcher->fetch($patchId,$patchFile,$patchSha256);if($rawContent===null){$statuses[$patchId]='unknown';$warnings[]="Could not fetch patch file for {$patchId}";continue;}$diffContent=$this->extractDiff($rawContent);if($diffContent===null){$statuses[$patchId]='unknown';$warnings[]="Could not extract diff from patch file for {$patchId}";continue;}$descendants=$this->getDescendants($patchId,$applicablePatchIds);$prerequisites=$this->getPrerequisites($patchId,$applicablePatchIds,$warnings);[$overlappingDescDiffs,$overlappingPrereqDiffs,$missingDepIds]=$this->resolveDependencyDiffs($diffContent,$descendants,$prerequisites);if(!empty($missingDepIds)){$warnings[]='descendant diffs unavailable for '.implode(', ',$missingDepIds)."; dry-run for {$patchId} may be inaccurate";}$affectedFiles=$this->collectAffectedFiles($diffContent,$overlappingDescDiffs,$overlappingPrereqDiffs);$tmpDiff=sys_get_temp_dir().'/patch_status_'.$this->sanitizeForFilename($patchId).'_'.uniqid().'.diff';file_put_contents($tmpDiff,$diffContent);$tmpDirToClean=null;$descendantSanitizationFailed=false;try{$workDir=$root;if(!empty($overlappingDescDiffs)){$tmpDirToClean=$this->createTempWorkDir($root,$patchId,$affectedFiles);$revertWarn=$this->revertDescendantsIn($tmpDirToClean,$patchId,$overlappingDescDiffs);if($revertWarn!==null){$warnings[]=$revertWarn;$this->rmdirRecursive($tmpDirToClean);$tmpDirToClean=null;$descendantSanitizationFailed=true;}else{$workDir=$tmpDirToClean;}}$fwd=$this->runPatch($tmpDiff,$workDir,reverse:false,dryRun:true);$rev=$this->runPatch($tmpDiff,$workDir,reverse:true,dryRun:true);$status=$this->classify($fwd['exit'],$rev['exit']);if($status==='unknown'&&!empty($overlappingPrereqDiffs)&&!$descendantSanitizationFailed){if($tmpDirToClean===null){$tmpDirToClean=$this->createTempWorkDir($root,$patchId,$affectedFiles);$workDir=$tmpDirToClean;}$applyWarn=$this->forwardApplyPrereqsIn($tmpDirToClean,$patchId,$overlappingPrereqDiffs);if($applyWarn!==null){$warnings[]=$applyWarn;}else{$fwd=$this->runPatch($tmpDiff,$workDir,reverse:false,dryRun:true);$rev=$this->runPatch($tmpDiff,$workDir,reverse:true,dryRun:true);$status=$this->classify($fwd['exit'],$rev['exit']);}}$statuses[$patchId]=$status;if($status==='unknown'){$unknownLogs[$patchId]="FWD:\n{$fwd['output']}\nREV:\n{$rev['output']}";}}finally{@unlink($tmpDiff);if($tmpDirToClean!==null){$this->rmdirRecursive($tmpDirToClean);}}}return['statuses'=>$statuses,'method'=>'dry_run','warnings'=>$warnings,'unknown_logs'=>$unknownLogs,];}private function getDescendants(string $patchId,array $applicablePatchIds):array{$applicableSet=array_flip($applicablePatchIds);$descendants=[];$queue=[$patchId];$visited=[$patchId=>true];while(!empty($queue)){$current=array_shift($queue);foreach($this->registry['patches']??[]as $id=>$entry){if(!isset($applicableSet[$id])||isset($visited[$id])){continue;}if(in_array($current,$entry['requires']??[],true)){$descendants[]=$id;$visited[$id]=true;$queue[]=$id;}}}return $descendants;}private function getPrerequisites(string $patchId,array $applicablePatchIds,array&$warnings):array{$applicableSet=array_flip($applicablePatchIds);$result=[];$visited=[$patchId=>true];$this->collectTransitivePrereqs($patchId,$applicableSet,$visited,$result,$warnings);return $result;}private function collectTransitivePrereqs(string $patchId,array $applicableSet,array&$visited,array&$result,array&$warnings):void{$requires=$this->registry['patches'][$patchId]['requires']??[];foreach($requires as $preId){if(isset($visited[$preId])){continue;}$visited[$preId]=true;if(!isset($this->registry['patches'][$preId])){$warnings[]="Registry entry '{$patchId}' requires unknown patch '{$preId}'; skipping.";continue;}if(!isset($applicableSet[$preId])){continue;}$this->collectTransitivePrereqs($preId,$applicableSet,$visited,$result,$warnings);$result[]=$preId;}}private function resolveDependencyDiffs(string $diffContent,array $descendants,array $prerequisites):array{$pFiles=array_flip($this->parseDiffFiles($diffContent));$missingDepIds=[];$overlappingDescDiffs=[];foreach(array_reverse($descendants)as $depId){$diff=$this->fetchDependencyDiff($depId);if($diff===null){$missingDepIds[]=$depId;continue;}if($this->diffOverlapsFiles($diff,$pFiles)){$overlappingDescDiffs[$depId]=$diff;}}$overlappingPrereqDiffs=[];foreach($prerequisites as $preId){$diff=$this->fetchDependencyDiff($preId);if($diff===null){continue;}if($this->diffOverlapsFiles($diff,$pFiles)){$overlappingPrereqDiffs[$preId]=$diff;}}return[$overlappingDescDiffs,$overlappingPrereqDiffs,$missingDepIds];}private function fetchDependencyDiff(string $patchId):?string{$entry=$this->registry['patches'][$patchId]??null;if($entry===null){return null;}$raw=$this->fetcher->fetch($patchId,$entry['file_name']??'',$entry['sha256']??'');if($raw===null){return null;}return $this->extractDiff($raw);}private function diffOverlapsFiles(string $diff,array $fileSet):bool{foreach($this->parseDiffFiles($diff)as $f){if(isset($fileSet[$f])){return true;}}return false;}private function collectAffectedFiles(string $diffContent,array $overlappingDescDiffs,array $overlappingPrereqDiffs):array{$files=$this->parseDiffFiles($diffContent);foreach($overlappingDescDiffs as $d){$files=array_merge($files,$this->parseDiffFiles($d));}foreach($overlappingPrereqDiffs as $d){$files=array_merge($files,$this->parseDiffFiles($d));}return array_values(array_unique($files));}private function createTempWorkDir(string $root,string $patchId,array $affectedFiles):string{$tmpDir=sys_get_temp_dir().'/patch_status_wd_'.$this->sanitizeForFilename($patchId).'_'.uniqid();mkdir($tmpDir,0777,true);foreach($affectedFiles as $relPath){$src=$root.'/'.$relPath;if(!file_exists($src)){continue;}$dst=$tmpDir.'/'.$relPath;$dstDir=dirname($dst);if(!is_dir($dstDir)){mkdir($dstDir,0777,true);}copy($src,$dst);}return $tmpDir;}private function revertDescendantsIn(string $workDir,string $patchId,array $overlappingDescDiffs):?string{foreach($overlappingDescDiffs as $depId=>$depDiff){$tmpDepDiff=sys_get_temp_dir().'/patch_status_dep_'.$this->sanitizeForFilename($depId).'_'.uniqid().'.diff';file_put_contents($tmpDepDiff,$depDiff);$check=$this->runPatch($tmpDepDiff,$workDir,reverse:true,dryRun:true);if($check['exit']!==0){@unlink($tmpDepDiff);continue;}$result=$this->runPatch($tmpDepDiff,$workDir,reverse:true,dryRun:false);@unlink($tmpDepDiff);if($result['exit']!==0){return"Failed to reverse-apply {$depId} when preparing dry-run for {$patchId}; result may be inaccurate";}}return null;}private function forwardApplyPrereqsIn(string $workDir,string $patchId,array $overlappingPrereqDiffs):?string{foreach($overlappingPrereqDiffs as $preId=>$preDiff){$tmpPreDiff=sys_get_temp_dir().'/patch_status_pre_'.$this->sanitizeForFilename($preId).'_'.uniqid().'.diff';file_put_contents($tmpPreDiff,$preDiff);$checkRev=$this->runPatch($tmpPreDiff,$workDir,reverse:true,dryRun:true);if($checkRev['exit']===0){@unlink($tmpPreDiff);continue;}$result=$this->runPatch($tmpPreDiff,$workDir,reverse:false,dryRun:false);@unlink($tmpPreDiff);if($result['exit']!==0){return"Failed to forward-apply prerequisite {$preId} when preparing dry-run for {$patchId}; result may be inaccurate";}}return null;}protected function runPatch(string $diffFile,string $workDir,bool $reverse,bool $dryRun):array{$args=['patch','-p1','--fuzz=0','--batch','--forward'];if($reverse){$args[]='-R';}if($dryRun){$args[]='--dry-run';}$args[]='-d';$args[]=$workDir;$args[]='-i';$args[]=$diffFile;$cmd=implode(' ',array_map('escapeshellarg',$args)).' 2>&1';$descriptors=[0=>['pipe','r'],1=>['pipe','w']];$process=proc_open($cmd,$descriptors,$pipes);if(!is_resource($process)){return['exit'=>-1,'output'=>''];}fclose($pipes[0]);$output=(string)stream_get_contents($pipes[1]);fclose($pipes[1]);$exit=proc_close($process);return['exit'=>$exit,'output'=>trim($output)];}private function classify(int $fwdExit,int $revExit):string{return match(true){$fwdExit!==0&&$revExit===0=>'applied',$fwdExit===0&&$revExit!==0=>'not_applied',default=>'unknown',};}private function parseDiffFiles(string $diffContent):array{$files=[];foreach(explode("\n",$diffContent)as $line){if(preg_match('#^(?:---|\+\+\+) [ab]/(.+)$#',$line,$m)){$path=trim($m[1]);if($path!=='/dev/null'){$files[$path]=true;}}}return array_keys($files);}private function extractDiff(string $content):?string{if(!str_starts_with($content,"PK\x03\x04")){return $content;}if(!class_exists('ZipArchive')){return null;}$tmpZip=sys_get_temp_dir().'/patch_status_'.uniqid().'.zip';file_put_contents($tmpZip,$content);$zip=new \ZipArchive();if($zip->open($tmpZip)!==true){@unlink($tmpZip);return null;}$diffContent=null;for($i=0;$i<$zip->numFiles;$i++){$name=$zip->getNameIndex($i);if(str_ends_with($name,'.patch')||str_ends_with($name,'.diff')){$extracted=$zip->getFromIndex($i);$diffContent=($extracted!==false)?$extracted:null;break;}}$zip->close();@unlink($tmpZip);return $diffContent;}private function rmdirRecursive(string $path):void{if(!is_dir($path)){return;}$entries=scandir($path);if($entries===false){return;}foreach($entries as $item){if($item==='.'||$item==='..'){continue;}$full=$path.'/'.$item;is_dir($full)?$this->rmdirRecursive($full):unlink($full);}rmdir($path);}protected function isTempDirWritable():bool{return is_writable(sys_get_temp_dir());}private function sanitizeForFilename(string $id):string{$sanitized=preg_replace('/[^A-Za-z0-9_.\-]/','_',$id);if($sanitized!==null){return $sanitized;}return'patch_'.sha1($id);}}namespace Magento\PatchStatus\Registry;class RegistryLoader{public const REMOTE_URL='https://d3sw4ohxqoqoqa.cloudfront.net/patch-registry.json';private const CACHE_FILE='var/patch_metadata/.patch_registry_cache.json';private const CACHE_TTL=3600;private const TIMEOUT=3;public function __construct(private readonly string $magentoRoot,private readonly bool $forceRefresh=false,){}public function load():array{$cachePath=rtrim($this->magentoRoot,'/').'/'.self::CACHE_FILE;$warnings=[];$cached=$this->forceRefresh?null:$this->readCache($cachePath);if($cached!==null&&$this->cacheAge($cachePath)<self::CACHE_TTL){return['registry'=>$cached,'source'=>'cache','warnings'=>[]];}$remote=$this->fetchRemote($warnings);if($remote!==null){$this->writeCache($cachePath,$remote);return['registry'=>$remote,'source'=>'remote','warnings'=>[]];}if($this->forceRefresh){$warnings[]='Could not fetch remote registry and --no-registry-cache was set; aborting.';return['registry'=>[],'source'=>'none','warnings'=>$warnings];}if($cached!==null){$ageHours=(int)round($this->cacheAge($cachePath)/3600);$warnings[]=sprintf('Could not load remote registry. Using cached registry (%d hour%s old). CVE coverage may be incomplete.',$ageHours,$ageHours===1?'':'s',);return['registry'=>$cached,'source'=>'stale_cache','warnings'=>$warnings];}$warnings[]='Patch registry could not be loaded.';return['registry'=>[],'source'=>'none','warnings'=>$warnings];}protected function fetchRemote(array&$warnings):?array{$context=stream_context_create(['http'=>['timeout'=>self::TIMEOUT,'ignore_errors'=>true,'user_agent'=>'Adobe-Commerce-PatchStatus/'.\Magento\PatchStatus\PatchStatusCommand::VERSION,],'ssl'=>['verify_peer'=>true,'verify_peer_name'=>true,],]);$raw=@file_get_contents(self::REMOTE_URL,context:$context);if($raw===false){return null;}$data=json_decode($raw,true);if(!is_array($data)){$warnings[]='Remote registry response was not valid JSON; ignoring.';return null;}return $data;}private function readCache(string $path):?array{if(!file_exists($path)){return null;}$raw=@file_get_contents($path);if($raw===false){return null;}$data=json_decode($raw,true);return is_array($data)?$data:null;}private function writeCache(string $path,array $data):void{$dir=dirname($path);if(!is_dir($dir)){@mkdir($dir,0775,true);}@file_put_contents($path,json_encode($data),LOCK_EX);}private function cacheAge(string $path):int{$mtime=@filemtime($path);return $mtime!==false?(time()-$mtime):PHP_INT_MAX;}}namespace Magento\PatchStatus\Resolver;final class PatchResolver{public function __construct(private readonly array $registry){}public function getApplicableIds(array $componentVersions,array $installedAreas):array{$assumeAll=empty($installedAreas)||empty($componentVersions);return array_keys($this->applicablePatches($componentVersions,$installedAreas,$assumeAll));}public function resolve(array $appliedIds,array $componentVersions,array $installedAreas=[]):array{$warnings=[];$assumeAll=empty($installedAreas)||empty($componentVersions);if($assumeAll){$warnings[]='Installed components could not be detected; all patches treated as applicable. Results may include patches irrelevant to this installation.';}$applicable=$this->applicablePatches($componentVersions,$installedAreas,$assumeAll);if(empty($applicable)){$versionsStr=implode(', ',array_map(fn($a,$v)=>"{$a}={$v}",array_keys($componentVersions),array_values($componentVersions)));$warnings[]="No patches found in registry for installed component versions ({$versionsStr})";return['missing'=>[],'warnings'=>$warnings,];}$appliedSet=array_flip($appliedIds);$missing=[];foreach($applicable as $patchId=>$patch){if(!isset($appliedSet[$patchId])){$missing[]=$patchId;}}return['missing'=>$missing,'warnings'=>$warnings,];}private function applicablePatches(array $componentVersions,array $installedAreas,bool $assumeAll):array{$areaSet=$assumeAll?null:array_flip($installedAreas);$result=[];foreach($this->registry['patches']??[]as $patchId=>$patch){if($assumeAll){$result[$patchId]=$patch;continue;}$area=$patch['area']??'';if($areaSet!==null&&!isset($areaSet[$area])){continue;}$installedVersion=$componentVersions[$area]??null;if($installedVersion===null){continue;}if(!in_array($installedVersion,$patch['applies_to']??[],true)){continue;}$result[$patchId]=$patch;}return $result;}}namespace Magento\PatchStatus\Resolver;final class CveResolver{private const PRIORITY=['NOT_APPLICABLE'=>0,'VULNERABLE'=>1,'UNKNOWN'=>2,'PROTECTED'=>3,];public function __construct(private readonly array $registry){}public function resolve(array $appliedIds,array $missingIds=[],array $installedAreas=[],array $componentVersions=[],array $unknownIds=[],):array{$appliedSet=array_flip($appliedIds);$unknownSet=array_flip($unknownIds);$areaSet=!empty($installedAreas)?array_flip($installedAreas):null;$best=[];foreach($this->registry['patches']??[]as $patchId=>$patch){$patchArea=$patch['area']??'CE';if(!empty($componentVersions)){$areaIsInstalled=$areaSet===null||isset($areaSet[$patchArea]);if($areaIsInstalled){$installedVersion=$componentVersions[$patchArea]??null;if($installedVersion===null||!in_array($installedVersion,$patch['applies_to']??[],true)){continue;}}}if(isset($appliedSet[$patchId])){$newStatus='PROTECTED';}elseif($areaSet!==null&&!isset($areaSet[$patchArea])){$newStatus='NOT_APPLICABLE';}elseif(isset($unknownSet[$patchId])){$newStatus='UNKNOWN';}else{$newStatus='VULNERABLE';}$newPriority=self::PRIORITY[$newStatus];$entry=['status'=>$newStatus,'fixed_in'=>$patchId,'area'=>$patchArea];foreach($patch['cves']??[]as $cve){if(!isset($best[$cve])||$newPriority>$best[$cve]['priority']){$best[$cve]=['entry'=>$entry,'priority'=>$newPriority];}}}$status=[];foreach($best as $cve=>$data){$status[$cve]=$data['entry'];}ksort($status);return $status;}}namespace Magento\PatchStatus\Formatter;use Magento\PatchStatus\Model\PatchStatus;final class JsonFormatter{public function format(PatchStatus $status):string{return json_encode($status->toArray(),JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES)."\n";}}namespace Magento\PatchStatus\Formatter;use Magento\PatchStatus\Model\PatchStatus;final class CsvFormatter{private const HEADERS=['base_version','installed_components','applied_patches','missing_patches','unknown_patches','cve','cve_area','cve_status','fixed_in',];public function format(PatchStatus $status):string{$buf=fopen('php://temp','r+');fputcsv($buf,self::HEADERS,separator:',',enclosure:'"',escape:'\\');$common=[$status->baseVersion,implode(';',array_map(static fn($area,$ver)=>"{$area}:{$ver}",array_keys($status->installedComponents),$status->installedComponents,)),implode(';',$status->appliedPatches),implode(';',$status->missingPatches),implode(';',$status->unknownPatches),];if(empty($status->vulnerabilityStatus)){fputcsv($buf,array_merge($common,['','','','']),separator:',',enclosure:'"',escape:'\\');}else{foreach($status->vulnerabilityStatus as $cve=>$info){fputcsv($buf,array_merge($common,[$cve,$info['area']??'',$info['status'],$info['fixed_in'],]),separator:',',enclosure:'"',escape:'\\');}}rewind($buf);$content=stream_get_contents($buf);fclose($buf);return $content;}}namespace Magento\PatchStatus;use Magento\PatchStatus\Detector\ComposerDetector;use Magento\PatchStatus\Detector\DryRunDetector;use Magento\PatchStatus\Fetcher\PatchFetcher;use Magento\PatchStatus\Formatter\CsvFormatter;use Magento\PatchStatus\Formatter\JsonFormatter;use Magento\PatchStatus\Model\PatchStatus;use Magento\PatchStatus\Registry\RegistryLoader;use Magento\PatchStatus\Resolver\CveResolver;use Magento\PatchStatus\Resolver\PatchResolver;class PatchStatusCommand{public const VERSION='0.2.0-alpha';private const LOG_FILE='var/log/patch_status.log';private string $root='.';private string $format='json';private bool $noRegistryCache=false;public function run(array $argv):int{$this->parseArgs($argv);$loaded=$this->makeRegistryLoader($this->root,forceRefresh:$this->noRegistryCache)->load();$warnings=$loaded['warnings'];$registry=$loaded['registry'];if(empty($registry)){foreach($warnings as $warning){$this->error($warning);}if(empty($warnings)){$this->error('Cannot load patch registry');}return 1;}$comp=(new ComposerDetector($this->root))->detect();$warnings=array_merge($warnings,$comp['warnings']);$baseVersion=$comp['base_version']??'unknown';$areaDefinitions=$registry['_areas']??[];$installedAreas=[];$componentVersions=[];foreach($areaDefinitions as $area=>$def){if(($def['detection']??'')==='base_version'){if($baseVersion!=='unknown'){$installedAreas[]=$area;$componentVersions[$area]=$baseVersion;}}elseif(isset($def['composer_package'])){$pkg=$def['composer_package'];if(isset($comp['installed_packages'][$pkg])){$installedAreas[]=$area;$componentVersions[$area]=ltrim($comp['installed_packages'][$pkg],'v');}}}if($baseVersion==='unknown'){$status=new PatchStatus(baseVersion:'unknown',appliedPatches:[],missingPatches:[],installedComponents:[],vulnerabilityStatus:[],warnings:array_values(array_unique($warnings)),registrySource:$loaded['source'],);echo match($this->format){'csv'=>(new CsvFormatter())->format($status),default=>(new JsonFormatter())->format($status),};return 1;}if(!$this->isPatchBinaryAvailable()){$this->error('patch(1) binary not found. Install the patch utility and try again.');return 1;}$patchResolver=new PatchResolver($registry);$applicableIds=$patchResolver->getApplicableIds($componentVersions,$installedAreas);if(empty($applicableIds)){$versionsStr=implode(', ',array_map(fn($a,$v)=>"{$a}={$v}",array_keys($componentVersions),array_values($componentVersions),));$warnings[]="No patches found in registry for installed component versions ({$versionsStr})";}try{$detected=$this->runDryRunDetection($applicableIds,$registry);}catch(\RuntimeException $e){$this->error($e->getMessage());return 1;}$warnings=array_merge($warnings,$detected['warnings']);$unknownLogs=$detected['unknown_logs'];$appliedPatches=[];$missingPatches=[];$unknownPatches=[];foreach($detected['statuses']as $patchId=>$patchStatus){match($patchStatus){'applied'=>$appliedPatches[]=$patchId,'not_applied'=>$missingPatches[]=$patchId,'unknown'=>$unknownPatches[]=$patchId,default=>null,};}$cveResolver=new CveResolver($registry);$vulnStatus=$cveResolver->resolve($appliedPatches,$missingPatches,$installedAreas,$componentVersions,$unknownPatches,);$status=new PatchStatus(baseVersion:$baseVersion,appliedPatches:array_values($appliedPatches),missingPatches:array_values($missingPatches),installedComponents:$componentVersions,vulnerabilityStatus:$vulnStatus,warnings:array_values(array_unique($warnings)),registrySource:$loaded['source'],unknownPatches:array_values($unknownPatches),);$output=match($this->format){'csv'=>(new CsvFormatter())->format($status),default=>(new JsonFormatter())->format($status),};echo $output;$this->writeLog($status,$unknownLogs);return 0;}protected function makeRegistryLoader(string $magentoRoot,bool $forceRefresh):RegistryLoader{return new RegistryLoader(magentoRoot:$magentoRoot,forceRefresh:$forceRefresh);}protected function isPatchBinaryAvailable():bool{return DryRunDetector::isPatchBinaryAvailable();}protected function runDryRunDetection(array $applicableIds,array $registry):array{$fetcher=new PatchFetcher($this->root,PatchFetcher::DIFF_BASE_URL);$detector=new DryRunDetector($this->root,$registry,$fetcher);return $detector->detect($applicableIds);}private function parseArgs(array $argv):void{foreach(array_slice($argv,1)as $arg){if(preg_match('/^--root=(.+)$/',$arg,$m)){$this->root=rtrim($m[1],'/');}elseif(preg_match('/^--format=(json|csv)$/',$arg,$m)){$this->format=$m[1];}elseif($arg==='--no-registry-cache'){$this->noRegistryCache=true;}elseif(in_array($arg,['--version','-V'],true)){echo'patch-status '.self::VERSION."\n";exit(0);}elseif(in_array($arg,['--help','-h'],true)){$this->printUsage();exit(0);}}}private function printUsage():void{$version=self::VERSION;echo"Adobe Commerce Monthly Security Release Versioning Tool v{$version}\n\n"."Usage:\n"."  vendor/bin/patch-status [OPTIONS]\n\n"."Options:\n"."  --root=PATH           Path to Commerce installation root (default: current directory)\n"."  --format=FORMAT       Output format: json (default) or csv\n"."  --no-registry-cache   Force a fresh registry fetch from remote, ignoring local cache; exits with an error if remote is unreachable\n"."  --version             Show version\n"."  --help                Show this help message\n\n"."Note: Output format is not final and may change in future releases.\n\n";}private function writeLog(PatchStatus $status,array $unknownLogs):void{$logPath=rtrim($this->root,'/').'/'.self::LOG_FILE;$logDir=dirname($logPath);if(!is_dir($logDir)&&!@mkdir($logDir,0775,true)){return;}$line=sprintf("[%s] base=%s applied=[%s] missing=[%s] unknown=[%s]\n",date('c'),$status->baseVersion,implode(',',$status->appliedPatches),implode(',',$status->missingPatches),implode(',',$status->unknownPatches),);@file_put_contents($logPath,$line,FILE_APPEND|LOCK_EX);foreach($unknownLogs as $patchId=>$logOutput){$block=sprintf("[%s] UNKNOWN %s:\n%s\n",date('c'),$patchId,$logOutput);@file_put_contents($logPath,$block,FILE_APPEND|LOCK_EX);}}private function error(string $msg):void{fwrite(STDERR,"patch-status: {$msg}\n");}}
++$command=new PatchStatusCommand();exit($command->run($argv));

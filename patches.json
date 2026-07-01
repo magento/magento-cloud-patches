@@ -316,6 +316,14 @@
       "2.4.7-p8 || 2.4.6-p13": "Revert-AC-15165__2.4.7-p8_2.4.6-p13__composer.patch",
       "2.4.5-p15": "Revert-AC-15165__2.4.5-p15__composer.patch",
       "2.4.4-p16": "Revert-AC-15165__2.4.4-p16__composer.patch"
+    },
+    "Patch for Jul 2026 monthly release" : {
+      "2.4.9": "MCLOUD-15066__Jul_2026_monthly_release_ce__2.4.9.patch",
+      "2.4.8-p5": "MCLOUD-15066__Jul_2026_monthly_release_ce__2.4.8-p5.patch",
+      "2.4.7-p10": "MCLOUD-15066__Jul_2026_monthly_release_ce__2.4.7-p10.patch",
+      "2.4.6-p15": "MCLOUD-15066__Jul_2026_monthly_release_ce__2.4.6-p15.patch",
+      "2.4.5-p17": "MCLOUD-15066__Jul_2026_monthly_release_ce__2.4.5-p17.patch",
+      "2.4.4-p18": "MCLOUD-15066__Jul_2026_monthly_release_ce__2.4.4-p18.patch"
     }
   },
   "magento/module-paypal": {
@@ -415,6 +423,13 @@
     },
     "Fixes the issue where an SQL syntax error occurs due to the non-existence of the REGEXP_LIKE function when attempting to update the company_structure table.": {
       "1.5.2": "MCLOUD-13605__B2B_SQL_syntax_error_due_to_the_REGEXP_LIKE_function__1.5.2.patch"
+    },
+    "Patch for Jul 2026 monthly release B2B" : {
+      "1.5.3": "MCLOUD-15066__Jul_2026_monthly_release_b2b__1.5.3.patch",
+      "1.5.2-p5": "MCLOUD-15066__Jul_2026_monthly_release_b2b__1.5.2-p5.patch",
+      "1.4.2-p10": "MCLOUD-15066__Jul_2026_monthly_release_b2b__1.4.2-p10.patch",
+      "1.3.4-p17": "MCLOUD-15066__Jul_2026_monthly_release_b2b__1.3.4-p17.patch",
+      "1.3.3-p18": "MCLOUD-15066__Jul_2026_monthly_release_b2b__1.3.3-p18.patch"
     }
   },
   "magento/magento2-ee-base": {
@@ -449,6 +464,13 @@
       ">=2.3.3-p1 <=2.3.4": "MDVA-43443__parser_token_new_fix__2.3.3-p1.patch",
       ">=2.3.4-p2 <2.3.7-p3 || >=2.4.0 <2.4.3": "MDVA-43443__parser_token_new_fix__2.3.4-p2.patch",
       ">=2.4.3 <2.4.3-p2": "MDVA-43443__parser_token_new_fix__2.4.3.patch"
+    },
+    "Patch for Jul 2026 monthly release EE" : {
+      "2.4.9": "MCLOUD-15066__Jul_2026_monthly_release_ee__2.4.9.patch",
+      "2.4.8-p5": "MCLOUD-15066__Jul_2026_monthly_release_ee__2.4.8-p5.patch",
+      "2.4.6-p15|2.4.7-p10": "MCLOUD-15066__Jul_2026_monthly_release_ee__2.4.7-p10.patch",
+      "2.4.5-p17": "MCLOUD-15066__Jul_2026_monthly_release_ee__2.4.5-p17.patch",
+      "2.4.4-p18": "MCLOUD-15066__Jul_2026_monthly_release_ee__2.4.4-p18.patch"
     }
   },
   "magento/framework": {
