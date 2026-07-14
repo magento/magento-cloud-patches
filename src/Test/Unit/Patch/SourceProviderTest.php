@@ -252,4 +252,57 @@ class SourceProviderTest extends TestCase
 
         $this->sourceProvider->getCommunityPatches();
     }
+
+    /**
+     * Tests retrieving local patches config when custom-patches.json exists.
+     *
+     * @return void
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetLocalPatchesConfig(): void
+    {
+        $magentoRoot = '/magento/root';
+        $configPath = $magentoRoot . '/' . SourceProvider::HOT_FIXES_DIR . '/custom-patches.json';
+        $configSource = [
+            'HIB-000001.patch' => [
+                'id'         => 'HIB-000001',
+                'title'      => 'My custom fix',
+                'categories' => ['Bug Fix'],
+            ],
+        ];
+
+        $this->directoryList->expects($this->once())
+            ->method('getMagentoRoot')
+            ->willReturn($magentoRoot);
+
+        $this->jsonConfigReader->expects($this->once())
+            ->method('read')
+            ->with($configPath)
+            ->willReturn($configSource);
+
+        $this->assertEquals($configSource, $this->sourceProvider->getLocalPatchesConfig());
+    }
+
+    /**
+     * Tests that getLocalPatchesConfig returns empty array when file is missing.
+     *
+     * @return void
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetLocalPatchesConfigMissing(): void
+    {
+        $magentoRoot = '/magento/root';
+        $configPath = $magentoRoot . '/' . SourceProvider::HOT_FIXES_DIR . '/custom-patches.json';
+
+        $this->directoryList->expects($this->once())
+            ->method('getMagentoRoot')
+            ->willReturn($magentoRoot);
+
+        $this->jsonConfigReader->expects($this->once())
+            ->method('read')
+            ->with($configPath)
+            ->willThrowException(new SourceProviderException('File not found'));
+
+        $this->assertEquals([], $this->sourceProvider->getLocalPatchesConfig());
+    }
 }

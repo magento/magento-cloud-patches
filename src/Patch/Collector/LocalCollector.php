@@ -48,16 +48,21 @@ class LocalCollector
     public function collect(): array
     {
         $files = $this->sourceProvider->getLocalPatches();
+        $infoFile = $this->sourceProvider->getLocalPatchesConfig();
         $result = [];
         foreach ($files as $file) {
             $shortPath = '../' . SourceProvider::HOT_FIXES_DIR . '/' . basename($file);
-            $this->patchBuilder->setId($shortPath);
-            $this->patchBuilder->setTitle($shortPath);
+            $fileKey = basename($file);
+            $id = !empty($infoFile[$fileKey]['id']) ? $infoFile[$fileKey]['id'] : $fileKey;
+            $title = !empty($infoFile[$fileKey]['title']) ? $infoFile[$fileKey]['title'] : $shortPath;
+            $categories = !empty($infoFile[$fileKey]['categories']) ? $infoFile[$fileKey]['categories'] : ['Other'];
+            $this->patchBuilder->setId($id);
+            $this->patchBuilder->setTitle($title);
             $this->patchBuilder->setFilename(basename($file));
             $this->patchBuilder->setPath($file);
             $this->patchBuilder->setType(PatchInterface::TYPE_CUSTOM);
             $this->patchBuilder->setOrigin(self::ORIGIN);
-            $this->patchBuilder->setCategories(['Other']);
+            $this->patchBuilder->setCategories($categories);
             $result[] = $this->patchBuilder->build();
         }
 
